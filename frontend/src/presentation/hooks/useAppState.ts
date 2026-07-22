@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "../context/useAppContext";
 import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo, Theme, Person } from "../../domain/entities";
+import { ApiUpdateRepository, type UpdateInfo } from "../../data/ApiUpdateRepository";
 
 export function useAppState() {
   const { compositionRoot } = useAppContext();
@@ -16,8 +17,11 @@ export function useAppState() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [showConflict, setShowConflict] = useState(false);
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const updateRepository = new ApiUpdateRepository();
 
   const resolveTheme = useCallback((theme: Theme): "light" | "dark" => {
     if (theme === "system") {
@@ -70,6 +74,9 @@ export function useAppState() {
   useEffect(() => {
     loadSettings();
     loadDbInfo();
+    updateRepository.check().then((info) => {
+      if (info) setUpdateInfo(info);
+    });
   }, [loadSettings, loadDbInfo]);
 
   useEffect(() => {
@@ -131,6 +138,15 @@ export function useAppState() {
     const next = order[(order.indexOf(settings.theme) + 1) % order.length];
     await compositionRoot.provideUpdateThemeUseCase().setTheme(next);
     setSettings(settings.withTheme(next));
+  }
+
+  async function checkForUpdate() {
+    const info = await updateRepository.check();
+    setUpdateInfo(info);
+  }
+
+  async function downloadUpdate() {
+    await updateRepository.download();
   }
 
   async function saveTransaction(data: {
@@ -222,12 +238,16 @@ export function useAppState() {
     persons,
     showConflict,
     resolvedTheme,
+    updateInfo,
     loading,
     error,
     changeYear,
     changeMonth,
     changeViewMode,
     toggleTheme,
+    checkForUpdate,
+    downloadUpdate,
+    dismissUpdate: () => setUpdateInfo(null),
     saveTransaction,
     updateTransaction,
     deleteTransaction,

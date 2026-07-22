@@ -4,3 +4,4 @@ export * from "./ApiSettingsRepository";
 export * from "./ApiDbInfoRepository";
 export * from "./ApiExcelRepository";
 export * from "./ApiPersonRepository";
+export * from "./ApiUpdateRepository";

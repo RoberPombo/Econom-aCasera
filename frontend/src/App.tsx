@@ -10,6 +10,7 @@ import { CategoriesConfig } from "./presentation/components/CategoriesConfig";
 import { PersonsConfig } from "./presentation/components/PersonsConfig";
 import { ImportExcel } from "./presentation/components/ImportExcel";
 import { ConflictDialog } from "./presentation/components/ConflictDialog";
+import { UpdateDialog } from "./presentation/components/UpdateDialog";
 import "./presentation/components/App.css";
 
 type Tab = "transactions" | "monthly" | "annual" | "categories" | "persons" | "import";
@@ -197,6 +198,14 @@ function App() {
           onReload={state.reloadDatabase}
           onOverwrite={state.forceOverwrite}
           onCancel={state.closeConflict}
+        />
+      )}
+
+      {state.updateInfo && (
+        <UpdateDialog
+          update={state.updateInfo}
+          onConfirm={state.downloadUpdate}
+          onCancel={state.dismissUpdate}
         />
       )}
     </div>
