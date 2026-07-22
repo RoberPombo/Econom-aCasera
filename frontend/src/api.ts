@@ -42,13 +42,11 @@ export interface AnnualSummary {
   balance: number;
 }
 
-export interface DriveStatus {
-  authenticated: boolean;
-  email?: string;
-}
-
-export interface DriveConfig {
-  client_id: string;
+export interface DbInfo {
+  dbPath: string;
+  backupPath: string;
+  usesDrive: boolean;
+  driveFolder: string | null;
 }
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
@@ -107,21 +105,7 @@ export const updateCategory = (id: number, name: string, type: "income" | "expen
 export const deleteCategory = (id: number) =>
   api<{ ok: boolean }>(`/category-config/${id}`, { method: "DELETE" });
 
-export const getDriveStatus = () => api<DriveStatus>("/drive/status");
-export const getDriveConfig = () => api<DriveConfig | null>("/drive/config");
-export const setDriveConfig = (cfg: DriveConfig) =>
-  api<{ ok: boolean }>("/drive/config", { method: "POST", body: JSON.stringify(cfg) });
-
-export const startGoogleAuth = () =>
-  api<{ url: string }>("/drive/auth", { method: "POST" });
-
-export const backupToDrive = () =>
-  api<{ success: boolean; message: string }>("/drive/backup", { method: "POST" });
-
-export const restoreFromDrive = () =>
-  api<{ success: boolean; message: string }>("/drive/restore", { method: "POST" });
-
-export const getDbPath = () => api<{ path: string }>("/dbpath");
+export const getDbInfo = () => api<DbInfo>("/db-info");
 
 export const importExcel = (file: File) => {
   const formData = new FormData();

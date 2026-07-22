@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Transaction, Category, CategorySummary, DriveStatus, MonthlySummary, AnnualSummary } from "./api";
+import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, DbInfo } from "./api";
 import {
   listTransactions,
   createTransaction,
@@ -16,7 +16,7 @@ import {
   getViewMode,
   setViewMode,
   listCategories,
-  getDriveStatus,
+  getDbInfo,
 } from "./api";
 import { TransactionForm } from "./TransactionForm";
 import { TransactionList } from "./TransactionList";
@@ -24,11 +24,10 @@ import { SummaryCards } from "./SummaryCards";
 import { MonthlyView } from "./MonthlyView";
 import { AnnualView } from "./AnnualView";
 import { CategoriesConfig } from "./CategoriesConfig";
-import { DriveSection } from "./DriveSection";
 import { ImportExcel } from "./ImportExcel";
 import "./App.css";
 
-type Tab = "transactions" | "monthly" | "annual" | "categories" | "import" | "drive";
+type Tab = "transactions" | "monthly" | "annual" | "categories" | "import";
 
 function App() {
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -39,9 +38,9 @@ function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [driveStatus, setDriveStatus] = useState<DriveStatus>({ authenticated: false });
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
   const [annualSummary, setAnnualSummary] = useState<AnnualSummary[]>([]);
+  const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
   const [tab, setTab] = useState<Tab>("transactions");
 
   useEffect(() => {
@@ -64,18 +63,18 @@ function App() {
   }
 
   async function refresh() {
-    const [tx, sum, catsummary, allCategories, status] = await Promise.all([
+    const [tx, sum, catsummary, allCategories, info] = await Promise.all([
       listTransactions(year, viewMode === "monthly" ? month : undefined),
       getSummary(year, viewMode === "monthly" ? month : undefined),
       getCategories(year, viewMode === "monthly" ? month : undefined),
       listCategories(),
-      getDriveStatus(),
+      getDbInfo(),
     ]);
     setTransactions(tx);
     setSummary(sum);
     setCategorySummary(catsummary);
     setCategories(allCategories);
-    setDriveStatus(status);
+    setDbInfo(info);
 
     const [monthly, annual] = await Promise.all([
       getMonthlySummary(year),
@@ -171,9 +170,6 @@ function App() {
         <button className={tab === "import" ? "active" : ""} onClick={() => setTab("import")}>
           Importar Excel
         </button>
-        <button className={tab === "drive" ? "active" : ""} onClick={() => setTab("drive")}>
-          Drive
-        </button>
       </nav>
 
       <main>
@@ -221,13 +217,25 @@ function App() {
             <ImportExcel onImported={refresh} />
           </section>
         )}
-
-        {tab === "drive" && (
-          <section>
-            <DriveSection status={driveStatus} onChange={refresh} />
-          </section>
-        )}
       </main>
+
+      {dbInfo && (
+        <footer className="db-info">
+          {dbInfo.usesDrive ? (
+            <>
+              <p>✅ Sincronizado con Google Drive</p>
+              <p className="hint">Base de datos: <span>{dbInfo.dbPath}</span></p>
+              <p className="hint">Copia de seguridad local: <span>{dbInfo.backupPath}</span></p>
+            </>
+          ) : (
+            <>
+              <p>⚠️ Google Drive no detectado</p>
+              <p className="hint">Base de datos: <span>{dbInfo.dbPath}</span></p>
+              <p className="hint">Copia de seguridad: <span>{dbInfo.backupPath}</span></p>
+            </>
+          )}
+        </footer>
+      )}
     </div>
   );
 }

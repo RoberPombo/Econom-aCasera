@@ -350,6 +350,18 @@ th {
   border-radius: var(--radius);
 }
 
+.db-info {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.db-info p {
+  margin: 0.25rem 0;
+}
+
 @media (max-width: 600px) {
   .form-row {
     grid-template-columns: 1fr;

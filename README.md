@@ -1,6 +1,6 @@
 # Gastos e Ingresos
 
-Aplicación de escritorio para llevar el control de gastos e ingresos anuales. Funciona localmente, guarda los datos en SQLite y permite hacer copias de seguridad en Google Drive.
+Aplicación de escritorio para llevar el control de gastos e ingresos anuales. Funciona localmente, guarda los datos en SQLite y se sincroniza automáticamente con Google Drive si está instalado.
 
 ## Características
 
@@ -9,8 +9,27 @@ Aplicación de escritorio para llevar el control de gastos e ingresos anuales. F
 - **Categorías configurables** para ingresos y gastos.
 - **Importación desde Excel**: una hoja por mes (Ene., Feb., ...) con la tabla de transacciones.
 - **Resumen mensual y anual** con totales por categoría.
-- **Backup y restore en Google Drive**.
+- **Sincronización automática con Google Drive** si el usuario lo tiene instalado.
+- **Copia de seguridad local** si no hay Google Drive.
 - **Ejecutable con doble click**: no requiere conocimientos técnicos para usarlo.
+
+## Cómo funciona el almacenamiento
+
+La app detecta automáticamente si el usuario tiene Google Drive instalado:
+
+### Si tiene Google Drive
+- La base de datos se guarda dentro de `Google Drive/Gastos/gastos.db`.
+- Cada cambio se persiste directamente en esa carpeta, así que Drive lo sincroniza.
+- También se mantiene una copia de seguridad local por si Drive no está disponible temporalmente.
+- **Si abres la app en dos PCs con la misma cuenta de Google Drive, los datos se sincronizan.**
+  - Importante: no edites al mismo tiempo en los dos PCs, porque podrían generarse conflictos en Drive.
+
+### Si no tiene Google Drive
+- La base de datos se guarda en el directorio de datos del usuario:
+  - Windows: `%APPDATA%\Gastos\gastos.db`
+  - macOS: `~/Library/Application Support/Gastos/gastos.db`
+  - Linux: `~/.local/share/Gastos/gastos.db`
+- Se mantiene una copia de seguridad en `~/Gastos/backup/gastos_backup.db`.
 
 ## Tecnología
 
@@ -96,25 +115,6 @@ La app espera un archivo `.xlsx` con:
   - **EUROS**: importe.
   - **DESCRIPCIÓN**: concepto del movimiento.
 
-## Google Drive
-
-Para activar el backup en Google Drive:
-
-1. Ve a [Google Cloud Console](https://console.cloud.google.com/).
-2. Crea un nuevo proyecto.
-3. Habilita la **Google Drive API**.
-4. Ve a **Credenciales** → **Crear credenciales** → **ID de cliente de OAuth**.
-5. Selecciona **Aplicación de escritorio**.
-6. Copia el **Client ID** y pégalo en la aplicación, en la sección de Google Drive.
-7. Pulsa **Conectar con Google**, autoriza desde tu navegador y ya podrás subir/restaurar copias.
-
-## Datos almacenados
-
-- La base de datos SQLite se guarda en el directorio de datos del usuario:
-  - Windows: `%APPDATA%\Gastos\gastos.db`
-  - macOS: `~/Library/Application Support/Gastos/gastos.db`
-  - Linux: `~/.local/share/Gastos/gastos.db`
-
 ## Estructura del proyecto
 
 ```
@@ -129,14 +129,13 @@ Para activar el backup en Google Drive:
 │   │   ├── MonthlyView.tsx
 │   │   ├── AnnualView.tsx
 │   │   ├── CategoriesConfig.tsx
-│   │   ├── DriveSection.tsx
-│   │   └── ImportExcel.tsx
+│   │   ├── ImportExcel.tsx
+│   │   └── ...
 │   └── index.html
 ├── src/               # Backend Bun
 │   ├── server.ts      # Servidor HTTP + API + importación Excel
-│   ├── db.ts          # SQLite + migraciones
-│   ├── drive.ts       # Google Drive OAuth
-│   ├── utils.ts       # Rutas de datos
+│   ├── db.ts          # SQLite + sincronización Drive/local
+│   ├── utils.ts       # Detección de Google Drive y rutas
 │   └── types.ts       # Tipos compartidos
 ├── dist/              # Frontend compilado y ejecutables
 ├── scripts/           # Scripts de compilación

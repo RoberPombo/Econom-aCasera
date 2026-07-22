@@ -1,16 +1,58 @@
 import { Database } from "bun:sqlite";
-import path from "path";
 import { Transaction, Summary, CategorySummary, Category } from "./types";
-import { getAppDataDir } from "./utils";
+import { getDbLocation, copyIfNewer, getFileModTime } from "./utils";
 
-const dataDir = getAppDataDir();
-export const dbPath = path.join(dataDir, "gastos.db");
+const { dbPath, backupPath, usesDrive, driveFolder } = getDbLocation();
+export { dbPath, backupPath, usesDrive, driveFolder };
 
-const db = new Database(dbPath);
+// Decidir qué base de datos usar al inicio
+function resolveDatabasePath(): string {
+  const localExists = require("fs").existsSync(dbPath);
+  const backupExists = require("fs").existsSync(backupPath);
 
-// Migraciones simples
+  if (usesDrive) {
+    if (localExists && backupExists) {
+      const localTime = getFileModTime(dbPath);
+      const backupTime = getFileModTime(backupPath);
+      if (backupTime && localTime && backupTime > localTime) {
+        console.log("La copia local de seguridad es más reciente que Google Drive. Se usa la copia local.");
+        return backupPath;
+      }
+    }
+    // Si existe en Drive, usar Drive (o copiar de backup si backup es más reciente)
+    if (localExists) {
+      // Hacer backup local por si acaso
+      copyIfNewer(dbPath, backupPath);
+      return dbPath;
+    }
+    if (backupExists) {
+      // Restaurar desde backup local a Drive
+      copyIfNewer(backupPath, dbPath);
+      return dbPath;
+    }
+    return dbPath;
+  }
+
+  // Sin Drive: usar local, restaurar desde backup si backup es más reciente
+  if (backupExists && localExists) {
+    const localTime = getFileModTime(dbPath);
+    const backupTime = getFileModTime(backupPath);
+    if (backupTime && localTime && backupTime > localTime) {
+      copyIfNewer(backupPath, dbPath);
+    }
+  } else if (backupExists && !localExists) {
+    copyIfNewer(backupPath, dbPath);
+  }
+
+  return dbPath;
+}
+
+const resolvedDbPath = resolveDatabasePath();
+export const activeDbPath = resolvedDbPath;
+
+const db = new Database(resolvedDbPath);
+
 function migrate() {
-  // Tabla de versiones
   db.run(`CREATE TABLE IF NOT EXISTS _migrations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
@@ -77,13 +119,12 @@ function migrate() {
 
 migrate();
 
-// Asegurar fila default de settings
 db.run(
   "INSERT OR IGNORE INTO settings (key, current_year, current_month, view_mode) VALUES ('default', ?, ?, 'monthly')",
   [new Date().getFullYear(), new Date().getMonth() + 1]
 );
 
-// Categorías por defecto basadas en el Excel
+// Categorías por defecto
 const defaultCategories: { name: string; type: "income" | "expense" }[] = [
   { name: "Nóminas", type: "income" },
   { name: "Ingresos por intereses", type: "income" },
@@ -164,6 +205,7 @@ export function createTransaction(t: Transaction): Transaction {
     "INSERT INTO transactions (date, type, category, concept, amount, year, month) VALUES (?, ?, ?, ?, ?, ?, ?)",
     [t.date, t.type, t.category, t.concept, t.amount, year, month]
   );
+  syncToBackup();
   return { ...t, id: Number(result.lastInsertRowid), year, month };
 }
 
@@ -176,11 +218,23 @@ export function updateTransaction(t: Transaction): Transaction {
     "UPDATE transactions SET date = ?, type = ?, category = ?, concept = ?, amount = ?, year = ?, month = ? WHERE id = ?",
     [t.date, t.type, t.category, t.concept, t.amount, year, month, t.id]
   );
+  syncToBackup();
   return { ...t, year, month };
 }
 
 export function deleteTransaction(id: number): void {
   db.run("DELETE FROM transactions WHERE id = ?", [id]);
+  syncToBackup();
+}
+
+function syncToBackup() {
+  if (usesDrive) {
+    // Si la BD principal está en Drive, mantener una copia local de seguridad
+    copyIfNewer(dbPath, backupPath);
+  } else {
+    // Si no hay Drive, mantener backup local
+    copyIfNewer(dbPath, backupPath);
+  }
 }
 
 export function getSummary(year: number, month?: number): Summary {
@@ -258,7 +312,6 @@ export function getAnnualSummary(): { year: number; income: number; expense: num
   }));
 }
 
-// Categorías configurables
 export function listCategories(): Category[] {
   return db
     .query("SELECT id, name, type, active FROM categories ORDER BY type, name")
@@ -267,15 +320,18 @@ export function listCategories(): Category[] {
 
 export function createCategory(name: string, type: "income" | "expense"): Category {
   const result = db.run("INSERT INTO categories (name, type, active) VALUES (?, ?, 1)", [name, type]);
+  syncToBackup();
   return { id: Number(result.lastInsertRowid), name, type, active: 1 };
 }
 
 export function updateCategory(id: number, name: string, type: "income" | "expense", active: number): void {
   db.run("UPDATE categories SET name = ?, type = ?, active = ? WHERE id = ?", [name, type, active, id]);
+  syncToBackup();
 }
 
 export function deleteCategory(id: number): void {
   db.run("DELETE FROM categories WHERE id = ?", [id]);
+  syncToBackup();
 }
 
 export function close(): void {

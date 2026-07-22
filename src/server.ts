@@ -22,16 +22,11 @@ import {
   updateCategory,
   deleteCategory,
   dbPath,
+  backupPath,
+  usesDrive,
+  driveFolder,
 } from "./db";
-import {
-  getDriveConfig,
-  setDriveConfig,
-  getDriveStatus,
-  startGoogleAuth,
-  backupToDrive,
-  restoreFromDrive,
-} from "./drive";
-import { Transaction, DriveConfig } from "./types";
+import { Transaction } from "./types";
 import { getStaticDir } from "./utils";
 
 const distDir = getStaticDir();
@@ -78,7 +73,6 @@ async function importExcel(file: File): Promise<{ imported: number; errors: stri
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }) as any[][];
 
-    // Buscar la fila de cabecera de transacciones
     let headerRow = -1;
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -93,7 +87,7 @@ async function importExcel(file: File): Promise<{ imported: number; errors: stri
       continue;
     }
 
-    const year = 2016; // Por defecto del nombre del archivo
+    const year = 2016;
 
     for (let i = headerRow + 1; i < data.length; i++) {
       const row = data[i];
@@ -236,36 +230,13 @@ async function apiHandler(req: Request): Promise<Response | null> {
     }
   }
 
-  if (pathname === "/api/drive/status") {
-    return Response.json(await getDriveStatus());
-  }
-
-  if (pathname === "/api/drive/config") {
-    if (req.method === "POST") {
-      const cfg = (await req.json()) as DriveConfig;
-      setDriveConfig(cfg);
-      return Response.json({ ok: true });
-    }
-    return Response.json(getDriveConfig());
-  }
-
-  if (pathname === "/api/drive/auth") {
-    const url = await startGoogleAuth();
-    return Response.json({ url });
-  }
-
-  if (pathname === "/api/drive/backup") {
-    const result = await backupToDrive(dbPath);
-    return Response.json(result);
-  }
-
-  if (pathname === "/api/drive/restore") {
-    const result = await restoreFromDrive(dbPath);
-    return Response.json(result);
-  }
-
-  if (pathname === "/api/dbpath") {
-    return Response.json({ path: dbPath });
+  if (pathname === "/api/db-info") {
+    return Response.json({
+      dbPath,
+      backupPath,
+      usesDrive,
+      driveFolder,
+    });
   }
 
   if (pathname === "/api/import/excel" && req.method === "POST") {
@@ -324,6 +295,14 @@ async function openBrowser() {
 }
 
 console.log(`Iniciando servidor en http://127.0.0.1:${PORT}`);
+if (usesDrive) {
+  console.log(`Base de datos en Google Drive: ${dbPath}`);
+  console.log(`Copia de seguridad local: ${backupPath}`);
+} else {
+  console.log(`Base de datos local: ${dbPath}`);
+  console.log(`Copia de seguridad local: ${backupPath}`);
+}
+
 serve({ port: PORT, fetch: handler });
 
 setTimeout(openBrowser, 800);
