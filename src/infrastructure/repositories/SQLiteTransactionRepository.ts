@@ -12,11 +12,11 @@ export class SQLiteTransactionRepository implements ITransactionRepository {
   list(year: number, month?: number): Transaction[] {
     if (month) {
       return this.db
-        .query("SELECT id, date, type, category, concept, amount, year, month FROM transactions WHERE year = ? AND month = ? ORDER BY date DESC, id DESC")
+        .query("SELECT id, date, type, category, concept, amount, year, month, person FROM transactions WHERE year = ? AND month = ? ORDER BY date DESC, id DESC")
         .all(year, month) as Transaction[];
     }
     return this.db
-      .query("SELECT id, date, type, category, concept, amount, year, month FROM transactions WHERE year = ? ORDER BY date DESC, id DESC")
+      .query("SELECT id, date, type, category, concept, amount, year, month, person FROM transactions WHERE year = ? ORDER BY date DESC, id DESC")
       .all(year) as Transaction[];
   }
 
@@ -24,11 +24,12 @@ export class SQLiteTransactionRepository implements ITransactionRepository {
     const date = new Date(transaction.date);
     const year = transaction.year || date.getFullYear();
     const month = transaction.month || date.getMonth() + 1;
+    const person = transaction.person || "";
     const result = this.db.run(
-      "INSERT INTO transactions (date, type, category, concept, amount, year, month) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, year, month]
+      "INSERT INTO transactions (date, type, category, concept, amount, year, month, person) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, year, month, person]
     );
-    return { ...transaction, id: Number(result.lastInsertRowid), year, month };
+    return { ...transaction, id: Number(result.lastInsertRowid), year, month, person };
   }
 
   update(transaction: Transaction): Transaction {
@@ -36,11 +37,12 @@ export class SQLiteTransactionRepository implements ITransactionRepository {
     const date = new Date(transaction.date);
     const year = transaction.year || date.getFullYear();
     const month = transaction.month || date.getMonth() + 1;
+    const person = transaction.person || "";
     this.db.run(
-      "UPDATE transactions SET date = ?, type = ?, category = ?, concept = ?, amount = ?, year = ?, month = ? WHERE id = ?",
-      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, year, month, transaction.id]
+      "UPDATE transactions SET date = ?, type = ?, category = ?, concept = ?, amount = ?, year = ?, month = ?, person = ? WHERE id = ?",
+      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, year, month, person, transaction.id]
     );
-    return { ...transaction, year, month };
+    return { ...transaction, year, month, person };
   }
 
   delete(id: number): void {

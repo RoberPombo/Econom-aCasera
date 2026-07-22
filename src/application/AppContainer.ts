@@ -3,10 +3,12 @@ import { ConflictService } from "./services/ConflictService";
 import { SQLiteTransactionRepository } from "../infrastructure/repositories/SQLiteTransactionRepository";
 import { SQLiteCategoryRepository } from "../infrastructure/repositories/SQLiteCategoryRepository";
 import { SQLiteSettingsRepository } from "../infrastructure/repositories/SQLiteSettingsRepository";
+import { SQLitePersonRepository } from "../infrastructure/repositories/SQLitePersonRepository";
 import {
   TransactionUseCases,
   CategoryUseCases,
   SettingsUseCases,
+  PersonUseCases,
 } from "../domain";
 
 export class AppContainer {
@@ -16,6 +18,7 @@ export class AppContainer {
   readonly transactionUseCases: TransactionUseCases;
   readonly categoryUseCases: CategoryUseCases;
   readonly settingsUseCases: SettingsUseCases;
+  readonly personUseCases: PersonUseCases;
 
   constructor() {
     const db = this.databaseService.getDatabase();
@@ -27,10 +30,12 @@ export class AppContainer {
     const transactionRepo = new SQLiteTransactionRepository(db);
     const categoryRepo = new SQLiteCategoryRepository(db);
     const settingsRepo = new SQLiteSettingsRepository(db);
+    const personRepo = new SQLitePersonRepository(db);
 
     this.transactionUseCases = new TransactionUseCases(transactionRepo);
     this.categoryUseCases = new CategoryUseCases(categoryRepo);
     this.settingsUseCases = new SettingsUseCases(settingsRepo);
+    this.personUseCases = new PersonUseCases(personRepo);
   }
 
   getDbInfo() {

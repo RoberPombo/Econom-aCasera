@@ -7,6 +7,7 @@ export interface Transaction {
   amount: number;
   year: number;
   month: number;
+  person?: string;
 }
 
 export interface Category {
@@ -56,4 +57,10 @@ export interface DbInfo {
   backupPath: string;
   usesDrive: boolean;
   driveFolder: string | null;
+}
+
+export interface Person {
+  id: number;
+  name: string;
+  active: number;
 }

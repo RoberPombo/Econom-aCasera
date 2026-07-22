@@ -73,6 +73,17 @@ export class SQLiteDatabase {
           ALTER TABLE settings ADD COLUMN theme TEXT NOT NULL DEFAULT 'system';
         `,
       },
+      {
+        name: "v5_persons",
+        sql: `
+          CREATE TABLE IF NOT EXISTS persons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            active INTEGER NOT NULL DEFAULT 1
+          );
+          ALTER TABLE transactions ADD COLUMN person TEXT DEFAULT '';
+        `,
+      },
     ];
 
     for (const m of migrations) {

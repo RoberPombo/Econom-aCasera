@@ -5,6 +5,7 @@ import { CategoryController } from "./controllers/CategoryController";
 import { SettingsController } from "./controllers/SettingsController";
 import { DbController } from "./controllers/DbController";
 import { ImportController } from "./controllers/ImportController";
+import { PersonController } from "./controllers/PersonController";
 import type { Transaction } from "../domain/entities";
 
 export class HttpRouter {
@@ -13,6 +14,7 @@ export class HttpRouter {
   private readonly settingsController: SettingsController;
   private readonly dbController: DbController;
   private readonly importController: ImportController;
+  private readonly personController: PersonController;
 
   constructor(private readonly container: AppContainer) {
     this.transactionController = new TransactionController(container);
@@ -20,6 +22,7 @@ export class HttpRouter {
     this.settingsController = new SettingsController(container);
     this.dbController = new DbController(container);
     this.importController = new ImportController(container);
+    this.personController = new PersonController(container);
   }
 
   async handle(req: Request): Promise<Response | null> {
@@ -106,6 +109,26 @@ export class HttpRouter {
       if (pathname === "/api/theme" && method === "POST") {
         const { theme } = (await req.json()) as { theme: "light" | "dark" | "system" };
         return this.settingsController.theme(theme);
+      }
+
+      if (pathname === "/api/persons" && method === "GET") {
+        return this.personController.list();
+      }
+
+      if (pathname === "/api/persons" && method === "POST") {
+        const { name } = (await req.json()) as { name: string };
+        return this.personController.create(name);
+      }
+
+      if (pathname.startsWith("/api/persons/")) {
+        const id = Number(pathname.split("/").pop());
+        if (method === "PUT") {
+          const { name, active } = (await req.json()) as { name: string; active: number };
+          return this.personController.update(id, name, active);
+        }
+        if (method === "DELETE") {
+          return this.personController.delete(id);
+        }
       }
 
       if (pathname === "/api/category-config" && method === "GET") {
