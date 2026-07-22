@@ -1,16 +1,15 @@
 import { describe, expect, test } from "vitest";
-import type { TransactionRepository } from "../repositories/TransactionRepository";
+import type { TransactionRepository, SummaryResult } from "../repositories/TransactionRepository";
 import { Transaction } from "../entities/Transaction";
 import { Summary } from "../entities/Summary";
 import { CreateTransactionUseCase } from "../usecases/CreateTransactionUseCase";
 import { GetTransactionsUseCase } from "../usecases/GetTransactionsUseCase";
 import { DeleteTransactionUseCase } from "../usecases/DeleteTransactionUseCase";
-import { GetSummaryUseCase } from "../usecases/GetSummaryUseCase";
 
 class InMemoryTransactionRepository implements TransactionRepository {
   private transactions: Transaction[] = [];
 
-  async getAll(year: number): Promise<Transaction[]> {
+  async getByYearAndMonth(year: number): Promise<Transaction[]> {
     return this.transactions.filter((t) => t.year === year);
   }
 
@@ -29,20 +28,13 @@ class InMemoryTransactionRepository implements TransactionRepository {
     this.transactions = this.transactions.filter((t) => t.id !== id);
   }
 
-  async getSummary(): Promise<Summary> {
-    return new Summary({ income: 0, expense: 0 });
-  }
-
-  async getCategories() {
-    return [];
-  }
-
-  async getMonthlySummary() {
-    return [];
-  }
-
-  async getAnnualSummary() {
-    return [];
+  async getSummary(): Promise<SummaryResult> {
+    return {
+      summary: new Summary({ income: 0, expense: 0 }),
+      categories: [],
+      monthly: [],
+      annual: [],
+    };
   }
 }
 

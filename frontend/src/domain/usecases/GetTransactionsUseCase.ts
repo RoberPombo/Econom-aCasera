@@ -2,9 +2,13 @@ import type { Transaction } from "../entities";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
 
 export class GetTransactionsUseCase {
-  constructor(private readonly repository: TransactionRepository) {}
+  private readonly repository: TransactionRepository;
+
+  constructor(repository: TransactionRepository) {
+    this.repository = repository;
+  }
 
   async execute(year: number, month?: number): Promise<Transaction[]> {
-    return this.repository.getAll(year, month);
+    return this.repository.getByYearAndMonth(year, month);
   }
 }

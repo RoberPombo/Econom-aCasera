@@ -1,8 +1,12 @@
-import { Category } from "../entities";
+import type { Category } from "../entities";
 import type { CategoryRepository } from "../repositories/CategoryRepository";
 
 export class GetCategoriesUseCase {
-  constructor(private readonly repository: CategoryRepository) {}
+  private readonly repository: CategoryRepository;
+
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
+  }
 
   async execute(): Promise<Category[]> {
     return this.repository.getAll();
@@ -10,7 +14,11 @@ export class GetCategoriesUseCase {
 }
 
 export class CreateCategoryUseCase {
-  constructor(private readonly repository: CategoryRepository) {}
+  private readonly repository: CategoryRepository;
+
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
+  }
 
   async execute(name: string, type: "income" | "expense"): Promise<Category> {
     return this.repository.create(name, type);
@@ -18,7 +26,11 @@ export class CreateCategoryUseCase {
 }
 
 export class UpdateCategoryUseCase {
-  constructor(private readonly repository: CategoryRepository) {}
+  private readonly repository: CategoryRepository;
+
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
+  }
 
   async execute(category: Category): Promise<void> {
     return this.repository.update(category);
@@ -26,7 +38,11 @@ export class UpdateCategoryUseCase {
 }
 
 export class DeleteCategoryUseCase {
-  constructor(private readonly repository: CategoryRepository) {}
+  private readonly repository: CategoryRepository;
+
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
+  }
 
   async execute(id: number): Promise<void> {
     return this.repository.delete(id);

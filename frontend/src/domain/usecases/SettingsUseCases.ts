@@ -1,26 +1,34 @@
-import type { ViewMode } from "../entities";
+import type { Settings } from "../entities";
 import type { SettingsRepository } from "../repositories/SettingsRepository";
 
 export class GetSettingsUseCase {
-  constructor(private readonly repository: SettingsRepository) {}
+  private readonly repository: SettingsRepository;
 
-  async execute() {
+  constructor(repository: SettingsRepository) {
+    this.repository = repository;
+  }
+
+  async execute(): Promise<Settings> {
     return this.repository.get();
   }
 }
 
 export class UpdateSettingsUseCase {
-  constructor(private readonly repository: SettingsRepository) {}
+  private readonly repository: SettingsRepository;
+
+  constructor(repository: SettingsRepository) {
+    this.repository = repository;
+  }
 
   async setYear(year: number): Promise<void> {
-    return this.repository.setCurrentYear(year);
+    await this.repository.setCurrentYear(year);
   }
 
   async setMonth(month: number): Promise<void> {
-    return this.repository.setCurrentMonth(month);
+    await this.repository.setCurrentMonth(month);
   }
 
-  async setViewMode(mode: ViewMode): Promise<void> {
-    return this.repository.setViewMode(mode);
+  async setViewMode(mode: "monthly" | "annual"): Promise<void> {
+    await this.repository.setViewMode(mode);
   }
 }

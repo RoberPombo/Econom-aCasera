@@ -29,7 +29,7 @@ describe("Transaction", () => {
 
     expect(tx.year).toBe(2026);
     expect(tx.month).toBe(7);
-    expect(tx.amount.value).toBe(12.5);
+    expect(tx.amount).toBe(12.5);
   });
 
   test("should allow updating fields", () => {
@@ -44,7 +44,7 @@ describe("Transaction", () => {
     const updated = tx.withUpdates({ amount: 20, concept: "Cena" });
 
     expect(updated.concept).toBe("Cena");
-    expect(updated.amount.value).toBe(20);
+    expect(updated.amount).toBe(20);
     expect(updated.date).toBe(tx.date);
   });
 });

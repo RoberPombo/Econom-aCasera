@@ -2,7 +2,11 @@ import { Transaction } from "../entities";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
 
 export class CreateTransactionUseCase {
-  constructor(private readonly repository: TransactionRepository) {}
+  private readonly repository: TransactionRepository;
+
+  constructor(repository: TransactionRepository) {
+    this.repository = repository;
+  }
 
   async execute(data: {
     date: string;

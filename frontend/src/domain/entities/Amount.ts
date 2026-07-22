@@ -1,7 +1,11 @@
 export class InvalidAmountError extends Error {}
 
 export class Amount {
-  private constructor(public readonly value: number) {}
+  public readonly value: number;
+
+  private constructor(value: number) {
+    this.value = value;
+  }
 
   static create(value: number): Amount {
     if (isNaN(value)) {

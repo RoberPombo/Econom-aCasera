@@ -19,11 +19,11 @@ export class Transaction extends Entity {
   readonly type: TransactionType;
   readonly category: string;
   readonly concept: string;
-  readonly amount: Amount;
+  readonly amount: number;
   readonly year: number;
   readonly month: number;
 
-  private constructor(data: TransactionData & { amount: Amount; year: number; month: number }) {
+  private constructor(data: TransactionData & { year: number; month: number }) {
     super(data.id ?? crypto.randomUUID());
 
     this.date = data.date;
@@ -41,13 +41,12 @@ export class Transaction extends Entity {
       throw new Error("La fecha no es válida");
     }
 
-    const amount = Amount.create(data.amount);
+    Amount.create(data.amount);
     const year = data.year ?? date.getFullYear();
     const month = data.month ?? date.getMonth() + 1;
 
     return new Transaction({
       ...data,
-      amount,
       year,
       month,
     });
@@ -60,7 +59,7 @@ export class Transaction extends Entity {
       type: data.type ?? this.type,
       category: data.category ?? this.category,
       concept: data.concept ?? this.concept,
-      amount: data.amount ?? this.amount.value,
+      amount: data.amount ?? this.amount,
       year: data.year ?? this.year,
       month: data.month ?? this.month,
     });

@@ -3,7 +3,7 @@ import { Entity } from "./Entity";
 export type CategoryType = "income" | "expense";
 
 export interface CategoryData {
-  id?: number;
+  id?: string | number;
   name: string;
   type: CategoryType;
   active?: boolean;

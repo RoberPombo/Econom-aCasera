@@ -1,16 +1,14 @@
+import type { SummaryResult } from "../repositories/TransactionRepository";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
 
 export class GetSummaryUseCase {
-  constructor(private readonly repository: TransactionRepository) {}
+  private readonly repository: TransactionRepository;
 
-  async execute(year: number, month?: number) {
-    const [summary, categories, monthly, annual] = await Promise.all([
-      this.repository.getSummary(year, month),
-      this.repository.getCategories(year, month),
-      this.repository.getMonthlySummary(year),
-      this.repository.getAnnualSummary(),
-    ]);
+  constructor(repository: TransactionRepository) {
+    this.repository = repository;
+  }
 
-    return { summary, categories, monthly, annual };
+  async execute(year: number, month?: number): Promise<SummaryResult> {
+    return this.repository.getSummary(year, month);
   }
 }

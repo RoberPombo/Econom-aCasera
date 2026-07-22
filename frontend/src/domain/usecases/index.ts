@@ -5,3 +5,5 @@ export * from "./DeleteTransactionUseCase";
 export * from "./GetSummaryUseCase";
 export * from "./CategoryUseCases";
 export * from "./SettingsUseCases";
+export * from "./DbInfoUseCases";
+export * from "./ImportExcelUseCase";

@@ -14,3 +14,23 @@ export class Summary {
     this.balance = Math.round((this.income - this.expense) * 100) / 100;
   }
 }
+
+export interface CategorySummary {
+  category: string;
+  type: "income" | "expense";
+  amount: number;
+}
+
+export interface MonthlySummary {
+  month: number;
+  income: number;
+  expense: number;
+  balance: number;
+}
+
+export interface AnnualSummary {
+  year: number;
+  income: number;
+  expense: number;
+  balance: number;
+}
