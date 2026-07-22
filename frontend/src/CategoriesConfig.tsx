@@ -1,49 +1,31 @@
 import { useState } from "react";
 import type { Category } from "./api";
-import { createCategory, updateCategory, deleteCategory, ConflictError } from "./api";
 
 interface Props {
   categories: Category[];
-  onChange: () => void;
-  onConflict: () => void;
+  onAdd: (name: string, type: "income" | "expense") => void;
+  onUpdate: (id: number, name: string, type: "income" | "expense", active: number) => void;
+  onDelete: (id: number) => void;
 }
 
-export function CategoriesConfig({ categories, onChange, onConflict }: Props) {
+export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Props) {
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"income" | "expense">("expense");
 
-  async function handleAdd(e: React.FormEvent) {
+  function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!newName.trim()) return;
-    try {
-      await createCategory(newName.trim(), newType);
-      setNewName("");
-      onChange();
-    } catch (err) {
-      if (err instanceof ConflictError) onConflict();
-      else throw err;
-    }
+    onAdd(newName.trim(), newType);
+    setNewName("");
   }
 
-  async function toggleActive(cat: Category) {
-    try {
-      await updateCategory(cat.id, cat.name, cat.type, cat.active === 1 ? 0 : 1);
-      onChange();
-    } catch (err) {
-      if (err instanceof ConflictError) onConflict();
-      else throw err;
-    }
+  function toggleActive(cat: Category) {
+    onUpdate(cat.id, cat.name, cat.type, cat.active === 1 ? 0 : 1);
   }
 
-  async function handleDelete(cat: Category) {
+  function handleDelete(cat: Category) {
     if (!confirm(`¿Eliminar "${cat.name}"?`)) return;
-    try {
-      await deleteCategory(cat.id);
-      onChange();
-    } catch (err) {
-      if (err instanceof ConflictError) onConflict();
-      else throw err;
-    }
+    onDelete(cat.id);
   }
 
   const income = categories.filter((c) => c.type === "income");
@@ -104,3 +86,4 @@ export function CategoriesConfig({ categories, onChange, onConflict }: Props) {
     </div>
   );
 }
+

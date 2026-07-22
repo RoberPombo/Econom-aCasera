@@ -1,23 +1,6 @@
-import { useEffect, useState } from "react";
-import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, DbInfo } from "./api";
-import {
-  listTransactions,
-  createTransaction,
-  updateTransaction,
-  deleteTransaction,
-  getSummary,
-  getCategories,
-  getMonthlySummary,
-  getAnnualSummary,
-  getCurrentYear,
-  setCurrentYear,
-  getCurrentMonth,
-  setCurrentMonth,
-  getViewMode,
-  setViewMode,
-  listCategories,
-  getDbInfo,
-} from "./api";
+import { useState } from "react";
+import type { Transaction } from "./api";
+import { useAppState } from "./hooks/useAppState";
 import { TransactionForm } from "./TransactionForm";
 import { TransactionList } from "./TransactionList";
 import { SummaryCards } from "./SummaryCards";
@@ -26,81 +9,23 @@ import { AnnualView } from "./AnnualView";
 import { CategoriesConfig } from "./CategoriesConfig";
 import { ImportExcel } from "./ImportExcel";
 import { ConflictDialog } from "./ConflictDialog";
-import { ConflictError } from "./api";
 import "./App.css";
 
 type Tab = "transactions" | "monthly" | "annual" | "categories" | "import";
 
 function App() {
-  const [year, setYear] = useState<number>(new Date().getFullYear());
-  const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
-  const [viewMode, setViewModeState] = useState<"monthly" | "annual">("monthly");
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [summary, setSummary] = useState({ income: 0, expense: 0, balance: 0 });
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
-  const [annualSummary, setAnnualSummary] = useState<AnnualSummary[]>([]);
-  const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
+  const state = useAppState();
   const [tab, setTab] = useState<Tab>("transactions");
-  const [conflict, setConflict] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadInitial();
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [year, month, viewMode]);
-
-  async function loadInitial() {
-    const [{ year }, { month }, { mode }] = await Promise.all([
-      getCurrentYear(),
-      getCurrentMonth(),
-      getViewMode(),
-    ]);
-    setYear(year);
-    setMonth(month);
-    setViewModeState(mode);
+  async function handleSubmit(tx: Transaction) {
+    const ok = await state.saveTransaction(tx, editingId);
+    if (ok) setEditingId(null);
   }
 
-  async function refresh() {
-    const [tx, sum, catsummary, allCategories, info] = await Promise.all([
-      listTransactions(year, viewMode === "monthly" ? month : undefined),
-      getSummary(year, viewMode === "monthly" ? month : undefined),
-      getCategories(year, viewMode === "monthly" ? month : undefined),
-      listCategories(),
-      getDbInfo(),
-    ]);
-    setTransactions(tx);
-    setSummary(sum);
-    setCategorySummary(catsummary);
-    setCategories(allCategories);
-    setDbInfo(info);
-
-    const [monthly, annual] = await Promise.all([
-      getMonthlySummary(year),
-      getAnnualSummary(),
-    ]);
-    setMonthlySummary(monthly);
-    setAnnualSummary(annual);
-  }
-
-  async function changeYear(delta: number) {
-    const newYear = year + delta;
-    await setCurrentYear(newYear);
-    setYear(newYear);
-  }
-
-  async function changeMonth(newMonth: number) {
-    await setCurrentMonth(newMonth);
-    setMonth(newMonth);
-  }
-
-  async function changeViewMode(mode: "monthly" | "annual") {
-    await setViewMode(mode);
-    setViewModeState(mode);
+  async function handleDelete(id: number) {
+    if (!confirm("¿Eliminar este movimiento?")) return;
+    await state.removeTransaction(id);
   }
 
   function edit(tx: Transaction) {
@@ -108,61 +33,30 @@ function App() {
     setTab("transactions");
   }
 
-  async function withConflictHandling<T>(fn: () => Promise<T>): Promise<T | undefined> {
-    try {
-      return await fn();
-    } catch (err) {
-      if (err instanceof ConflictError) {
-        setConflict(true);
-        return undefined;
-      }
-      throw err;
-    }
-  }
-
-  async function handleSubmit(tx: Transaction) {
-    const result = await withConflictHandling(async () => {
-      if (editingId) {
-        return await updateTransaction({ ...tx, id: editingId });
-      }
-      return await createTransaction(tx);
-    });
-    if (result === undefined) return;
-    setEditingId(null);
-    await refresh();
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm("¿Eliminar este movimiento?")) return;
-    const result = await withConflictHandling(() => deleteTransaction(id));
-    if (result === undefined) return;
-    await refresh();
-  }
-
-  const editingTx = editingId ? transactions.find((t) => t.id === editingId) : null;
+  const editingTx = editingId ? state.transactions.find((t) => t.id === editingId) : null;
 
   return (
     <div className="app">
       <header>
         <h1>Gastos e Ingresos</h1>
         <div className="year-selector">
-          <button onClick={() => changeYear(-1)}>◀</button>
-          <span>{year}</span>
-          <button onClick={() => changeYear(1)}>▶</button>
+          <button onClick={() => state.changeYear(-1)}>◀</button>
+          <span>{state.year}</span>
+          <button onClick={() => state.changeYear(1)}>▶</button>
         </div>
       </header>
 
       <div className="view-controls">
         <div className="view-mode">
-          <button className={viewMode === "monthly" ? "active" : ""} onClick={() => changeViewMode("monthly")}>
+          <button className={state.viewMode === "monthly" ? "active" : ""} onClick={() => state.changeViewMode("monthly")}>
             Mensual
           </button>
-          <button className={viewMode === "annual" ? "active" : ""} onClick={() => changeViewMode("annual")}>
+          <button className={state.viewMode === "annual" ? "active" : ""} onClick={() => state.changeViewMode("annual")}>
             Anual
           </button>
         </div>
-        {viewMode === "monthly" && (
-          <select value={month} onChange={(e) => changeMonth(Number(e.target.value))}>
+        {state.viewMode === "monthly" && (
+          <select value={state.month} onChange={(e) => state.changeMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i + 1} value={i + 1}>
                 {new Date(2000, i).toLocaleString("es-ES", { month: "long" })}
@@ -193,75 +87,85 @@ function App() {
       <main>
         {tab === "transactions" && (
           <>
-            <SummaryCards summary={summary} title={viewMode === "monthly" ? `Resumen ${new Date(year, month - 1).toLocaleString("es-ES", { month: "long", year: "numeric" })}` : `Resumen ${year}`} />
+            <SummaryCards
+              summary={state.summary}
+              title={
+                state.viewMode === "monthly"
+                  ? `Resumen ${new Date(state.year, state.month - 1).toLocaleString("es-ES", { month: "long", year: "numeric" })}`
+                  : `Resumen ${state.year}`
+              }
+            />
             <section className="form-section">
               <h2>{editingId ? "Editar" : "Nuevo"} movimiento</h2>
               <TransactionForm
                 onSubmit={handleSubmit}
                 onCancel={() => setEditingId(null)}
                 editing={editingTx}
-                categories={categories}
-                year={year}
-                month={month}
+                categories={state.categories}
+                year={state.year}
+                month={state.month}
               />
             </section>
             <section className="list-section">
               <h2>Movimientos</h2>
-              <TransactionList transactions={transactions} onEdit={edit} onDelete={handleDelete} />
+              <TransactionList transactions={state.transactions} onEdit={edit} onDelete={handleDelete} />
             </section>
           </>
         )}
 
         {tab === "monthly" && (
           <section>
-            <MonthlyView monthlySummary={monthlySummary} categories={categorySummary} year={year} />
+            <MonthlyView monthlySummary={state.monthlySummary} categories={state.categorySummary} year={state.year} />
           </section>
         )}
 
         {tab === "annual" && (
           <section>
-            <AnnualView annualSummary={annualSummary} />
+            <AnnualView annualSummary={state.annualSummary} />
           </section>
         )}
 
         {tab === "categories" && (
           <section>
-            <CategoriesConfig categories={categories} onChange={refresh} onConflict={() => setConflict(true)} />
+            <CategoriesConfig
+              categories={state.categories}
+              onAdd={state.saveCategory}
+              onUpdate={state.updateCategoryState}
+              onDelete={state.removeCategory}
+            />
           </section>
         )}
 
         {tab === "import" && (
           <section>
-            <ImportExcel onImported={refresh} />
+            <ImportExcel onImported={state.refresh} />
           </section>
         )}
       </main>
 
-      {dbInfo && (
+      {state.dbInfo && (
         <footer className="db-info">
-          {dbInfo.usesDrive ? (
+          {state.dbInfo.usesDrive ? (
             <>
               <p>✅ Sincronizado con Google Drive</p>
-              <p className="hint">Base de datos: <span>{dbInfo.dbPath}</span></p>
-              <p className="hint">Copia de seguridad local: <span>{dbInfo.backupPath}</span></p>
+              <p className="hint">Base de datos: <span>{state.dbInfo.dbPath}</span></p>
+              <p className="hint">Copia de seguridad local: <span>{state.dbInfo.backupPath}</span></p>
             </>
           ) : (
             <>
               <p>⚠️ Google Drive no detectado</p>
-              <p className="hint">Base de datos: <span>{dbInfo.dbPath}</span></p>
-              <p className="hint">Copia de seguridad: <span>{dbInfo.backupPath}</span></p>
+              <p className="hint">Base de datos: <span>{state.dbInfo.dbPath}</span></p>
+              <p className="hint">Copia de seguridad: <span>{state.dbInfo.backupPath}</span></p>
             </>
           )}
         </footer>
       )}
 
-      {conflict && (
+      {state.conflict && (
         <ConflictDialog
-          onResolved={() => {
-            setConflict(false);
-            refresh();
-          }}
-          onCancel={() => setConflict(false)}
+          onResolved={() => state.handleConflictResolution("reload")}
+          onOverwrite={() => state.handleConflictResolution("overwrite")}
+          onCancel={() => state.setConflict(false)}
         />
       )}
     </div>
