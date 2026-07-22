@@ -1,0 +1,38 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: |
+          bun install
+          cd frontend
+          bun install
+
+      - name: Typecheck backend
+        run: bun build --compile --target=bun-linux-x64 src/server.ts --outfile /tmp/economiacasera-test
+
+      - name: Build frontend
+        run: cd frontend && bun run build
+
+      - name: Run frontend tests
+        run: cd frontend && bun run test

@@ -1,11 +1,62 @@
-.DS_Store
-node_modules
-*.db
-*.sqlite
-token.json
-drive_config.json
-.env
-dist
-build
+# Dependencies
+node_modules/
+frontend/node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Compiled executables
+economiacasera
+economiacasera.exe
+economiacasera-mac
+dist/release/
+
+# Logs
+logs/
 *.log
-frontend/bun.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Backup files
+backup/
+*.bak
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
