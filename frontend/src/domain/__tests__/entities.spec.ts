@@ -76,7 +76,7 @@ describe("Summary", () => {
 
 describe("Settings", () => {
   test("should create settings and update year", () => {
-    const settings = new Settings({ currentYear: 2026, currentMonth: 7, viewMode: "monthly" });
+    const settings = new Settings({ currentYear: 2026, currentMonth: 7, viewMode: "monthly", theme: "system" });
     const updated = settings.withYear(2025);
     expect(updated.currentYear).toBe(2025);
     expect(updated.currentMonth).toBe(7);
