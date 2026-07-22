@@ -49,13 +49,24 @@ export interface DbInfo {
   driveFolder: string | null;
 }
 
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
   if (!res.ok) {
-    const text = await res.text();
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 409 && data.conflict) {
+      throw new ConflictError(data.message || "Conflict detected");
+    }
+    const text = typeof data === "string" ? data : JSON.stringify(data);
     throw new Error(text || res.statusText);
   }
   return res.json();
@@ -106,6 +117,12 @@ export const deleteCategory = (id: number) =>
   api<{ ok: boolean }>(`/category-config/${id}`, { method: "DELETE" });
 
 export const getDbInfo = () => api<DbInfo>("/db-info");
+
+export const reloadDatabase = () =>
+  api<{ ok: boolean; dbPath: string; usesDrive: boolean }>("/db/reload", { method: "POST" });
+
+export const forceOverwrite = () =>
+  api<{ ok: boolean; dbPath: string; usesDrive: boolean }>("/db/force-overwrite", { method: "POST" });
 
 export const importExcel = (file: File) => {
   const formData = new FormData();

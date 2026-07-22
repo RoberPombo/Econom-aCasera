@@ -25,6 +25,8 @@ import { MonthlyView } from "./MonthlyView";
 import { AnnualView } from "./AnnualView";
 import { CategoriesConfig } from "./CategoriesConfig";
 import { ImportExcel } from "./ImportExcel";
+import { ConflictDialog } from "./ConflictDialog";
+import { ConflictError } from "./api";
 import "./App.css";
 
 type Tab = "transactions" | "monthly" | "annual" | "categories" | "import";
@@ -42,6 +44,7 @@ function App() {
   const [annualSummary, setAnnualSummary] = useState<AnnualSummary[]>([]);
   const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
   const [tab, setTab] = useState<Tab>("transactions");
+  const [conflict, setConflict] = useState(false);
 
   useEffect(() => {
     loadInitial();
@@ -105,19 +108,34 @@ function App() {
     setTab("transactions");
   }
 
-  async function handleSubmit(tx: Transaction) {
-    if (editingId) {
-      await updateTransaction({ ...tx, id: editingId });
-    } else {
-      await createTransaction(tx);
+  async function withConflictHandling<T>(fn: () => Promise<T>): Promise<T | undefined> {
+    try {
+      return await fn();
+    } catch (err) {
+      if (err instanceof ConflictError) {
+        setConflict(true);
+        return undefined;
+      }
+      throw err;
     }
+  }
+
+  async function handleSubmit(tx: Transaction) {
+    const result = await withConflictHandling(async () => {
+      if (editingId) {
+        return await updateTransaction({ ...tx, id: editingId });
+      }
+      return await createTransaction(tx);
+    });
+    if (result === undefined) return;
     setEditingId(null);
     await refresh();
   }
 
   async function handleDelete(id: number) {
     if (!confirm("¿Eliminar este movimiento?")) return;
-    await deleteTransaction(id);
+    const result = await withConflictHandling(() => deleteTransaction(id));
+    if (result === undefined) return;
     await refresh();
   }
 
@@ -208,7 +226,7 @@ function App() {
 
         {tab === "categories" && (
           <section>
-            <CategoriesConfig categories={categories} onChange={refresh} />
+            <CategoriesConfig categories={categories} onChange={refresh} onConflict={() => setConflict(true)} />
           </section>
         )}
 
@@ -235,6 +253,16 @@ function App() {
             </>
           )}
         </footer>
+      )}
+
+      {conflict && (
+        <ConflictDialog
+          onResolved={() => {
+            setConflict(false);
+            refresh();
+          }}
+          onCancel={() => setConflict(false)}
+        />
       )}
     </div>
   );

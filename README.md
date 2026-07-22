@@ -10,6 +10,7 @@ Aplicación de escritorio para llevar el control de gastos e ingresos anuales. F
 - **Importación desde Excel**: una hoja por mes (Ene., Feb., ...) con la tabla de transacciones.
 - **Resumen mensual y anual** con totales por categoría.
 - **Sincronización automática con Google Drive** si el usuario lo tiene instalado.
+- **Detección de conflictos** si los datos cambian en otro dispositivo, con opción de recargar o sobrescribir.
 - **Copia de seguridad local** si no hay Google Drive.
 - **Ejecutable con doble click**: no requiere conocimientos técnicos para usarlo.
 
@@ -22,7 +23,9 @@ La app detecta automáticamente si el usuario tiene Google Drive instalado:
 - Cada cambio se persiste directamente en esa carpeta, así que Drive lo sincroniza.
 - También se mantiene una copia de seguridad local por si Drive no está disponible temporalmente.
 - **Si abres la app en dos PCs con la misma cuenta de Google Drive, los datos se sincronizan.**
-  - Importante: no edites al mismo tiempo en los dos PCs, porque podrían generarse conflictos en Drive.
+  - Si la app detecta que los datos han cambiado en otro dispositivo, muestra un diálogo para elegir entre:
+    - **Recargar datos remotos**: usar la versión de Google Drive (pierdes cambios locales no guardados).
+    - **Usar mis datos locales**: sobrescribir la versión de Google Drive con tus datos.
 
 ### Si no tiene Google Drive
 - La base de datos se guarda en el directorio de datos del usuario:

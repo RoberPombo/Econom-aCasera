@@ -21,10 +21,10 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-  dbPath,
-  backupPath,
-  usesDrive,
-  driveFolder,
+  getDbInfo,
+  reloadDatabase,
+  forceOverwrite,
+  ConflictError,
 } from "./db";
 import { Transaction } from "./types";
 import { getStaticDir } from "./utils";
@@ -136,115 +136,127 @@ async function apiHandler(req: Request): Promise<Response | null> {
   const url = new URL(req.url);
   const pathname = url.pathname;
 
-  if (pathname === "/api/transactions") {
-    if (req.method === "GET") {
+  try {
+    if (pathname === "/api/transactions") {
+      if (req.method === "GET") {
+        const year = Number(url.searchParams.get("year"));
+        const month = url.searchParams.get("month");
+        return Response.json(listTransactions(year, month ? Number(month) : undefined));
+      }
+      if (req.method === "POST") {
+        const body = (await req.json()) as Transaction;
+        return Response.json(createTransaction(body));
+      }
+    }
+
+    if (pathname.startsWith("/api/transactions/")) {
+      const id = Number(pathname.split("/").pop());
+      if (req.method === "PUT") {
+        const body = (await req.json()) as Transaction;
+        body.id = id;
+        return Response.json(updateTransaction(body));
+      }
+      if (req.method === "DELETE") {
+        deleteTransaction(id);
+        return Response.json({ ok: true });
+      }
+    }
+
+    if (pathname === "/api/summary") {
       const year = Number(url.searchParams.get("year"));
       const month = url.searchParams.get("month");
-      return Response.json(listTransactions(year, month ? Number(month) : undefined));
+      return Response.json(getSummary(year, month ? Number(month) : undefined));
     }
-    if (req.method === "POST") {
-      const body = (await req.json()) as Transaction;
-      return Response.json(createTransaction(body));
+
+    if (pathname === "/api/categories") {
+      const year = Number(url.searchParams.get("year"));
+      const month = url.searchParams.get("month");
+      return Response.json(getCategories(year, month ? Number(month) : undefined));
     }
-  }
 
-  if (pathname.startsWith("/api/transactions/")) {
-    const id = Number(pathname.split("/").pop());
-    if (req.method === "PUT") {
-      const body = (await req.json()) as Transaction;
-      body.id = id;
-      return Response.json(updateTransaction(body));
+    if (pathname === "/api/monthly-summary") {
+      const year = Number(url.searchParams.get("year"));
+      return Response.json(getMonthlySummary(year));
     }
-    if (req.method === "DELETE") {
-      deleteTransaction(id);
-      return Response.json({ ok: true });
+
+    if (pathname === "/api/annual-summary") {
+      return Response.json(getAnnualSummary());
     }
-  }
 
-  if (pathname === "/api/summary") {
-    const year = Number(url.searchParams.get("year"));
-    const month = url.searchParams.get("month");
-    return Response.json(getSummary(year, month ? Number(month) : undefined));
-  }
-
-  if (pathname === "/api/categories") {
-    const year = Number(url.searchParams.get("year"));
-    const month = url.searchParams.get("month");
-    return Response.json(getCategories(year, month ? Number(month) : undefined));
-  }
-
-  if (pathname === "/api/monthly-summary") {
-    const year = Number(url.searchParams.get("year"));
-    return Response.json(getMonthlySummary(year));
-  }
-
-  if (pathname === "/api/annual-summary") {
-    return Response.json(getAnnualSummary());
-  }
-
-  if (pathname === "/api/year") {
-    if (req.method === "GET") return Response.json({ year: getCurrentYear() });
-    if (req.method === "POST") {
-      const { year } = (await req.json()) as { year: number };
-      setCurrentYear(year);
-      return Response.json({ year });
+    if (pathname === "/api/year") {
+      if (req.method === "GET") return Response.json({ year: getCurrentYear() });
+      if (req.method === "POST") {
+        const { year } = (await req.json()) as { year: number };
+        setCurrentYear(year);
+        return Response.json({ year });
+      }
     }
-  }
 
-  if (pathname === "/api/month") {
-    if (req.method === "GET") return Response.json({ month: getCurrentMonth() });
-    if (req.method === "POST") {
-      const { month } = (await req.json()) as { month: number };
-      setCurrentMonth(month);
-      return Response.json({ month });
+    if (pathname === "/api/month") {
+      if (req.method === "GET") return Response.json({ month: getCurrentMonth() });
+      if (req.method === "POST") {
+        const { month } = (await req.json()) as { month: number };
+        setCurrentMonth(month);
+        return Response.json({ month });
+      }
     }
-  }
 
-  if (pathname === "/api/view-mode") {
-    if (req.method === "GET") return Response.json({ mode: getViewMode() });
-    if (req.method === "POST") {
-      const { mode } = (await req.json()) as { mode: "monthly" | "annual" };
-      setViewMode(mode);
-      return Response.json({ mode });
+    if (pathname === "/api/view-mode") {
+      if (req.method === "GET") return Response.json({ mode: getViewMode() });
+      if (req.method === "POST") {
+        const { mode } = (await req.json()) as { mode: "monthly" | "annual" };
+        setViewMode(mode);
+        return Response.json({ mode });
+      }
     }
-  }
 
-  if (pathname === "/api/category-config") {
-    if (req.method === "GET") return Response.json(listCategories());
-    if (req.method === "POST") {
-      const { name, type } = (await req.json()) as { name: string; type: "income" | "expense" };
-      return Response.json(createCategory(name, type));
+    if (pathname === "/api/category-config") {
+      if (req.method === "GET") return Response.json(listCategories());
+      if (req.method === "POST") {
+        const { name, type } = (await req.json()) as { name: string; type: "income" | "expense" };
+        return Response.json(createCategory(name, type));
+      }
     }
-  }
 
-  if (pathname.startsWith("/api/category-config/")) {
-    const id = Number(pathname.split("/").pop());
-    if (req.method === "PUT") {
-      const { name, type, active } = (await req.json()) as { name: string; type: "income" | "expense"; active: number };
-      updateCategory(id, name, type, active);
-      return Response.json({ ok: true });
+    if (pathname.startsWith("/api/category-config/")) {
+      const id = Number(pathname.split("/").pop());
+      if (req.method === "PUT") {
+        const { name, type, active } = (await req.json()) as { name: string; type: "income" | "expense"; active: number };
+        updateCategory(id, name, type, active);
+        return Response.json({ ok: true });
+      }
+      if (req.method === "DELETE") {
+        deleteCategory(id);
+        return Response.json({ ok: true });
+      }
     }
-    if (req.method === "DELETE") {
-      deleteCategory(id);
-      return Response.json({ ok: true });
+
+    if (pathname === "/api/db-info") {
+      return Response.json(getDbInfo());
     }
-  }
 
-  if (pathname === "/api/db-info") {
-    return Response.json({
-      dbPath,
-      backupPath,
-      usesDrive,
-      driveFolder,
-    });
-  }
+    if (pathname === "/api/db/reload" && req.method === "POST") {
+      const info = reloadDatabase();
+      return Response.json({ ok: true, ...info });
+    }
 
-  if (pathname === "/api/import/excel" && req.method === "POST") {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) return Response.json({ error: "No file provided" }, { status: 400 });
-    const result = await importExcel(file);
-    return Response.json(result);
+    if (pathname === "/api/db/force-overwrite" && req.method === "POST") {
+      const info = forceOverwrite();
+      return Response.json({ ok: true, ...info });
+    }
+
+    if (pathname === "/api/import/excel" && req.method === "POST") {
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      if (!file) return Response.json({ error: "No file provided" }, { status: 400 });
+      const result = await importExcel(file);
+      return Response.json(result);
+    }
+  } catch (err) {
+    if (err instanceof ConflictError) {
+      return Response.json({ conflict: true, message: err.message }, { status: 409 });
+    }
+    throw err;
   }
 
   return null;
@@ -294,13 +306,14 @@ async function openBrowser() {
   }
 }
 
+const info = getDbInfo();
 console.log(`Iniciando servidor en http://127.0.0.1:${PORT}`);
-if (usesDrive) {
-  console.log(`Base de datos en Google Drive: ${dbPath}`);
-  console.log(`Copia de seguridad local: ${backupPath}`);
+if (info.usesDrive) {
+  console.log(`Base de datos en Google Drive: ${info.dbPath}`);
+  console.log(`Copia de seguridad local: ${info.backupPath}`);
 } else {
-  console.log(`Base de datos local: ${dbPath}`);
-  console.log(`Copia de seguridad local: ${backupPath}`);
+  console.log(`Base de datos local: ${info.dbPath}`);
+  console.log(`Copia de seguridad local: ${info.backupPath}`);
 }
 
 serve({ port: PORT, fetch: handler });

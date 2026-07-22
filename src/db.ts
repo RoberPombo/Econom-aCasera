@@ -1,66 +1,32 @@
 import { Database } from "bun:sqlite";
+import { existsSync, statSync, copyFileSync } from "fs";
 import { Transaction, Summary, CategorySummary, Category } from "./types";
 import { getDbLocation, copyIfNewer, getFileModTime } from "./utils";
+import { initSyncTracking, updateSyncTimestamp, checkExternalChange, refreshLastKnownTimestamp, copyDatabase } from "./sync";
 
-const { dbPath, backupPath, usesDrive, driveFolder } = getDbLocation();
-export { dbPath, backupPath, usesDrive, driveFolder };
+const { dbPath: initialDbPath, backupPath, usesDrive, driveFolder } = getDbLocation();
+export { initialDbPath as dbPath, backupPath, usesDrive, driveFolder };
 
-// Decidir qué base de datos usar al inicio
-function resolveDatabasePath(): string {
-  const localExists = require("fs").existsSync(dbPath);
-  const backupExists = require("fs").existsSync(backupPath);
+let currentDbPath = initialDbPath;
+let db = createDatabaseConnection(currentDbPath);
 
-  if (usesDrive) {
-    if (localExists && backupExists) {
-      const localTime = getFileModTime(dbPath);
-      const backupTime = getFileModTime(backupPath);
-      if (backupTime && localTime && backupTime > localTime) {
-        console.log("La copia local de seguridad es más reciente que Google Drive. Se usa la copia local.");
-        return backupPath;
-      }
-    }
-    // Si existe en Drive, usar Drive (o copiar de backup si backup es más reciente)
-    if (localExists) {
-      // Hacer backup local por si acaso
-      copyIfNewer(dbPath, backupPath);
-      return dbPath;
-    }
-    if (backupExists) {
-      // Restaurar desde backup local a Drive
-      copyIfNewer(backupPath, dbPath);
-      return dbPath;
-    }
-    return dbPath;
-  }
-
-  // Sin Drive: usar local, restaurar desde backup si backup es más reciente
-  if (backupExists && localExists) {
-    const localTime = getFileModTime(dbPath);
-    const backupTime = getFileModTime(backupPath);
-    if (backupTime && localTime && backupTime > localTime) {
-      copyIfNewer(backupPath, dbPath);
-    }
-  } else if (backupExists && !localExists) {
-    copyIfNewer(backupPath, dbPath);
-  }
-
-  return dbPath;
+function createDatabaseConnection(databasePath: string): Database {
+  const conn = new Database(databasePath);
+  runMigrations(conn);
+  seedDefaults(conn);
+  initSyncTracking();
+  return conn;
 }
 
-const resolvedDbPath = resolveDatabasePath();
-export const activeDbPath = resolvedDbPath;
-
-const db = new Database(resolvedDbPath);
-
-function migrate() {
-  db.run(`CREATE TABLE IF NOT EXISTS _migrations (
+function runMigrations(conn: Database) {
+  conn.run(`CREATE TABLE IF NOT EXISTS _migrations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
 
   const applied = new Set(
-    (db.query("SELECT name FROM _migrations").all() as { name: string }[]).map((r) => r.name)
+    (conn.query("SELECT name FROM _migrations").all() as { name: string }[]).map((r) => r.name)
   );
 
   const migrations: { name: string; sql: string }[] = [
@@ -107,8 +73,8 @@ function migrate() {
   for (const m of migrations) {
     if (!applied.has(m.name)) {
       try {
-        db.run(m.sql);
-        db.run("INSERT INTO _migrations (name) VALUES (?)", [m.name]);
+        conn.run(m.sql);
+        conn.run("INSERT INTO _migrations (name) VALUES (?)", [m.name]);
       } catch (e) {
         console.error(`Error en migración ${m.name}:`, e);
         throw e;
@@ -117,37 +83,87 @@ function migrate() {
   }
 }
 
-migrate();
-
-db.run(
-  "INSERT OR IGNORE INTO settings (key, current_year, current_month, view_mode) VALUES ('default', ?, ?, 'monthly')",
-  [new Date().getFullYear(), new Date().getMonth() + 1]
-);
-
-// Categorías por defecto
-const defaultCategories: { name: string; type: "income" | "expense" }[] = [
-  { name: "Nóminas", type: "income" },
-  { name: "Ingresos por intereses", type: "income" },
-  { name: "Dividendos", type: "income" },
-  { name: "Ganancias patrimoniales", type: "income" },
-  { name: "Becas y subvenciones", type: "income" },
-  { name: "Ingresos extraordinarios", type: "income" },
-  { name: "Apuestas y juego", type: "income" },
-  { name: "Bonificaciones", type: "income" },
-  { name: "Vivienda", type: "expense" },
-  { name: "Alimentación", type: "expense" },
-  { name: "Transporte", type: "expense" },
-  { name: "Salud", type: "expense" },
-  { name: "Ocio", type: "expense" },
-  { name: "Educación", type: "expense" },
-  { name: "Otros gastos", type: "expense" },
-];
-
-for (const cat of defaultCategories) {
-  db.run(
-    "INSERT OR IGNORE INTO categories (name, type, active) VALUES (?, ?, 1)",
-    [cat.name, cat.type]
+function seedDefaults(conn: Database) {
+  conn.run(
+    "INSERT OR IGNORE INTO settings (key, current_year, current_month, view_mode) VALUES ('default', ?, ?, 'monthly')",
+    [new Date().getFullYear(), new Date().getMonth() + 1]
   );
+
+  const defaultCategories: { name: string; type: "income" | "expense" }[] = [
+    { name: "Nóminas", type: "income" },
+    { name: "Ingresos por intereses", type: "income" },
+    { name: "Dividendos", type: "income" },
+    { name: "Ganancias patrimoniales", type: "income" },
+    { name: "Becas y subvenciones", type: "income" },
+    { name: "Ingresos extraordinarios", type: "income" },
+    { name: "Apuestas y juego", type: "income" },
+    { name: "Bonificaciones", type: "income" },
+    { name: "Vivienda", type: "expense" },
+    { name: "Alimentación", type: "expense" },
+    { name: "Transporte", type: "expense" },
+    { name: "Salud", type: "expense" },
+    { name: "Ocio", type: "expense" },
+    { name: "Educación", type: "expense" },
+    { name: "Otros gastos", type: "expense" },
+  ];
+
+  for (const cat of defaultCategories) {
+    conn.run(
+      "INSERT OR IGNORE INTO categories (name, type, active) VALUES (?, ?, 1)",
+      [cat.name, cat.type]
+    );
+  }
+}
+
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
+function checkConflict() {
+  if (checkExternalChange()) {
+    throw new ConflictError("Los datos han cambiado en otro dispositivo. Recarga o fuerza la sobrescritura.");
+  }
+}
+
+function afterWrite() {
+  updateSyncTimestamp();
+  if (usesDrive) {
+    copyIfNewer(currentDbPath, backupPath);
+  } else {
+    copyIfNewer(currentDbPath, backupPath);
+  }
+}
+
+export function reloadDatabase(): { dbPath: string; usesDrive: boolean } {
+  db.close();
+  const location = getDbLocation();
+  currentDbPath = location.dbPath;
+  db = createDatabaseConnection(currentDbPath);
+  return { dbPath: currentDbPath, usesDrive: location.usesDrive };
+}
+
+export function forceOverwrite(): { dbPath: string; usesDrive: boolean } {
+  if (usesDrive) {
+    // Sobrescribir la BD de Drive con la copia local de seguridad
+    copyDatabase(backupPath, currentDbPath);
+  } else {
+    // Sobrescribir la BD local con la copia de seguridad
+    copyDatabase(backupPath, currentDbPath);
+  }
+  refreshLastKnownTimestamp();
+  return { dbPath: currentDbPath, usesDrive };
+}
+
+export function getDbInfo() {
+  return {
+    dbPath: currentDbPath,
+    backupPath,
+    usesDrive,
+    driveFolder,
+  };
 }
 
 export function getCurrentYear(): number {
@@ -156,10 +172,12 @@ export function getCurrentYear(): number {
 }
 
 export function setCurrentYear(year: number): void {
+  checkConflict();
   db.run(
     "INSERT INTO settings (key, current_year, current_month, view_mode) VALUES ('default', ?, 1, 'monthly') ON CONFLICT(key) DO UPDATE SET current_year = excluded.current_year",
     [year]
   );
+  afterWrite();
 }
 
 export function getCurrentMonth(): number {
@@ -168,10 +186,12 @@ export function getCurrentMonth(): number {
 }
 
 export function setCurrentMonth(month: number): void {
+  checkConflict();
   db.run(
     "INSERT INTO settings (key, current_year, current_month, view_mode) VALUES ('default', 2026, ?, 'monthly') ON CONFLICT(key) DO UPDATE SET current_month = excluded.current_month",
     [month]
   );
+  afterWrite();
 }
 
 export function getViewMode(): "monthly" | "annual" {
@@ -180,10 +200,12 @@ export function getViewMode(): "monthly" | "annual" {
 }
 
 export function setViewMode(mode: "monthly" | "annual"): void {
+  checkConflict();
   db.run(
     "INSERT INTO settings (key, current_year, current_month, view_mode) VALUES ('default', 2026, 1, ?) ON CONFLICT(key) DO UPDATE SET view_mode = excluded.view_mode",
     [mode]
   );
+  afterWrite();
 }
 
 export function listTransactions(year: number, month?: number): Transaction[] {
@@ -198,6 +220,7 @@ export function listTransactions(year: number, month?: number): Transaction[] {
 }
 
 export function createTransaction(t: Transaction): Transaction {
+  checkConflict();
   const date = new Date(t.date);
   const year = t.year || date.getFullYear();
   const month = t.month || date.getMonth() + 1;
@@ -205,11 +228,12 @@ export function createTransaction(t: Transaction): Transaction {
     "INSERT INTO transactions (date, type, category, concept, amount, year, month) VALUES (?, ?, ?, ?, ?, ?, ?)",
     [t.date, t.type, t.category, t.concept, t.amount, year, month]
   );
-  syncToBackup();
+  afterWrite();
   return { ...t, id: Number(result.lastInsertRowid), year, month };
 }
 
 export function updateTransaction(t: Transaction): Transaction {
+  checkConflict();
   if (!t.id) throw new Error("id is required");
   const date = new Date(t.date);
   const year = t.year || date.getFullYear();
@@ -218,23 +242,14 @@ export function updateTransaction(t: Transaction): Transaction {
     "UPDATE transactions SET date = ?, type = ?, category = ?, concept = ?, amount = ?, year = ?, month = ? WHERE id = ?",
     [t.date, t.type, t.category, t.concept, t.amount, year, month, t.id]
   );
-  syncToBackup();
+  afterWrite();
   return { ...t, year, month };
 }
 
 export function deleteTransaction(id: number): void {
+  checkConflict();
   db.run("DELETE FROM transactions WHERE id = ?", [id]);
-  syncToBackup();
-}
-
-function syncToBackup() {
-  if (usesDrive) {
-    // Si la BD principal está en Drive, mantener una copia local de seguridad
-    copyIfNewer(dbPath, backupPath);
-  } else {
-    // Si no hay Drive, mantener backup local
-    copyIfNewer(dbPath, backupPath);
-  }
+  afterWrite();
 }
 
 export function getSummary(year: number, month?: number): Summary {
@@ -319,19 +334,22 @@ export function listCategories(): Category[] {
 }
 
 export function createCategory(name: string, type: "income" | "expense"): Category {
+  checkConflict();
   const result = db.run("INSERT INTO categories (name, type, active) VALUES (?, ?, 1)", [name, type]);
-  syncToBackup();
+  afterWrite();
   return { id: Number(result.lastInsertRowid), name, type, active: 1 };
 }
 
 export function updateCategory(id: number, name: string, type: "income" | "expense", active: number): void {
+  checkConflict();
   db.run("UPDATE categories SET name = ?, type = ?, active = ? WHERE id = ?", [name, type, active, id]);
-  syncToBackup();
+  afterWrite();
 }
 
 export function deleteCategory(id: number): void {
+  checkConflict();
   db.run("DELETE FROM categories WHERE id = ?", [id]);
-  syncToBackup();
+  afterWrite();
 }
 
 export function close(): void {
