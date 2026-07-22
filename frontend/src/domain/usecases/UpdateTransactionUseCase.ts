@@ -14,6 +14,7 @@ export class UpdateTransactionUseCase {
     category?: string;
     concept?: string;
     amount?: number;
+    person?: string;
     year?: number;
     month?: number;
   }): Promise<Transaction> {

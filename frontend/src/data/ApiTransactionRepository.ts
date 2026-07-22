@@ -26,6 +26,7 @@ export class ApiTransactionRepository implements TransactionRepository {
         category: t.category,
         concept: t.concept,
         amount: Number(t.amount),
+        person: t.person,
         year: t.year,
         month: t.month,
       })
@@ -41,6 +42,7 @@ export class ApiTransactionRepository implements TransactionRepository {
         category: transaction.category,
         concept: transaction.concept,
         amount: transaction.amount,
+        person: transaction.person,
         year: transaction.year,
         month: transaction.month,
       }),
@@ -57,6 +59,7 @@ export class ApiTransactionRepository implements TransactionRepository {
         category: transaction.category,
         concept: transaction.concept,
         amount: transaction.amount,
+        person: transaction.person,
         year: transaction.year,
         month: transaction.month,
       }),

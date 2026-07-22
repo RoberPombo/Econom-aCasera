@@ -12,6 +12,7 @@ export interface TransactionData {
   amount: number;
   year?: number;
   month?: number;
+  person?: string;
 }
 
 export class Transaction extends Entity {
@@ -22,6 +23,7 @@ export class Transaction extends Entity {
   readonly amount: number;
   readonly year: number;
   readonly month: number;
+  readonly person: string;
 
   private constructor(data: TransactionData & { year: number; month: number }) {
     super(data.id ?? crypto.randomUUID());
@@ -33,6 +35,7 @@ export class Transaction extends Entity {
     this.amount = data.amount;
     this.year = data.year;
     this.month = data.month;
+    this.person = data.person ?? "";
   }
 
   static create(data: TransactionData): Transaction {
@@ -62,6 +65,7 @@ export class Transaction extends Entity {
       amount: data.amount ?? this.amount,
       year: data.year ?? this.year,
       month: data.month ?? this.month,
+      person: data.person ?? this.person,
     });
   }
 }

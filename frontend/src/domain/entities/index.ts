@@ -5,3 +5,4 @@ export * from "./Category";
 export * from "./Summary";
 export * from "./Settings";
 export * from "./DbInfo";
+export * from "./Person";

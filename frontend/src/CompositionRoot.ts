@@ -3,6 +3,7 @@ import { ApiCategoryRepository } from "./data/ApiCategoryRepository";
 import { ApiSettingsRepository } from "./data/ApiSettingsRepository";
 import { ApiDbInfoRepository } from "./data/ApiDbInfoRepository";
 import { ApiExcelRepository } from "./data/ApiExcelRepository";
+import { ApiPersonRepository } from "./data/ApiPersonRepository";
 import {
   GetTransactionsUseCase,
   CreateTransactionUseCase,
@@ -19,6 +20,10 @@ import {
   ReloadDatabaseUseCase,
   ForceOverwriteUseCase,
   ImportExcelUseCase,
+  GetPersonsUseCase,
+  CreatePersonUseCase,
+  UpdatePersonUseCase,
+  DeletePersonUseCase,
 } from "./domain/usecases";
 
 export class CompositionRoot {
@@ -29,6 +34,7 @@ export class CompositionRoot {
   private settingsRepository = new ApiSettingsRepository();
   private dbInfoRepository = new ApiDbInfoRepository();
   private excelRepository = new ApiExcelRepository();
+  private personRepository = new ApiPersonRepository();
 
   private constructor() {}
 
@@ -101,5 +107,21 @@ export class CompositionRoot {
 
   provideImportExcelUseCase() {
     return new ImportExcelUseCase(this.excelRepository);
+  }
+
+  provideGetPersonsUseCase() {
+    return new GetPersonsUseCase(this.personRepository);
+  }
+
+  provideCreatePersonUseCase() {
+    return new CreatePersonUseCase(this.personRepository);
+  }
+
+  provideUpdatePersonUseCase() {
+    return new UpdatePersonUseCase(this.personRepository);
+  }
+
+  provideDeletePersonUseCase() {
+    return new DeletePersonUseCase(this.personRepository);
   }
 }
