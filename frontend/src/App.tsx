@@ -46,7 +46,7 @@ function App() {
   return (
     <div className="app">
       <header>
-        <h1>Gastos e Ingresos</h1>
+        <h1>Economía Casera</h1>
         <div className="year-selector">
           <button onClick={() => state.changeYear(-1)}>◀</button>
           <span>{currentYear}</span>

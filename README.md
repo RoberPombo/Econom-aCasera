@@ -1,4 +1,4 @@
-# Gastos e Ingresos
+# Economía Casera
 
 Aplicación de escritorio para llevar el control de gastos e ingresos anuales. Funciona localmente, guarda los datos en SQLite y se sincroniza automáticamente con Google Drive si está instalado.
 
@@ -19,7 +19,8 @@ Aplicación de escritorio para llevar el control de gastos e ingresos anuales. F
 La app detecta automáticamente si el usuario tiene Google Drive instalado:
 
 ### Si tiene Google Drive
-- La base de datos se guarda dentro de `Google Drive/Gastos/gastos.db`.
+
+- La base de datos se guarda dentro de `Google Drive/EconomiaCasera/economiacasera.db`.
 - Cada cambio se persiste directamente en esa carpeta, así que Drive lo sincroniza.
 - También se mantiene una copia de seguridad local por si Drive no está disponible temporalmente.
 - **Si abres la app en dos PCs con la misma cuenta de Google Drive, los datos se sincronizan.**
@@ -28,11 +29,12 @@ La app detecta automáticamente si el usuario tiene Google Drive instalado:
     - **Usar mis datos locales**: sobrescribir la versión de Google Drive con tus datos.
 
 ### Si no tiene Google Drive
+
 - La base de datos se guarda en el directorio de datos del usuario:
-  - Windows: `%APPDATA%\Gastos\gastos.db`
-  - macOS: `~/Library/Application Support/Gastos/gastos.db`
-  - Linux: `~/.local/share/Gastos/gastos.db`
-- Se mantiene una copia de seguridad en `~/Gastos/backup/gastos_backup.db`.
+  - Windows: `%APPDATA%\EconomiaCasera\economiacasera.db`
+  - macOS: `~/Library/Application Support/EconomiaCasera/economiacasera.db`
+  - Linux: `~/.local/share/EconomiaCasera/economiacasera.db`
+- Se mantiene una copia de seguridad en `~/EconomiaCasera/backup/economiacasera_backup.db`.
 
 ## Tecnología
 
@@ -81,11 +83,11 @@ El resultado estará en `dist/release/`:
 
 ```
 dist/release/
-├── gastos          (Linux/Mac) o gastos.exe (Windows)
-└── dist/           (archivos del frontend)
+├── economiacasera          (Linux/Mac) o economiacasera.exe (Windows)
+└── dist/                   (archivos del frontend)
 ```
 
-Para distribuir, copia toda la carpeta `dist/release/` y el usuario solo tiene que hacer doble click en `gastos` o `gastos.exe`.
+Para distribuir, copia toda la carpeta `dist/release/` y el usuario solo tiene que hacer doble click en `economiacasera` o `economiacasera.exe`.
 
 ## Compilar para otras plataformas desde tu sistema
 
@@ -93,13 +95,13 @@ Con Bun puedes hacer cross-compilation:
 
 ```bash
 # Windows desde Linux/Mac
-bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/gastos.exe
+bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/economiacasera.exe
 
 # Linux
-bun build --compile --target=bun-linux-x64 src/server.ts --outfile dist/gastos
+bun build --compile --target=bun-linux-x64 src/server.ts --outfile dist/economiacasera
 
 # macOS Apple Silicon
-bun build --compile --target=bun-darwin-arm64 src/server.ts --outfile dist/gastos-mac
+bun build --compile --target=bun-darwin-arm64 src/server.ts --outfile dist/economiacasera-mac
 ```
 
 No olvides copiar la carpeta `dist/` (frontend) junto al ejecutable.
@@ -125,21 +127,18 @@ La app espera un archivo `.xlsx` con:
 ├── frontend/          # React + TypeScript
 │   ├── src/
 │   │   ├── App.tsx
-│   │   ├── api.ts
-│   │   ├── TransactionForm.tsx
-│   │   ├── TransactionList.tsx
-│   │   ├── SummaryCards.tsx
-│   │   ├── MonthlyView.tsx
-│   │   ├── AnnualView.tsx
-│   │   ├── CategoriesConfig.tsx
-│   │   ├── ImportExcel.tsx
-│   │   └── ...
+│   │   ├── main.tsx
+│   │   ├── CompositionRoot.ts
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
 │   └── index.html
 ├── src/               # Backend Bun
 │   ├── server.ts      # Servidor HTTP + API + importación Excel
-│   ├── db.ts          # SQLite + sincronización Drive/local
-│   ├── utils.ts       # Detección de Google Drive y rutas
-│   └── types.ts       # Tipos compartidos
+│   ├── application/   # Casos de uso y servicios
+│   ├── domain/        # Entidades y reglas de negocio
+│   ├── infrastructure/# Repositorios SQLite, sincronización Drive/local
+│   └── presentation/  # Controladores y rutas HTTP
 ├── dist/              # Frontend compilado y ejecutables
 ├── scripts/           # Scripts de compilación
 ├── iniciar.sh         # Inicio rápido Linux/Mac

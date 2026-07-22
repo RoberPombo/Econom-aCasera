@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo Building Gastos...
+echo Building EconomiaCasera...
 
 REM Build frontend
 cd frontend
@@ -10,7 +10,7 @@ cd ..
 
 REM Compile executable for Windows
 mkdir dist\release 2>nul
-bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/release/gastos.exe
+bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/release/economiacasera.exe
 
 REM Copy frontend static files next to executable
 mkdir dist\release\dist 2>nul

@@ -2,7 +2,7 @@ import { homedir } from "os";
 import path from "path";
 import { mkdirSync, existsSync, statSync, readdirSync } from "fs";
 
-const APP_NAME = "Gastos";
+const APP_NAME = "EconomiaCasera";
 
 export interface StorageLocation {
   dbPath: string;
@@ -19,13 +19,13 @@ export class StorageLocator {
     if (driveFolder) {
       const appFolder = path.join(driveFolder, APP_NAME);
       mkdirSync(appFolder, { recursive: true });
-      const dbPath = path.join(appFolder, "gastos.db");
-      const backupPath = path.join(localDataDir, "gastos_local_backup.db");
+      const dbPath = path.join(appFolder, "economiacasera.db");
+      const backupPath = path.join(localDataDir, "economiacasera_local_backup.db");
       return { dbPath, backupPath, usesDrive: true, driveFolder: appFolder };
     }
 
-    const dbPath = path.join(localDataDir, "gastos.db");
-    const backupPath = path.join(this.getLocalBackupDir(), "gastos_backup.db");
+    const dbPath = path.join(localDataDir, "economiacasera.db");
+    const backupPath = path.join(this.getLocalBackupDir(), "economiacasera_backup.db");
     return { dbPath, backupPath, usesDrive: false, driveFolder: null };
   }
 
