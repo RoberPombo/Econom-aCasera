@@ -1,15 +1,15 @@
 import { useState } from "react";
-import type { Transaction } from "./api";
-import { useAppState } from "./hooks/useAppState";
-import { TransactionForm } from "./TransactionForm";
-import { TransactionList } from "./TransactionList";
-import { SummaryCards } from "./SummaryCards";
-import { MonthlyView } from "./MonthlyView";
-import { AnnualView } from "./AnnualView";
-import { CategoriesConfig } from "./CategoriesConfig";
-import { ImportExcel } from "./ImportExcel";
-import { ConflictDialog } from "./ConflictDialog";
-import "./App.css";
+import type { Transaction } from "./domain/entities";
+import { useAppState } from "./presentation/hooks/useAppState";
+import { TransactionForm, type TransactionFormData } from "./presentation/components/TransactionForm";
+import { TransactionList } from "./presentation/components/TransactionList";
+import { SummaryCards } from "./presentation/components/SummaryCards";
+import { MonthlyView } from "./presentation/components/MonthlyView";
+import { AnnualView } from "./presentation/components/AnnualView";
+import { CategoriesConfig } from "./presentation/components/CategoriesConfig";
+import { ImportExcel } from "./presentation/components/ImportExcel";
+import { ConflictDialog } from "./presentation/components/ConflictDialog";
+import "./presentation/components/App.css";
 
 type Tab = "transactions" | "monthly" | "annual" | "categories" | "import";
 
@@ -18,18 +18,26 @@ function App() {
   const [tab, setTab] = useState<Tab>("transactions");
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  async function handleSubmit(tx: Transaction) {
-    const ok = await state.saveTransaction(tx, editingId);
-    if (ok) setEditingId(null);
+  const currentYear = state.settings?.currentYear ?? new Date().getFullYear();
+  const currentMonth = state.settings?.currentMonth ?? 1;
+  const viewMode = state.settings?.viewMode ?? "monthly";
+
+  async function handleSubmit(data: TransactionFormData) {
+    if (editingId) {
+      await state.updateTransaction(editingId, data);
+    } else {
+      await state.saveTransaction(data);
+    }
+    setEditingId(null);
   }
 
   async function handleDelete(id: number) {
     if (!confirm("¿Eliminar este movimiento?")) return;
-    await state.removeTransaction(id);
+    await state.deleteTransaction(id);
   }
 
   function edit(tx: Transaction) {
-    setEditingId(tx.id ?? null);
+    setEditingId(typeof tx.id === "number" ? tx.id : Number(tx.id));
     setTab("transactions");
   }
 
@@ -41,22 +49,22 @@ function App() {
         <h1>Gastos e Ingresos</h1>
         <div className="year-selector">
           <button onClick={() => state.changeYear(-1)}>◀</button>
-          <span>{state.year}</span>
+          <span>{currentYear}</span>
           <button onClick={() => state.changeYear(1)}>▶</button>
         </div>
       </header>
 
       <div className="view-controls">
         <div className="view-mode">
-          <button className={state.viewMode === "monthly" ? "active" : ""} onClick={() => state.changeViewMode("monthly")}>
+          <button className={viewMode === "monthly" ? "active" : ""} onClick={() => state.changeViewMode("monthly")}>
             Mensual
           </button>
-          <button className={state.viewMode === "annual" ? "active" : ""} onClick={() => state.changeViewMode("annual")}>
+          <button className={viewMode === "annual" ? "active" : ""} onClick={() => state.changeViewMode("annual")}>
             Anual
           </button>
         </div>
-        {state.viewMode === "monthly" && (
-          <select value={state.month} onChange={(e) => state.changeMonth(Number(e.target.value))}>
+        {viewMode === "monthly" && (
+          <select value={currentMonth} onChange={(e) => state.changeMonth(Number(e.target.value))}>
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i + 1} value={i + 1}>
                 {new Date(2000, i).toLocaleString("es-ES", { month: "long" })}
@@ -90,9 +98,9 @@ function App() {
             <SummaryCards
               summary={state.summary}
               title={
-                state.viewMode === "monthly"
-                  ? `Resumen ${new Date(state.year, state.month - 1).toLocaleString("es-ES", { month: "long", year: "numeric" })}`
-                  : `Resumen ${state.year}`
+                viewMode === "monthly"
+                  ? `Resumen ${new Date(currentYear, currentMonth - 1).toLocaleString("es-ES", { month: "long", year: "numeric" })}`
+                  : `Resumen ${currentYear}`
               }
             />
             <section className="form-section">
@@ -100,10 +108,10 @@ function App() {
               <TransactionForm
                 onSubmit={handleSubmit}
                 onCancel={() => setEditingId(null)}
-                editing={editingTx}
+                initialValue={editingTx ?? undefined}
                 categories={state.categories}
-                year={state.year}
-                month={state.month}
+                year={currentYear}
+                month={currentMonth}
               />
             </section>
             <section className="list-section">
@@ -115,7 +123,7 @@ function App() {
 
         {tab === "monthly" && (
           <section>
-            <MonthlyView monthlySummary={state.monthlySummary} categories={state.categorySummary} year={state.year} />
+            <MonthlyView monthlySummary={state.monthlySummary} categories={state.categorySummary} year={currentYear} />
           </section>
         )}
 
@@ -129,8 +137,8 @@ function App() {
           <section>
             <CategoriesConfig
               categories={state.categories}
-              onAdd={state.saveCategory}
-              onUpdate={state.updateCategoryState}
+              onAdd={state.createCategory}
+              onUpdate={state.updateCategory}
               onDelete={state.removeCategory}
             />
           </section>
@@ -138,7 +146,7 @@ function App() {
 
         {tab === "import" && (
           <section>
-            <ImportExcel onImported={state.refresh} />
+            <ImportExcel onImport={state.importExcel} onImported={state.refresh} />
           </section>
         )}
       </main>
@@ -161,11 +169,11 @@ function App() {
         </footer>
       )}
 
-      {state.conflict && (
+      {state.showConflict && (
         <ConflictDialog
-          onResolved={() => state.handleConflictResolution("reload")}
-          onOverwrite={() => state.handleConflictResolution("overwrite")}
-          onCancel={() => state.setConflict(false)}
+          onReload={state.reloadDatabase}
+          onOverwrite={state.forceOverwrite}
+          onCancel={state.closeConflict}
         />
       )}
     </div>
