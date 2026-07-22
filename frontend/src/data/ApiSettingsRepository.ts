@@ -1,5 +1,5 @@
 import { Settings } from "../domain/entities";
-import type { ViewMode } from "../domain/entities";
+import type { ViewMode, Theme } from "../domain/entities";
 import type { SettingsRepository } from "../domain/repositories/SettingsRepository";
 
 export class ApiSettingsRepository implements SettingsRepository {
@@ -16,15 +16,17 @@ export class ApiSettingsRepository implements SettingsRepository {
   }
 
   async get(): Promise<Settings> {
-    const [year, month, mode] = await Promise.all([
+    const [year, month, mode, theme] = await Promise.all([
       this.api<{ year: number }>("/year"),
       this.api<{ month: number }>("/month"),
       this.api<{ mode: ViewMode }>("/view-mode"),
+      this.api<{ theme: Theme }>("/theme"),
     ]);
     return new Settings({
       currentYear: year.year,
       currentMonth: month.month,
       viewMode: mode.mode,
+      theme: theme.theme,
     });
   }
 
@@ -46,6 +48,13 @@ export class ApiSettingsRepository implements SettingsRepository {
     await this.api("/view-mode", {
       method: "POST",
       body: JSON.stringify({ mode }),
+    });
+  }
+
+  async setTheme(theme: Theme): Promise<void> {
+    await this.api("/theme", {
+      method: "POST",
+      body: JSON.stringify({ theme }),
     });
   }
 }

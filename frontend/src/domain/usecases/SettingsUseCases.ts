@@ -1,4 +1,4 @@
-import type { Settings } from "../entities";
+import type { Settings, Theme } from "../entities";
 import type { SettingsRepository } from "../repositories/SettingsRepository";
 
 export class GetSettingsUseCase {
@@ -30,5 +30,9 @@ export class UpdateSettingsUseCase {
 
   async setViewMode(mode: "monthly" | "annual"): Promise<void> {
     await this.repository.setViewMode(mode);
+  }
+
+  async setTheme(theme: Theme): Promise<void> {
+    await this.repository.setTheme(theme);
   }
 }

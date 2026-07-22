@@ -83,6 +83,10 @@ export class CompositionRoot {
     return new UpdateSettingsUseCase(this.settingsRepository);
   }
 
+  provideUpdateThemeUseCase() {
+    return new UpdateSettingsUseCase(this.settingsRepository);
+  }
+
   provideGetDbInfoUseCase() {
     return new GetDbInfoUseCase(this.dbInfoRepository);
   }
