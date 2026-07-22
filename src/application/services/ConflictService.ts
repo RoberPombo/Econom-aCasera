@@ -18,6 +18,10 @@ export class ConflictService {
     this.tracker = tracker;
   }
 
+  hasConflict(): boolean {
+    return this.tracker.hasExternalChange();
+  }
+
   check(): void {
     if (this.tracker.hasExternalChange()) {
       throw new ConflictError("Los datos han cambiado en otro dispositivo. Recarga o fuerza la sobrescritura.");

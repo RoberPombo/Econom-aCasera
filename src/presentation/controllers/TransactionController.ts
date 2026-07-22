@@ -32,7 +32,10 @@ export class TransactionController {
 
   summary(year: number, month?: number): Response {
     const summary = this.container.transactionUseCases.getSummary(year, month);
-    return Response.json(summary);
+    const categories = this.container.transactionUseCases.getCategories(year, month);
+    const monthly = this.container.transactionUseCases.getMonthlySummary(year);
+    const annual = this.container.transactionUseCases.getAnnualSummary();
+    return Response.json({ summary, categories, monthly, annual });
   }
 
   categories(year: number, month?: number): Response {

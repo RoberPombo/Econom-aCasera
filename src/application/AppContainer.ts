@@ -34,7 +34,10 @@ export class AppContainer {
   }
 
   getDbInfo() {
-    return this.databaseService.getStorage();
+    return {
+      ...this.databaseService.getStorage(),
+      hasConflict: this.conflictService.hasConflict(),
+    };
   }
 
   checkConflict(): void {
