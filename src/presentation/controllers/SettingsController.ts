@@ -23,6 +23,10 @@ export class SettingsController {
     return Response.json({ mode: this.getSettings().viewMode });
   }
 
+  getTheme(): Response {
+    return Response.json({ theme: this.getSettings().theme });
+  }
+
   year(year: number): Response {
     this.container.checkConflict();
     this.container.settingsUseCases.setCurrentYear(year);
@@ -42,5 +46,12 @@ export class SettingsController {
     this.container.settingsUseCases.setViewMode(mode);
     this.container.afterWrite();
     return Response.json({ mode });
+  }
+
+  theme(theme: "light" | "dark" | "system"): Response {
+    this.container.checkConflict();
+    this.container.settingsUseCases.setTheme(theme);
+    this.container.afterWrite();
+    return Response.json({ theme });
   }
 }

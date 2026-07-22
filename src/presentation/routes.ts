@@ -99,6 +99,15 @@ export class HttpRouter {
         return this.settingsController.viewMode(mode);
       }
 
+      if (pathname === "/api/theme" && method === "GET") {
+        return this.settingsController.getTheme();
+      }
+
+      if (pathname === "/api/theme" && method === "POST") {
+        const { theme } = (await req.json()) as { theme: "light" | "dark" | "system" };
+        return this.settingsController.theme(theme);
+      }
+
       if (pathname === "/api/category-config" && method === "GET") {
         return this.categoryController.list();
       }

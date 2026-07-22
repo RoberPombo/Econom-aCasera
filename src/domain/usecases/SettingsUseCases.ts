@@ -1,4 +1,4 @@
-import type { Settings } from "../entities";
+import type { Settings, Theme } from "../entities";
 import type { ISettingsRepository } from "../repositories/ISettingsRepository";
 
 export class SettingsUseCases {
@@ -18,5 +18,9 @@ export class SettingsUseCases {
 
   setViewMode(mode: "monthly" | "annual"): void {
     this.repository.setViewMode(mode);
+  }
+
+  setTheme(theme: Theme): void {
+    this.repository.setTheme(theme);
   }
 }

@@ -42,10 +42,13 @@ export interface AnnualSummary {
   balance: number;
 }
 
+export type Theme = "light" | "dark" | "system";
+
 export interface Settings {
   currentYear: number;
   currentMonth: number;
   viewMode: "monthly" | "annual";
+  theme: Theme;
 }
 
 export interface DbInfo {

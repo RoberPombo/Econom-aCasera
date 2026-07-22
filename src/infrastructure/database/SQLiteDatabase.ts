@@ -67,6 +67,12 @@ export class SQLiteDatabase {
           );
         `,
       },
+      {
+        name: "v4_theme",
+        sql: `
+          ALTER TABLE settings ADD COLUMN theme TEXT NOT NULL DEFAULT 'system';
+        `,
+      },
     ];
 
     for (const m of migrations) {
