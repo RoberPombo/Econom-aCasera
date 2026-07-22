@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "../context/useAppContext";
-import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo } from "../../domain/entities";
+import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo, Theme } from "../../domain/entities";
 
 export function useAppState() {
   const { compositionRoot } = useAppContext();
@@ -14,8 +14,16 @@ export function useAppState() {
   const [annualSummary, setAnnualSummary] = useState<AnnualSummary[]>([]);
   const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
   const [showConflict, setShowConflict] = useState(false);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resolveTheme = useCallback((theme: Theme): "light" | "dark" => {
+    if (theme === "system") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    return theme;
+  }, []);
 
   const loadSettings = useCallback(async () => {
     const settings = await compositionRoot.provideGetSettingsUseCase().execute();
@@ -77,6 +85,24 @@ export function useAppState() {
     return () => clearInterval(interval);
   }, [compositionRoot]);
 
+  useEffect(() => {
+    if (!settings) return;
+    const resolved = resolveTheme(settings.theme);
+    setResolvedTheme(resolved);
+    document.documentElement.setAttribute("data-theme", resolved);
+
+    if (settings.theme === "system") {
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const handler = (e: MediaQueryListEvent) => {
+        const next = e.matches ? "dark" : "light";
+        setResolvedTheme(next);
+        document.documentElement.setAttribute("data-theme", next);
+      };
+      media.addEventListener("change", handler);
+      return () => media.removeEventListener("change", handler);
+    }
+  }, [settings, resolveTheme]);
+
   async function changeYear(delta: number) {
     if (!settings) return;
     const newYear = settings.currentYear + delta;
@@ -94,6 +120,14 @@ export function useAppState() {
     if (!settings) return;
     await compositionRoot.provideUpdateSettingsUseCase().setViewMode(mode);
     setSettings(settings.withViewMode(mode));
+  }
+
+  async function toggleTheme() {
+    if (!settings) return;
+    const order: Theme[] = ["light", "dark", "system"];
+    const next = order[(order.indexOf(settings.theme) + 1) % order.length];
+    await compositionRoot.provideUpdateThemeUseCase().setTheme(next);
+    setSettings(settings.withTheme(next));
   }
 
   async function saveTransaction(data: {
@@ -166,11 +200,13 @@ export function useAppState() {
     annualSummary,
     dbInfo,
     showConflict,
+    resolvedTheme,
     loading,
     error,
     changeYear,
     changeMonth,
     changeViewMode,
+    toggleTheme,
     saveTransaction,
     updateTransaction,
     deleteTransaction,

@@ -11,6 +11,18 @@
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+[data-theme="dark"] {
+  --bg: #111827;
+  --card: #1f2937;
+  --text: #f9fafb;
+  --muted: #9ca3af;
+  --income: #34d399;
+  --expense: #f87171;
+  --primary: #60a5fa;
+  --border: #374151;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -73,6 +85,15 @@ button.active {
   background: var(--card);
   color: var(--text);
   border: 1px solid var(--border);
+}
+
+.theme-toggle {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 1.25rem;
+  padding: 0.4rem 0.6rem;
+  margin-left: auto;
 }
 
 .view-controls {
@@ -201,6 +222,8 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 0.95rem;
+  background: var(--card);
+  color: var(--text);
 }
 
 input[type="date"] {
@@ -346,7 +369,8 @@ th {
 .import-result {
   margin-top: 1rem;
   padding: 0.75rem;
-  background: #f0f9ff;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 

@@ -52,6 +52,13 @@ function App() {
           <span>{currentYear}</span>
           <button onClick={() => state.changeYear(1)}>▶</button>
         </div>
+        <button
+          className="theme-toggle"
+          onClick={state.toggleTheme}
+          title={`Tema: ${state.settings?.theme ?? "system"}`}
+        >
+          {state.resolvedTheme === "dark" ? "☀️" : "🌙"}
+        </button>
       </header>
 
       <div className="view-controls">
