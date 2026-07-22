@@ -1,0 +1,24 @@
+{
+  "name": "gastos",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/server.ts",
+    "build": "cd frontend && bun run build",
+    "compile": "bun build --compile src/server.ts --outfile dist/gastos",
+    "compile:windows": "bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/gastos.exe",
+    "compile:linux": "bun build --compile --target=bun-linux-x64 src/server.ts --outfile dist/gastos",
+    "compile:mac": "bun build --compile --target=bun-darwin-arm64 src/server.ts --outfile dist/gastos-mac",
+    "start": "bun run src/server.ts",
+    "package": "bash scripts/build.sh"
+  },
+  "dependencies": {
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,11 @@
+.DS_Store
+node_modules
+*.db
+*.sqlite
+token.json
+drive_config.json
+.env
+dist
+build
+*.log
+frontend/bun.lock
