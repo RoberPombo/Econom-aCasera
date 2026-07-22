@@ -1,0 +1,186 @@
+import { useState, useEffect, useCallback } from "react";
+import { useAppContext } from "../context/useAppContext";
+import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo } from "../../domain/entities";
+
+export function useAppState() {
+  const { compositionRoot } = useAppContext();
+
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [summary, setSummary] = useState<Summary>({ income: 0, expense: 0, balance: 0 });
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
+  const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
+  const [annualSummary, setAnnualSummary] = useState<AnnualSummary[]>([]);
+  const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
+  const [showConflict, setShowConflict] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadSettings = useCallback(async () => {
+    const settings = await compositionRoot.provideGetSettingsUseCase().execute();
+    setSettings(settings);
+    return settings;
+  }, [compositionRoot]);
+
+  const loadDbInfo = useCallback(async () => {
+    const info = await compositionRoot.provideGetDbInfoUseCase().execute();
+    setDbInfo(info);
+  }, [compositionRoot]);
+
+  const loadData = useCallback(async () => {
+    if (!settings) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const year = settings.currentYear;
+      const month = settings.viewMode === "monthly" ? settings.currentMonth : undefined;
+
+      const [transactions, categories, { summary, categories: catSummary, monthly, annual }] = await Promise.all([
+        compositionRoot.provideGetTransactionsUseCase().execute(year, month),
+        compositionRoot.provideGetCategoriesUseCase().execute(),
+        compositionRoot.provideGetSummaryUseCase().execute(year, month),
+      ]);
+
+      setTransactions(transactions);
+      setCategories(categories);
+      setSummary(summary);
+      setCategorySummary(catSummary);
+      setMonthlySummary(monthly);
+      setAnnualSummary(annual);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [compositionRoot, settings]);
+
+  useEffect(() => {
+    loadSettings();
+    loadDbInfo();
+  }, [loadSettings, loadDbInfo]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const info = await compositionRoot.provideGetDbInfoUseCase().execute();
+        if (info.hasConflict) {
+          setShowConflict(true);
+        }
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [compositionRoot]);
+
+  async function changeYear(delta: number) {
+    if (!settings) return;
+    const newYear = settings.currentYear + delta;
+    await compositionRoot.provideUpdateSettingsUseCase().setYear(newYear);
+    setSettings(settings.withYear(newYear));
+  }
+
+  async function changeMonth(month: number) {
+    if (!settings) return;
+    await compositionRoot.provideUpdateSettingsUseCase().setMonth(month);
+    setSettings(settings.withMonth(month));
+  }
+
+  async function changeViewMode(mode: "monthly" | "annual") {
+    if (!settings) return;
+    await compositionRoot.provideUpdateSettingsUseCase().setViewMode(mode);
+    setSettings(settings.withViewMode(mode));
+  }
+
+  async function saveTransaction(data: {
+    date: string;
+    type: "income" | "expense";
+    category: string;
+    concept: string;
+    amount: number;
+    year?: number;
+    month?: number;
+  }) {
+    await compositionRoot.provideCreateTransactionUseCase().execute(data);
+    await loadData();
+  }
+
+  async function updateTransaction(id: number, data: {
+    date?: string;
+    type?: "income" | "expense";
+    category?: string;
+    concept?: string;
+    amount?: number;
+  }) {
+    await compositionRoot.provideUpdateTransactionUseCase().execute(id, data);
+    await loadData();
+  }
+
+  async function deleteTransaction(id: number) {
+    await compositionRoot.provideDeleteTransactionUseCase().execute(id);
+    await loadData();
+  }
+
+  async function createCategory(name: string, type: "income" | "expense") {
+    await compositionRoot.provideCreateCategoryUseCase().execute(name, type);
+    await loadData();
+  }
+
+  async function updateCategory(category: Category) {
+    await compositionRoot.provideUpdateCategoryUseCase().execute(category);
+    await loadData();
+  }
+
+  async function removeCategory(id: number) {
+    await compositionRoot.provideDeleteCategoryUseCase().execute(id);
+    await loadData();
+  }
+
+  async function importExcel(file: File) {
+    return compositionRoot.provideImportExcelUseCase().execute(file);
+  }
+
+  async function reloadDatabase() {
+    await compositionRoot.provideReloadDatabaseUseCase().execute();
+    setShowConflict(false);
+    await loadData();
+  }
+
+  async function forceOverwrite() {
+    await compositionRoot.provideForceOverwriteUseCase().execute();
+    setShowConflict(false);
+    await loadData();
+  }
+
+  return {
+    settings,
+    transactions,
+    summary,
+    categories,
+    categorySummary,
+    monthlySummary,
+    annualSummary,
+    dbInfo,
+    showConflict,
+    loading,
+    error,
+    changeYear,
+    changeMonth,
+    changeViewMode,
+    saveTransaction,
+    updateTransaction,
+    deleteTransaction,
+    createCategory,
+    updateCategory,
+    removeCategory,
+    importExcel,
+    reloadDatabase,
+    forceOverwrite,
+    closeConflict: () => setShowConflict(false),
+    refresh: loadData,
+  };
+}
