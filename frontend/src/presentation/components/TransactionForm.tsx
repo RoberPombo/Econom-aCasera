@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Transaction, Category } from "../../domain/entities";
+import type { Transaction, Category, Person } from "../../domain/entities";
 
 export type TransactionFormData = {
   date: string;
@@ -7,6 +7,7 @@ export type TransactionFormData = {
   category: string;
   concept: string;
   amount: number;
+  person: string;
 };
 
 interface Props {
@@ -14,17 +15,19 @@ interface Props {
   onCancel?: () => void;
   initialValue?: Transaction;
   categories: Category[];
+  persons: Person[];
   year: number;
   month: number;
 }
 
-export function TransactionForm({ onSubmit, onCancel, initialValue, categories, year, month }: Props) {
+export function TransactionForm({ onSubmit, onCancel, initialValue, categories, persons, year, month }: Props) {
   const [form, setForm] = useState<TransactionFormData>({
     date: `${year}-${String(month).padStart(2, "0")}-01`,
     type: "expense",
     category: "",
     concept: "",
     amount: 0,
+    person: "",
   });
 
   useEffect(() => {
@@ -35,6 +38,7 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
         category: initialValue.category,
         concept: initialValue.concept,
         amount: initialValue.amount,
+        person: initialValue.person || "",
       });
     } else {
       setForm({
@@ -43,11 +47,13 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
         category: "",
         concept: "",
         amount: 0,
+        person: "",
       });
     }
   }, [initialValue, year, month]);
 
   const filteredCategories = categories.filter((c) => c.type === form.type && c.active);
+  const activePersons = persons.filter((p) => p.active);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +93,20 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
           {filteredCategories.map((c) => (
             <option key={c.id} value={c.name}>
               {c.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="form-row">
+        <label>Persona</label>
+        <select
+          value={form.person}
+          onChange={(e) => setForm({ ...form, person: e.target.value })}
+        >
+          <option value="">Sin asignar</option>
+          {activePersons.map((p) => (
+            <option key={p.id} value={p.name}>
+              {p.name}
             </option>
           ))}
         </select>

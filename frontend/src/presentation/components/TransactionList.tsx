@@ -24,6 +24,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: Props) {
             <th>Fecha</th>
             <th>Tipo</th>
             <th>Categoría</th>
+            <th>Persona</th>
             <th>Concepto</th>
             <th>Importe</th>
             <th></th>
@@ -35,6 +36,7 @@ export function TransactionList({ transactions, onEdit, onDelete }: Props) {
               <td>{formatDate(t.date)}</td>
               <td>{t.type === "income" ? "Ingreso" : "Gasto"}</td>
               <td>{t.category}</td>
+              <td>{t.person || "—"}</td>
               <td>{t.concept}</td>
               <td className={t.type}>{formatMoney(t.amount)}</td>
               <td className="actions">

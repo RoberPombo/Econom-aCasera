@@ -7,11 +7,12 @@ import { SummaryCards } from "./presentation/components/SummaryCards";
 import { MonthlyView } from "./presentation/components/MonthlyView";
 import { AnnualView } from "./presentation/components/AnnualView";
 import { CategoriesConfig } from "./presentation/components/CategoriesConfig";
+import { PersonsConfig } from "./presentation/components/PersonsConfig";
 import { ImportExcel } from "./presentation/components/ImportExcel";
 import { ConflictDialog } from "./presentation/components/ConflictDialog";
 import "./presentation/components/App.css";
 
-type Tab = "transactions" | "monthly" | "annual" | "categories" | "import";
+type Tab = "transactions" | "monthly" | "annual" | "categories" | "persons" | "import";
 
 function App() {
   const state = useAppState();
@@ -94,6 +95,9 @@ function App() {
         <button className={tab === "categories" ? "active" : ""} onClick={() => setTab("categories")}>
           Categorías
         </button>
+        <button className={tab === "persons" ? "active" : ""} onClick={() => setTab("persons")}>
+          Personas
+        </button>
         <button className={tab === "import" ? "active" : ""} onClick={() => setTab("import")}>
           Importar Excel
         </button>
@@ -117,6 +121,7 @@ function App() {
                 onCancel={() => setEditingId(null)}
                 initialValue={editingTx ?? undefined}
                 categories={state.categories}
+                persons={state.persons}
                 year={currentYear}
                 month={currentMonth}
               />
@@ -147,6 +152,17 @@ function App() {
               onAdd={state.createCategory}
               onUpdate={state.updateCategory}
               onDelete={state.removeCategory}
+            />
+          </section>
+        )}
+
+        {tab === "persons" && (
+          <section>
+            <PersonsConfig
+              persons={state.persons}
+              onAdd={state.createPerson}
+              onUpdate={state.updatePerson}
+              onDelete={state.removePerson}
             />
           </section>
         )}

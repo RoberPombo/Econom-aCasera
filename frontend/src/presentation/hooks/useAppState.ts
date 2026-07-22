@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "../context/useAppContext";
-import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo, Theme } from "../../domain/entities";
+import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo, Theme, Person } from "../../domain/entities";
 
 export function useAppState() {
   const { compositionRoot } = useAppContext();
@@ -13,6 +13,7 @@ export function useAppState() {
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
   const [annualSummary, setAnnualSummary] = useState<AnnualSummary[]>([]);
   const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
+  const [persons, setPersons] = useState<Person[]>([]);
   const [showConflict, setShowConflict] = useState(false);
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(false);
@@ -45,14 +46,16 @@ export function useAppState() {
       const year = settings.currentYear;
       const month = settings.viewMode === "monthly" ? settings.currentMonth : undefined;
 
-      const [transactions, categories, { summary, categories: catSummary, monthly, annual }] = await Promise.all([
+      const [transactions, categories, persons, { summary, categories: catSummary, monthly, annual }] = await Promise.all([
         compositionRoot.provideGetTransactionsUseCase().execute(year, month),
         compositionRoot.provideGetCategoriesUseCase().execute(),
+        compositionRoot.provideGetPersonsUseCase().execute(),
         compositionRoot.provideGetSummaryUseCase().execute(year, month),
       ]);
 
       setTransactions(transactions);
       setCategories(categories);
+      setPersons(persons);
       setSummary(summary);
       setCategorySummary(catSummary);
       setMonthlySummary(monthly);
@@ -136,6 +139,7 @@ export function useAppState() {
     category: string;
     concept: string;
     amount: number;
+    person?: string;
     year?: number;
     month?: number;
   }) {
@@ -149,6 +153,7 @@ export function useAppState() {
     category?: string;
     concept?: string;
     amount?: number;
+    person?: string;
   }) {
     await compositionRoot.provideUpdateTransactionUseCase().execute(id, data);
     await loadData();
@@ -171,6 +176,21 @@ export function useAppState() {
 
   async function removeCategory(id: number) {
     await compositionRoot.provideDeleteCategoryUseCase().execute(id);
+    await loadData();
+  }
+
+  async function createPerson(name: string) {
+    await compositionRoot.provideCreatePersonUseCase().execute(name);
+    await loadData();
+  }
+
+  async function updatePerson(person: Person) {
+    await compositionRoot.provideUpdatePersonUseCase().execute(person);
+    await loadData();
+  }
+
+  async function removePerson(id: number) {
+    await compositionRoot.provideDeletePersonUseCase().execute(id);
     await loadData();
   }
 
@@ -199,6 +219,7 @@ export function useAppState() {
     monthlySummary,
     annualSummary,
     dbInfo,
+    persons,
     showConflict,
     resolvedTheme,
     loading,
@@ -213,6 +234,9 @@ export function useAppState() {
     createCategory,
     updateCategory,
     removeCategory,
+    createPerson,
+    updatePerson,
+    removePerson,
     importExcel,
     reloadDatabase,
     forceOverwrite,
