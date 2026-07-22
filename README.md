@@ -120,6 +120,59 @@ La app espera un archivo `.xlsx` con:
   - **EUROS**: importe.
   - **DESCRIPCIÓN**: concepto del movimiento.
 
+## Actualizaciones automáticas
+
+Cada vez que se hace push a `main`, el workflow `.github/workflows/release.yml` genera automáticamente una release en GitHub con binarios para Linux, Windows y macOS.
+
+La aplicación, al arrancar, consulta la última release pública de GitHub. Si detecta una versión nueva, muestra un diálogo con la opción de descargar e instalar la actualización. El proceso reinicia la aplicación con el nuevo ejecutable.
+
+Para compilar localmente con una versión concreta:
+
+```bash
+APP_VERSION=1.2.3 ./scripts/build.sh
+```
+
+En Windows:
+
+```batch
+set APP_VERSION=1.2.3
+scripts\build.bat
+```
+
+## Seguridad del repositorio
+
+El repositorio incluye configuración para reducir riesgos:
+
+- `.github/settings.yml`: reglas de protección de `main` (requiere PR, review, status checks). Requiere instalar la app [Probot Settings](https://github.com/apps/settings) en el repo.
+- Los workflows usan `permissions` mínimas y `persist-credentials: false`.
+- Los workflows no se ejecutan en forks (`if: github.event.repository.fork == false`).
+
+### Configuración manual recomendada en GitHub
+
+Si no usas Probot Settings, configura esto en la web de GitHub:
+
+1. **Settings > Branches > Add rule**
+   - Branch name pattern: `main`
+   - ✅ Require a pull request before merging
+   - ✅ Require approvals: 1
+   - ✅ Dismiss stale PR approvals when new commits are pushed
+   - ✅ Require status checks to pass: `PR Checks`
+   - ✅ Require branches to be up to date before merging
+   - ✅ Restrict pushes that create files larger than... (opcional)
+   - ✅ Do not allow bypassing the above settings
+   - ✅ Restrict who can push to matching branches: solo owners/maintainers
+
+2. **Settings > Actions > General**
+   - ✅ Require approval for first-time contributors
+   - ✅ Require approval for all outside collaborators
+   - **Fork pull request workflows**: selecciona *Require approval for first-time contributors* o *Require approval for all outside collaborators*
+
+3. **Settings > Secrets and variables > Actions**
+   - No añadir secrets innecesarios. `GITHUB_TOKEN` se genera automáticamente y solo tiene permisos declarados en cada workflow.
+
+4. **Settings > Code security**
+   - Habilitar *Dependabot alerts* y *Dependabot security updates*.
+
 ## Estructura del proyecto
 
 ```
@@ -141,7 +194,9 @@ La app espera un archivo `.xlsx` con:
 │   └── presentation/  # Controladores y rutas HTTP
 ├── dist/              # Frontend compilado y ejecutables
 ├── scripts/           # Scripts de compilación
+├── .github/           # Workflows y configuración del repo
 ├── iniciar.sh         # Inicio rápido Linux/Mac
 ├── iniciar.bat        # Inicio rápido Windows
+├── LICENSE            # MIT
 └── README.md
 ```

@@ -1,7 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo Building EconomiaCasera...
+if "%APP_VERSION%"=="" set APP_VERSION=0.0.0-local
+
+echo Building EconomiaCasera v%APP_VERSION%...
 
 REM Build frontend
 cd frontend
@@ -10,7 +12,7 @@ cd ..
 
 REM Compile executable for Windows
 mkdir dist\release 2>nul
-bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/release/economiacasera.exe
+bun build --compile --minify --sourcemap --define APP_VERSION='"%APP_VERSION%"' --target=bun-windows-x64 src/server.ts --outfile dist/release/economiacasera.exe
 
 REM Copy frontend static files next to executable
 mkdir dist\release\dist 2>nul
