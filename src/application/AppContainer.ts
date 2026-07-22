@@ -1,5 +1,6 @@
 import { DatabaseService } from "./services/DatabaseService";
 import { ConflictService } from "./services/ConflictService";
+import { UpdateService } from "./services/UpdateService";
 import { SQLiteTransactionRepository } from "../infrastructure/repositories/SQLiteTransactionRepository";
 import { SQLiteCategoryRepository } from "../infrastructure/repositories/SQLiteCategoryRepository";
 import { SQLiteSettingsRepository } from "../infrastructure/repositories/SQLiteSettingsRepository";
@@ -19,6 +20,7 @@ export class AppContainer {
   readonly categoryUseCases: CategoryUseCases;
   readonly settingsUseCases: SettingsUseCases;
   readonly personUseCases: PersonUseCases;
+  readonly updateService: UpdateService;
 
   constructor() {
     const db = this.databaseService.getDatabase();
@@ -36,6 +38,7 @@ export class AppContainer {
     this.categoryUseCases = new CategoryUseCases(categoryRepo);
     this.settingsUseCases = new SettingsUseCases(settingsRepo);
     this.personUseCases = new PersonUseCases(personRepo);
+    this.updateService = new UpdateService();
   }
 
   getDbInfo() {

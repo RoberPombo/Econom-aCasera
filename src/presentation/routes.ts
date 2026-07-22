@@ -6,6 +6,7 @@ import { SettingsController } from "./controllers/SettingsController";
 import { DbController } from "./controllers/DbController";
 import { ImportController } from "./controllers/ImportController";
 import { PersonController } from "./controllers/PersonController";
+import { UpdateController } from "./controllers/UpdateController";
 import type { Transaction } from "../domain/entities";
 
 export class HttpRouter {
@@ -15,6 +16,7 @@ export class HttpRouter {
   private readonly dbController: DbController;
   private readonly importController: ImportController;
   private readonly personController: PersonController;
+  private readonly updateController: UpdateController;
 
   constructor(private readonly container: AppContainer) {
     this.transactionController = new TransactionController(container);
@@ -23,6 +25,7 @@ export class HttpRouter {
     this.dbController = new DbController(container);
     this.importController = new ImportController(container);
     this.personController = new PersonController(container);
+    this.updateController = new UpdateController(container);
   }
 
   async handle(req: Request): Promise<Response | null> {
@@ -153,6 +156,14 @@ export class HttpRouter {
 
       if (pathname === "/api/db-info") {
         return this.dbController.info();
+      }
+
+      if (pathname === "/api/update/check") {
+        return this.updateController.check();
+      }
+
+      if (pathname === "/api/update/download" && method === "POST") {
+        return this.updateController.download();
       }
 
       if (pathname === "/api/db/reload" && method === "POST") {
