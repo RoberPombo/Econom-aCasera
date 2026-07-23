@@ -40,7 +40,7 @@
       "endpoints": [
         "https://github.com/RoberPombo/Econom-aCasera/releases/latest/download/latest.json"
       ],
-      "pubkey": "REPLACE_WITH_REAL_TAURI_SIGNER_PUBLIC_KEY"
+      "pubkey": "RWQZjf8V+aqX4Wg2031Aw6cdox8AeKgOinf2lcFaynQ47KIA9VFzKJt6"
     },
     "sql": {
       "preload": ["sqlite: economiacasera.db"]
