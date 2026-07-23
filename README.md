@@ -120,13 +120,44 @@ La app espera un archivo `.xlsx` con:
   - **EUROS**: importe.
   - **DESCRIPCIÓN**: concepto del movimiento.
 
-## Actualizaciones automáticas
+## Versionado y releases
 
-Cada vez que se hace push a `main`, el workflow `.github/workflows/release.yml` genera automáticamente una release en GitHub con binarios para Linux, Windows y macOS.
+El proyecto sigue [Semantic Versioning](https://semver.org/lang/es/):
 
-La aplicación, al arrancar, consulta la última release pública de GitHub. Si detecta una versión nueva, muestra un diálogo con la opción de descargar e instalar la actualización. El proceso reinicia la aplicación con el nuevo ejecutable.
+- Versiones menores a `1.0.0` durante el desarrollo activo.
+- La versión `1.0.0` será la primera estable.
+- `feat` → sube la versión menor (ej. `0.1.0` → `0.2.0`).
+- `fix` → sube la versión parche (ej. `0.1.0` → `0.1.1`).
+- `BREAKING CHANGE` → sube la versión mayor (ej. `0.5.0` → `1.0.0`).
 
-Para compilar localmente con una versión concreta:
+### Cómo se crean las releases
+
+El repositorio usa [`release-please`](https://github.com/googleapis/release-please-action):
+
+1. Cada vez que se hace merge a `main`, `release-please` abre (o actualiza) un PR de release.
+2. Ese PR actualiza automáticamente:
+   - `package.json` con la nueva versión.
+   - `CHANGELOG.md` con los cambios agrupados por tipo.
+3. Revisas el PR, y si todo está correcto, lo merges.
+4. Al mergear el PR de release:
+   - Se crea el tag y la release en GitHub.
+   - Se dispara el workflow `.github/workflows/release-binaries.yml`.
+   - Ese workflow compila y adjunta los binarios para Linux, Windows y macOS.
+
+### Commits para que release-please calcule bien la versión
+
+Usa [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+feat: add monthly summary chart
+fix: correct category totals in annual view
+docs: update README with import examples
+refactor: simplify transaction repository
+test: add use case tests for import
+BREAKING CHANGE: rename API endpoint for transactions
+```
+
+### Compilar localmente con una versión concreta
 
 ```bash
 APP_VERSION=1.2.3 ./scripts/build.sh
@@ -138,6 +169,10 @@ En Windows:
 set APP_VERSION=1.2.3
 scripts\build.bat
 ```
+
+## Actualizaciones automáticas en la app
+
+La aplicación, al arrancar, consulta la última release pública de GitHub. Si detecta una versión nueva, muestra un diálogo con la opción de descargar e instalar la actualización. El proceso reinicia la aplicación con el nuevo ejecutable.
 
 ## Seguridad del repositorio
 
