@@ -1,0 +1,8 @@
+[profile.dev]
+# Reduce memory usage during linking by stripping debug info in development.
+debug = 0
+strip = "debuginfo"
+codegen-units = 16
+
+[profile.dev.build-override]
+opt-level = 3

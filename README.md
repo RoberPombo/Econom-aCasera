@@ -39,72 +39,50 @@ La app detecta automáticamente si el usuario tiene Google Drive instalado:
 ## Tecnología
 
 - **Frontend:** React + TypeScript + Vite
-- **Backend:** Bun (TypeScript) + API REST + `bun:sqlite`
-- **Empaquetado:** `bun build --compile` para generar un ejecutable con doble click
+- **Backend nativo:** Rust (Tauri v2)
+- **Base de datos:** SQLite a través de `tauri-plugin-sql`
+- **Empaquetado:** Tauri genera ejecutables nativos para Linux, Windows y macOS
 
 ## Requisitos para desarrollar
 
-- [Bun](https://bun.sh/) instalado
+- [Node.js](https://nodejs.org/) (LTS)
+- [Rust](https://www.rust-lang.org/tools/install)
+- Dependencias del sistema para Tauri: https://tauri.app/start/prerequisites/
 
 ## Instalación de dependencias
 
 ```bash
-bun install
-cd frontend
-bun install
+cd tauri
+npm install
 ```
 
 ## Ejecutar en desarrollo
 
 ```bash
-bun run dev
+cd tauri
+cargo tauri dev
 ```
-
-O hacer doble click en:
-
-- Linux/Mac: `iniciar.sh`
-- Windows: `iniciar.bat`
 
 ## Compilar ejecutable para distribución
 
-### Linux/Mac
-
 ```bash
-./scripts/build.sh
+cd tauri
+cargo tauri build
 ```
 
-### Windows
-
-```batch
-scripts\build.bat
-```
-
-El resultado estará en `dist/release/`:
+El resultado estará en `tauri/src-tauri/target/release/bundle/`:
 
 ```
-dist/release/
-├── economiacasera          (Linux/Mac) o economiacasera.exe (Windows)
-└── dist/                   (archivos del frontend)
+tauri/src-tauri/target/release/bundle/
+├── deb/                  # Linux Debian/Ubuntu
+├── rpm/                  # Linux Fedora/openSUSE
+├── appimage/             # Linux AppImage
+├── msi/                  # Windows instalador
+├── dmg/                  # macOS imagen de disco
+└── ...
 ```
 
-Para distribuir, copia toda la carpeta `dist/release/` y el usuario solo tiene que hacer doble click en `economiacasera` o `economiacasera.exe`.
-
-## Compilar para otras plataformas desde tu sistema
-
-Con Bun puedes hacer cross-compilation:
-
-```bash
-# Windows desde Linux/Mac
-bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/economiacasera.exe
-
-# Linux
-bun build --compile --target=bun-linux-x64 src/server.ts --outfile dist/economiacasera
-
-# macOS Apple Silicon
-bun build --compile --target=bun-darwin-arm64 src/server.ts --outfile dist/economiacasera-mac
-```
-
-No olvides copiar la carpeta `dist/` (frontend) junto al ejecutable.
+Para distribuir, usa los archivos `.deb`, `.rpm`, `.AppImage`, `.msi` o `.dmg` generados para cada plataforma.
 
 ## Importar desde Excel
 
@@ -141,8 +119,8 @@ El repositorio usa [`release-please`](https://github.com/googleapis/release-plea
 3. Revisas el PR, y si todo está correcto, lo merges.
 4. Al mergear el PR de release:
    - Se crea el tag y la release en GitHub.
-   - Se dispara el workflow `.github/workflows/release-binaries.yml`.
-   - Ese workflow compila y adjunta los binarios para Linux, Windows y macOS.
+   - Se dispara el workflow `.github/workflows/tauri-release.yml`.
+   - Ese workflow compila y adjunta los binarios de Tauri para Linux, Windows y macOS.
 
 ### Commits para que release-please calcule bien la versión
 
@@ -159,16 +137,14 @@ BREAKING CHANGE: rename API endpoint for transactions
 
 ### Compilar localmente con una versión concreta
 
+Edita `tauri/src-tauri/tauri.conf.json` y cambia el campo `version` antes de compilar:
+
 ```bash
-APP_VERSION=1.2.3 ./scripts/build.sh
+cd tauri
+cargo tauri build
 ```
 
-En Windows:
-
-```batch
-set APP_VERSION=1.2.3
-scripts\build.bat
-```
+Para releases oficiales, la versión se actualiza automáticamente mediante `release-please`.
 
 ## Actualizaciones automáticas en la app
 
@@ -212,26 +188,21 @@ Si no usas Probot Settings, configura esto en la web de GitHub:
 
 ```
 .
-├── frontend/          # React + TypeScript
+├── tauri/             # Aplicación principal (Tauri v2 + React)
 │   ├── src/
-│   │   ├── App.tsx
 │   │   ├── main.tsx
 │   │   ├── CompositionRoot.ts
-│   │   ├── data/
-│   │   ├── domain/
-│   │   └── presentation/
+│   │   ├── data/      # Repositorios Tauri (SQLite, filesystem, updater)
+│   │   ├── domain/    # Entidades y casos de uso
+│   │   └── presentation/  # Componentes React, hooks y contexto
+│   ├── src-tauri/     # Rust + configuración Tauri
 │   └── index.html
-├── src/               # Backend Bun
-│   ├── server.ts      # Servidor HTTP + API + importación Excel
-│   ├── application/   # Casos de uso y servicios
-│   ├── domain/        # Entidades y reglas de negocio
-│   ├── infrastructure/# Repositorios SQLite, sincronización Drive/local
-│   └── presentation/  # Controladores y rutas HTTP
-├── dist/              # Frontend compilado y ejecutables
-├── scripts/           # Scripts de compilación
+├── frontend/          # Versión anterior (Bun + Vite), conservada como referencia
+├── src/               # Backend anterior (Bun), conservado como referencia
 ├── .github/           # Workflows y configuración del repo
-├── iniciar.sh         # Inicio rápido Linux/Mac
-├── iniciar.bat        # Inicio rápido Windows
 ├── LICENSE            # MIT
 └── README.md
 ```
+
+> **Nota:** La versión activa del proyecto es la de `tauri/`. Las carpetas `frontend/` y `src/` contienen la implementación anterior con Bun y se mantienen temporalmente como referencia.
+

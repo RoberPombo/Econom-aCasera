@@ -136,17 +136,13 @@ cd frontend && bun run test
 
 ```bash
 # Install dependencies
-bun install
-cd frontend && bun install
+cd tauri && npm install
 
 # Development
-bun run dev
+cd tauri && cargo tauri dev
 
-# Build frontend
-cd frontend && bun run build
-
-# Compile desktop executable
-bun run package        # uses scripts/build.sh
+# Build production bundles
+cd tauri && cargo tauri build
 ```
 
 ## Useful Project Files
