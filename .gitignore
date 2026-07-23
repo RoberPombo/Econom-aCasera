@@ -1,11 +1,14 @@
 # Dependencies
 node_modules/
 frontend/node_modules/
+tauri/node_modules/
 .pnp
 .pnp.js
 
 # Build outputs
 dist/
+frontend/dist/
+tauri/dist/
 build/
 out/
 *.tsbuildinfo

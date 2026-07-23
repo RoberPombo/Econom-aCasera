@@ -229,9 +229,50 @@ Si no usas Probot Settings, configura esto en la web de GitHub:
 │   └── presentation/  # Controladores y rutas HTTP
 ├── dist/              # Frontend compilado y ejecutables
 ├── scripts/           # Scripts de compilación
+├── tauri/             # Prueba de concepto Tauri (v2 + React + SQLite)
+│   ├── src/           # UI de la PoC
+│   └── src-tauri/   # Rust + configuración Tauri
 ├── .github/           # Workflows y configuración del repo
 ├── iniciar.sh         # Inicio rápido Linux/Mac
 ├── iniciar.bat        # Inicio rápido Windows
 ├── LICENSE            # MIT
 └── README.md
 ```
+
+## Prueba de concepto con Tauri
+
+Existe una prueba de concepto en `tauri/` que explora sustituir Bun + servidor embebido por Tauri v2:
+
+- **Frontend:** React + TypeScript + Vite (igual que el proyecto principal).
+- **Backend nativo:** Rust (Tauri commands + plugins).
+- **Base de datos:** SQLite a través de `tauri-plugin-sql`.
+- **Actualizaciones:** Tauri updater integrado, configurado para leer de GitHub Releases (requiere generar un par de claves de firma y publicar `latest.json`).
+- **Empaquetado:** ejecutables nativos mucho más pequeños que Electron o Bun compile.
+
+### Ejecutar la PoC en desarrollo
+
+Requisitos del sistema operativo: https://tauri.app/start/prerequisites/
+
+```bash
+cd tauri
+npm install
+npm run tauri dev
+```
+
+### Compilar la PoC
+
+```bash
+cd tauri
+npm run tauri build
+```
+
+El resultado estará en `tauri/src-tauri/target/release/bundle/`.
+
+### Workflow de CI
+
+`.github/workflows/tauri-poc.yml` compila la PoC en Linux, Windows y macOS en cada push a `feature/tauri-poc` y en pull requests a `develop`.
+
+### Estado de la PoC
+
+Es una comparativa funcional, no la versión principal. La app original sigue funcionando con Bun. Si la PoC demuestra ventajas claras (tamaño, actualizaciones, rendimiento), se puede decidir una migración controlada en una release mayor.
+

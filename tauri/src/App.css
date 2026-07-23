@@ -1,0 +1,135 @@
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+.container {
+  margin: 0 auto;
+  padding: 2rem;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  margin-bottom: 1rem;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card strong {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.card span {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.card.income {
+  background-color: #e6f9ed;
+  color: #1f7a3f;
+}
+
+.card.expense {
+  background-color: #fdeaea;
+  color: #9c1c1c;
+}
+
+.card.balance {
+  background-color: #e8f0fe;
+  color: #1a56db;
+}
+
+.transactions {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.transactions th,
+.transactions td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.transactions th {
+  background-color: #f0f0f0;
+  font-weight: 600;
+}
+
+.transactions tr:last-child td {
+  border-bottom: none;
+}
+
+.transactions tr.income td {
+  color: #1f7a3f;
+}
+
+.transactions tr.expense td {
+  color: #9c1c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #f6f6f6;
+    background-color: #2f2f2f;
+  }
+
+  .card.income {
+    background-color: #1a3d26;
+    color: #8af0a8;
+  }
+
+  .card.expense {
+    background-color: #3d1a1a;
+    color: #f0a8a8;
+  }
+
+  .card.balance {
+    background-color: #1a2d4d;
+    color: #a8d0f0;
+  }
+
+  .transactions {
+    background-color: #3a3a3a;
+  }
+
+  .transactions th {
+    background-color: #4a4a4a;
+  }
+
+  .transactions th,
+  .transactions td {
+    border-bottom-color: #555;
+  }
+}
