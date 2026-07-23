@@ -1,10 +1,6 @@
-export interface UpdateInfo {
-  version: string;
-  downloadUrl: string;
-  currentVersion: string;
-}
+import type { UpdateInfo, UpdateRepository } from "../domain/repositories/UpdateRepository";
 
-export class ApiUpdateRepository {
+export class ApiUpdateRepository implements UpdateRepository {
   async check(): Promise<UpdateInfo | null> {
     const res = await fetch("/api/update/check");
     if (!res.ok) return null;

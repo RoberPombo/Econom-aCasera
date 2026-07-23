@@ -1,17 +1,17 @@
 import { useState } from "react";
-import type { Transaction } from "./domain/entities";
-import { useAppState } from "./presentation/hooks/useAppState";
-import { TransactionForm, type TransactionFormData } from "./presentation/components/TransactionForm";
-import { TransactionList } from "./presentation/components/TransactionList";
-import { SummaryCards } from "./presentation/components/SummaryCards";
-import { MonthlyView } from "./presentation/components/MonthlyView";
-import { AnnualView } from "./presentation/components/AnnualView";
-import { CategoriesConfig } from "./presentation/components/CategoriesConfig";
-import { PersonsConfig } from "./presentation/components/PersonsConfig";
-import { ImportExcel } from "./presentation/components/ImportExcel";
-import { ConflictDialog } from "./presentation/components/ConflictDialog";
-import { UpdateDialog } from "./presentation/components/UpdateDialog";
-import "./presentation/components/App.css";
+import type { Transaction } from "../domain/entities";
+import { useAppState } from "./hooks/useAppState";
+import { TransactionForm, type TransactionFormData } from "./components/TransactionForm";
+import { TransactionList } from "./components/TransactionList";
+import { SummaryCards } from "./components/SummaryCards";
+import { MonthlyView } from "./components/MonthlyView";
+import { AnnualView } from "./components/AnnualView";
+import { CategoriesConfig } from "./components/CategoriesConfig";
+import { PersonsConfig } from "./components/PersonsConfig";
+import { ImportExcel } from "./components/ImportExcel";
+import { ConflictDialog } from "./components/ConflictDialog";
+import { UpdateDialog } from "./components/UpdateDialog";
+import "./components/App.css";
 
 type Tab = "transactions" | "monthly" | "annual" | "categories" | "persons" | "import";
 

@@ -8,3 +8,4 @@ export * from "./SettingsUseCases";
 export * from "./DbInfoUseCases";
 export * from "./ImportExcelUseCase";
 export * from "./PersonUseCases";
+export * from "./UpdateUseCases";

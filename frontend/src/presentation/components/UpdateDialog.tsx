@@ -1,4 +1,4 @@
-import type { UpdateInfo } from "../../data/ApiUpdateRepository";
+import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 
 interface Props {
   update: UpdateInfo;

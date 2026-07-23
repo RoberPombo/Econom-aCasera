@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "../context/useAppContext";
 import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo, Theme, Person } from "../../domain/entities";
-import { ApiUpdateRepository, type UpdateInfo } from "../../data/ApiUpdateRepository";
+import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 
 export function useAppState() {
   const { compositionRoot } = useAppContext();
@@ -20,8 +20,6 @@ export function useAppState() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const updateRepository = new ApiUpdateRepository();
 
   const resolveTheme = useCallback((theme: Theme): "light" | "dark" => {
     if (theme === "system") {
@@ -74,10 +72,10 @@ export function useAppState() {
   useEffect(() => {
     loadSettings();
     loadDbInfo();
-    updateRepository.check().then((info) => {
+    compositionRoot.provideCheckForUpdateUseCase().execute().then((info) => {
       if (info) setUpdateInfo(info);
     });
-  }, [loadSettings, loadDbInfo]);
+  }, [loadSettings, loadDbInfo, compositionRoot]);
 
   useEffect(() => {
     loadData();
@@ -141,12 +139,12 @@ export function useAppState() {
   }
 
   async function checkForUpdate() {
-    const info = await updateRepository.check();
+    const info = await compositionRoot.provideCheckForUpdateUseCase().execute();
     setUpdateInfo(info);
   }
 
   async function downloadUpdate() {
-    await updateRepository.download();
+    await compositionRoot.provideDownloadUpdateUseCase().execute();
   }
 
   async function saveTransaction(data: {
