@@ -37,4 +37,4 @@ jobs:
         run: cd tauri && npm run build
 
       - name: Build Tauri app
-        run: cd tauri && cargo tauri build
+        run: cd tauri && npm run tauri build
