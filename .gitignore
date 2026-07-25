@@ -9,6 +9,8 @@ dist-ssr/
 build/
 out/
 *.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
 # Tauri
 /src-tauri/target/
