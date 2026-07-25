@@ -11,9 +11,8 @@ out/
 *.tsbuildinfo
 
 # Tauri
-/tauri/src-tauri/target/
-/tauri/dist/
-/tauri/dist-ssr/
+/src-tauri/target/
+/src-tauri/gen/
 
 # Logs
 logs/

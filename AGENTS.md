@@ -55,14 +55,14 @@ BREAKING CHANGE: old token format is no longer accepted
 
 ## Architecture Rules
 
-The application lives in `tauri/` and follows Clean Architecture.
+The application follows Clean Architecture.
 
 ### Frontend (TypeScript + React)
 
-- `tauri/src/domain/` — entities, repository interfaces and use cases
-- `tauri/src/data/` — Tauri-specific repository implementations (SQLite, filesystem, updater)
-- `tauri/src/presentation/` — React components, hooks, context and pages
-- `tauri/src/CompositionRoot.ts` — dependency injection root
+- `src/domain/` — entities, repository interfaces and use cases
+- `src/data/` — Tauri-specific repository implementations (SQLite, filesystem, updater)
+- `src/presentation/` — React components, hooks, context and pages
+- `src/CompositionRoot.ts` — dependency injection root
 
 Rules:
 
@@ -74,10 +74,10 @@ Rules:
 
 ### Rust (Tauri backend)
 
-- `tauri/src-tauri/src/commands.rs` — Tauri commands exposed to the frontend
-- `tauri/src-tauri/src/lib.rs` — plugin initialization and command registration
-- `tauri/src-tauri/Cargo.toml` — Rust dependencies
-- `tauri/src-tauri/tauri.conf.json` — Tauri configuration
+- `src-tauri/src/commands.rs` — Tauri commands exposed to the frontend
+- `src-tauri/src/lib.rs` — plugin initialization and command registration
+- `src-tauri/Cargo.toml` — Rust dependencies
+- `src-tauri/tauri.conf.json` — Tauri configuration
 
 Rules:
 
@@ -92,21 +92,21 @@ For detailed frontend guidance invoke the skill `clean-architecture-frontend`.
 When writing or refactoring frontend tests, invoke the skill `testing-frontend`.
 
 - Stack: Vitest, jsdom, React Testing Library, jest-dom.
-- Domain tests go in `tauri/src/domain/__tests__/`.
-- Component/hook tests go in `tauri/src/presentation/__tests__/`.
+- Domain tests go in `src/domain/__tests__/`.
+- Component/hook tests go in `src/presentation/__tests__/`.
 - Use in-memory fakes for repositories; do not hit the real backend in unit tests.
 - Prefer `screen.getByRole`, `getByLabelText` and `userEvent` over test IDs.
 
 Run tests before committing:
 
 ```bash
-cd tauri && npm run test
+npm run test
 ```
 
 ## Release Rules
 
 - Releases are handled automatically by `release-please`.
-- Do not manually edit `package.json`, `tauri/src-tauri/Cargo.toml`, `tauri/src-tauri/tauri.conf.json` version or `CHANGELOG.md` except through the release PR.
+- Do not manually edit `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` version or `CHANGELOG.md` except through the release PR.
 - Do not create GitHub releases or tags manually.
 - The release workflow is:
   1. Merge feature PRs into `develop`.
@@ -122,7 +122,7 @@ cd tauri && npm run test
 - Do not add repository secrets unless explicitly requested.
 - Use `GITHUB_TOKEN` only; it is provided automatically with the permissions declared in each workflow.
 - Avoid executing untrusted scripts or installing packages outside the workspace.
-- The Tauri signing private key (`tauri/src-tauri/tauri.key`) must never be committed. It is ignored by `.gitignore`.
+- The Tauri signing private key (`src-tauri/tauri.key`) must never be committed. It is ignored by `.gitignore`.
 
 ## Communication Rules
 
@@ -134,23 +134,23 @@ cd tauri && npm run test
 
 ```bash
 # Install dependencies
-cd tauri && npm install
+pnpm install
 
 # Development
-cd tauri && npm run tauri dev
+cargo tauri dev
 
 # Build production bundles
-cd tauri && npm run tauri build
+cargo tauri build
 ```
 
 ## Useful Project Files
 
-- `tauri/src/CompositionRoot.ts`
-- `tauri/src/presentation/App.tsx`
-- `tauri/src/domain/`
-- `tauri/src/data/`
-- `tauri/src-tauri/src/commands.rs`
-- `tauri/src-tauri/tauri.conf.json`
+- `src/CompositionRoot.ts`
+- `src/presentation/App.tsx`
+- `src/domain/`
+- `src/data/`
+- `src-tauri/src/commands.rs`
+- `src-tauri/tauri.conf.json`
 - `.github/workflows/release-please.yml`
 - `.github/workflows/tauri-release.yml`
 - `.github/workflows/pr-check.yml`
