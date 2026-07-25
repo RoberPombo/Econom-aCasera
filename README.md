@@ -197,12 +197,8 @@ Si no usas Probot Settings, configura esto en la web de GitHub:
 │   │   └── presentation/  # Componentes React, hooks y contexto
 │   ├── src-tauri/     # Rust + configuración Tauri
 │   └── index.html
-├── frontend/          # Versión anterior (Bun + Vite), conservada como referencia
-├── src/               # Backend anterior (Bun), conservado como referencia
 ├── .github/           # Workflows y configuración del repo
 ├── LICENSE            # MIT
 └── README.md
 ```
-
-> **Nota:** La versión activa del proyecto es la de `tauri/`. Las carpetas `frontend/` y `src/` contienen la implementación anterior con Bun y se mantienen temporalmente como referencia.
 

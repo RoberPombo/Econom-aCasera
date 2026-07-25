@@ -1,20 +1,19 @@
 # Dependencies
 node_modules/
-frontend/node_modules/
 .pnp
 .pnp.js
 
 # Build outputs
 dist/
+dist-ssr/
 build/
 out/
 *.tsbuildinfo
 
-# Compiled executables
-economiacasera
-economiacasera.exe
-economiacasera-mac
-dist/release/
+# Tauri
+/tauri/src-tauri/target/
+/tauri/dist/
+/tauri/dist-ssr/
 
 # Logs
 logs/

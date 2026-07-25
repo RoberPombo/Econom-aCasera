@@ -4,7 +4,7 @@ This file contains rules and conventions for AI coding assistants working on thi
 
 ## Repository Context
 
-- Economía Casera is a desktop expenses/income tracker built with Bun, React, TypeScript, SQLite and optional Google Drive sync.
+- Economía Casera is a desktop expenses/income tracker built with Tauri v2, React, TypeScript, SQLite and optional Google Drive sync.
 - Public repository: `git@github.com:RoberPombo/Econom-aCasera.git`
 - License: MIT
 
@@ -55,68 +55,65 @@ BREAKING CHANGE: old token format is no longer accepted
 
 ## Architecture Rules
 
-### Backend
+The application lives in `tauri/` and follows Clean Architecture.
 
-Follow Clean Architecture layers:
+### Frontend (TypeScript + React)
 
-- `src/domain/` — entities and repository interfaces (no external dependencies)
-- `src/application/` — use cases and domain services
-- `src/infrastructure/` — SQLite repositories, Drive/local sync, file system
-- `src/presentation/` — HTTP controllers/routes
-- Dependencies point inward only.
-
-### Frontend
-
-Follow Clean Architecture layers:
-
-- `frontend/src/domain/` — entities, repository interfaces, use cases
-- `frontend/src/data/` — API repository implementations
-- `frontend/src/presentation/` — React components, hooks, context, pages
-- `frontend/src/CompositionRoot.ts` — dependency injection root
+- `tauri/src/domain/` — entities, repository interfaces and use cases
+- `tauri/src/data/` — Tauri-specific repository implementations (SQLite, filesystem, updater)
+- `tauri/src/presentation/` — React components, hooks, context and pages
+- `tauri/src/CompositionRoot.ts` — dependency injection root
 
 Rules:
 
 - Use cases and components must not instantiate API repositories directly.
 - Always consume repositories through `CompositionRoot` and the React context (`AppProvider` / `useAppContext`).
 - Keep UI components free of business logic; logic belongs in hooks or use cases.
+- SQLite access is done through `@tauri-apps/plugin-sql` from the data layer.
+- Filesystem operations (Google Drive sync, backups) are done through Tauri commands invoked from the data layer.
 
-For detailed guidance invoke the skill `clean-architecture-frontend`.
+### Rust (Tauri backend)
+
+- `tauri/src-tauri/src/commands.rs` — Tauri commands exposed to the frontend
+- `tauri/src-tauri/src/lib.rs` — plugin initialization and command registration
+- `tauri/src-tauri/Cargo.toml` — Rust dependencies
+- `tauri/src-tauri/tauri.conf.json` — Tauri configuration
+
+Rules:
+
+- Commands are small adapters that call Rust standard library functions.
+- Business logic should stay in the TypeScript domain/use case layers whenever possible.
+- File paths are resolved using `app.path().app_data_dir()` and `dirs::home_dir()`.
+
+For detailed frontend guidance invoke the skill `clean-architecture-frontend`.
 
 ## Testing Rules
-
-### Backend
-
-- Unit-test domain entities and use cases.
-- Use in-memory repository implementations for use-case tests.
-- Avoid real database or network calls in unit tests.
-
-### Frontend
 
 When writing or refactoring frontend tests, invoke the skill `testing-frontend`.
 
 - Stack: Vitest, jsdom, React Testing Library, jest-dom.
-- Domain tests go in `frontend/src/domain/__tests__/`.
-- Component/hook tests go in `frontend/src/presentation/__tests__/`.
+- Domain tests go in `tauri/src/domain/__tests__/`.
+- Component/hook tests go in `tauri/src/presentation/__tests__/`.
 - Use in-memory fakes for repositories; do not hit the real backend in unit tests.
 - Prefer `screen.getByRole`, `getByLabelText` and `userEvent` over test IDs.
 
 Run tests before committing:
 
 ```bash
-cd frontend && bun run test
+cd tauri && npm run test
 ```
 
 ## Release Rules
 
 - Releases are handled automatically by `release-please`.
-- Do not manually edit `package.json` version or `CHANGELOG.md` except through the release PR.
+- Do not manually edit `package.json`, `tauri/src-tauri/Cargo.toml`, `tauri/src-tauri/tauri.conf.json` version or `CHANGELOG.md` except through the release PR.
 - Do not create GitHub releases or tags manually.
 - The release workflow is:
   1. Merge feature PRs into `develop`.
   2. Open a PR from `develop` to `main`.
   3. `release-please` creates/updates the release PR on `main`.
   4. Review and merge the release PR.
-  5. Binaries are built and attached automatically by `.github/workflows/release-binaries.yml`.
+  5. Binaries are built and attached automatically by `.github/workflows/tauri-release.yml`.
   6. Merge `main` back into `develop`.
 
 ## Security Rules
@@ -125,6 +122,7 @@ cd frontend && bun run test
 - Do not add repository secrets unless explicitly requested.
 - Use `GITHUB_TOKEN` only; it is provided automatically with the permissions declared in each workflow.
 - Avoid executing untrusted scripts or installing packages outside the workspace.
+- The Tauri signing private key (`tauri/src-tauri/tauri.key`) must never be committed. It is ignored by `.gitignore`.
 
 ## Communication Rules
 
@@ -139,21 +137,22 @@ cd frontend && bun run test
 cd tauri && npm install
 
 # Development
-cd tauri && cargo tauri dev
+cd tauri && npm run tauri dev
 
 # Build production bundles
-cd tauri && cargo tauri build
+cd tauri && npm run tauri build
 ```
 
 ## Useful Project Files
 
-- `frontend/src/CompositionRoot.ts`
-- `frontend/src/presentation/App.tsx`
-- `frontend/src/domain/`
-- `frontend/src/data/`
-- `frontend/vitest.config.ts`
+- `tauri/src/CompositionRoot.ts`
+- `tauri/src/presentation/App.tsx`
+- `tauri/src/domain/`
+- `tauri/src/data/`
+- `tauri/src-tauri/src/commands.rs`
+- `tauri/src-tauri/tauri.conf.json`
 - `.github/workflows/release-please.yml`
-- `.github/workflows/release-binaries.yml`
+- `.github/workflows/tauri-release.yml`
 - `.github/workflows/pr-check.yml`
 - `.release-please-config.json`
 - `.release-please-manifest.json`
