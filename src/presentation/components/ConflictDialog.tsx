@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 interface Props {
   onReload: () => Promise<void>;
   onOverwrite: () => Promise<void>;
@@ -5,13 +7,33 @@ interface Props {
 }
 
 export function ConflictDialog({ onReload, onOverwrite, onCancel }: Props) {
+  const [confirming, setConfirming] = useState(false);
+
   async function handleReload() {
     await onReload();
   }
 
   async function handleOverwrite() {
-    if (!confirm("¿Seguro? Se perderán los cambios hechos en otro dispositivo.")) return;
     await onOverwrite();
+  }
+
+  if (confirming) {
+    return (
+      <div className="modal-overlay">
+        <div className="modal">
+          <h2>Confirmar</h2>
+          <p>¿Seguro? Se perderán los cambios hechos en otro dispositivo.</p>
+          <div className="modal-actions">
+            <button className="danger" onClick={handleOverwrite}>
+              Sí, usar mis datos locales
+            </button>
+            <button className="secondary" onClick={() => setConfirming(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -22,7 +44,7 @@ export function ConflictDialog({ onReload, onOverwrite, onCancel }: Props) {
         <p>¿Qué quieres hacer?</p>
         <div className="modal-actions">
           <button onClick={handleReload}>Recargar datos remotos</button>
-          <button onClick={handleOverwrite}>Usar mis datos locales</button>
+          <button onClick={() => setConfirming(true)}>Usar mis datos locales</button>
           <button className="secondary" onClick={onCancel}>Cancelar</button>
         </div>
       </div>

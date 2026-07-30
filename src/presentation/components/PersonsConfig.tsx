@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Person } from "../../domain/entities";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Props {
   persons: Person[];
@@ -10,6 +11,7 @@ interface Props {
 
 export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
   const [newName, setNewName] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<Person | null>(null);
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -23,8 +25,14 @@ export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
   }
 
   function handleDelete(person: Person) {
-    if (!confirm(`¿Eliminar "${person.name}"?`)) return;
-    onDelete(person.id as number);
+    setPendingDelete(person);
+  }
+
+  function confirmDelete() {
+    if (pendingDelete) {
+      onDelete(pendingDelete.id as number);
+    }
+    setPendingDelete(null);
   }
 
   return (
@@ -57,6 +65,14 @@ export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
           </li>
         ))}
       </ul>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          message={`¿Eliminar "${pendingDelete.name}"?`}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }

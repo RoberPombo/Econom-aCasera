@@ -10,6 +10,7 @@ import { CategoriesConfig } from "./components/CategoriesConfig";
 import { PersonsConfig } from "./components/PersonsConfig";
 import { ImportExcel } from "./components/ImportExcel";
 import { ConflictDialog } from "./components/ConflictDialog";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
 import "./components/App.css";
 
@@ -19,6 +20,7 @@ function App() {
   const state = useAppState();
   const [tab, setTab] = useState<Tab>("transactions");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const currentYear = state.settings?.currentYear ?? new Date().getFullYear();
   const currentMonth = state.settings?.currentMonth ?? 1;
@@ -34,8 +36,14 @@ function App() {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("¿Eliminar este movimiento?")) return;
-    await state.deleteTransaction(id);
+    setDeletingId(id);
+  }
+
+  async function confirmDelete() {
+    if (deletingId !== null) {
+      await state.deleteTransaction(deletingId);
+    }
+    setDeletingId(null);
   }
 
   function edit(tx: Transaction) {
@@ -203,6 +211,14 @@ function App() {
           update={state.updateInfo}
           onConfirm={state.downloadUpdate}
           onCancel={state.dismissUpdate}
+        />
+      )}
+
+      {deletingId !== null && (
+        <ConfirmDialog
+          message="¿Eliminar este movimiento?"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeletingId(null)}
         />
       )}
     </div>

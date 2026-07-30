@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Category } from "../../domain/entities";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface Props {
   categories: Category[];
@@ -11,6 +12,7 @@ interface Props {
 export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Props) {
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"income" | "expense">("expense");
+  const [pendingDelete, setPendingDelete] = useState<Category | null>(null);
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -24,8 +26,14 @@ export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Prop
   }
 
   function handleDelete(cat: Category) {
-    if (!confirm(`¿Eliminar "${cat.name}"?`)) return;
-    onDelete(cat.id as number);
+    setPendingDelete(cat);
+  }
+
+  function confirmDelete() {
+    if (pendingDelete) {
+      onDelete(pendingDelete.id as number);
+    }
+    setPendingDelete(null);
   }
 
   const income = categories.filter((c) => c.type === "income");
@@ -83,6 +91,14 @@ export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Prop
           </ul>
         </div>
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          message={`¿Eliminar "${pendingDelete.name}"?`}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }
