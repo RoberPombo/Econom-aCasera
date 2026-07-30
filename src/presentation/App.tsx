@@ -13,7 +13,7 @@ import { ConflictDialog } from "./components/ConflictDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
 import "./components/App.css";
 
-type Tab = "transactions" | "monthly" | "annual" | "categories" | "persons" | "import";
+type Tab = "transactions" | "monthly" | "annual" | "settings" | "import";
 
 function App() {
   const state = useAppState();
@@ -93,14 +93,16 @@ function App() {
         <button className={tab === "annual" ? "active" : ""} onClick={() => setTab("annual")}>
           Anual
         </button>
-        <button className={tab === "categories" ? "active" : ""} onClick={() => setTab("categories")}>
-          Categorías
-        </button>
-        <button className={tab === "persons" ? "active" : ""} onClick={() => setTab("persons")}>
-          Personas
-        </button>
         <button className={tab === "import" ? "active" : ""} onClick={() => setTab("import")}>
           Importar Excel
+        </button>
+        <button
+          className={tab === "settings" ? "active" : ""}
+          onClick={() => setTab("settings")}
+          title="Configuración"
+          aria-label="Configuración"
+        >
+          ⚙️
         </button>
       </nav>
 
@@ -146,7 +148,7 @@ function App() {
           </section>
         )}
 
-        {tab === "categories" && (
+        {tab === "settings" && (
           <section>
             <CategoriesConfig
               categories={state.categories}
@@ -154,11 +156,6 @@ function App() {
               onUpdate={state.updateCategory}
               onDelete={state.removeCategory}
             />
-          </section>
-        )}
-
-        {tab === "persons" && (
-          <section>
             <PersonsConfig
               persons={state.persons}
               onAdd={state.createPerson}
