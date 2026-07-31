@@ -6,3 +6,4 @@ export * from "./Summary";
 export * from "./Settings";
 export * from "./DbInfo";
 export * from "./Person";
+export * from "./ImportSource";

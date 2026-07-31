@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAppContext } from "../context/useAppContext";
 import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo, Theme, Person } from "../../domain/entities";
+import type { ImportSource } from "../../domain/entities/ImportSource";
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 
 export function useAppState() {
@@ -208,8 +209,14 @@ export function useAppState() {
     await loadData();
   }
 
-  async function importExcel(file: File) {
-    return compositionRoot.provideImportExcelUseCase().execute(file);
+  async function previewImport(source: ImportSource, file: File) {
+    return compositionRoot.providePreviewImportUseCase().execute(source, file);
+  }
+
+  async function confirmImport(transactions: Transaction[]) {
+    const count = await compositionRoot.provideConfirmImportUseCase().execute(transactions);
+    await loadData();
+    return count;
   }
 
   async function reloadDatabase() {
@@ -255,7 +262,8 @@ export function useAppState() {
     createPerson,
     updatePerson,
     removePerson,
-    importExcel,
+    previewImport,
+    confirmImport,
     reloadDatabase,
     forceOverwrite,
     closeConflict: () => setShowConflict(false),

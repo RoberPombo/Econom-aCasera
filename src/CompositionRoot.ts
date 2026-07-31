@@ -2,7 +2,7 @@ import { TauriTransactionRepository } from "./data/TauriTransactionRepository";
 import { TauriCategoryRepository } from "./data/TauriCategoryRepository";
 import { TauriSettingsRepository } from "./data/TauriSettingsRepository";
 import { TauriDbInfoRepository } from "./data/TauriDbInfoRepository";
-import { TauriExcelRepository } from "./data/TauriExcelRepository";
+import { TauriImportRepository } from "./data/TauriImportRepository";
 import { TauriPersonRepository } from "./data/TauriPersonRepository";
 import { TauriUpdateRepository } from "./data/TauriUpdateRepository";
 import {
@@ -20,7 +20,8 @@ import {
   GetDbInfoUseCase,
   ReloadDatabaseUseCase,
   ForceOverwriteUseCase,
-  ImportExcelUseCase,
+  PreviewImportUseCase,
+  ConfirmImportUseCase,
   GetPersonsUseCase,
   CreatePersonUseCase,
   UpdatePersonUseCase,
@@ -36,7 +37,7 @@ export class CompositionRoot {
   private categoryRepository = new TauriCategoryRepository();
   private settingsRepository = new TauriSettingsRepository();
   private dbInfoRepository = new TauriDbInfoRepository();
-  private excelRepository = new TauriExcelRepository();
+  private importRepository = new TauriImportRepository();
   private personRepository = new TauriPersonRepository();
   private updateRepository = new TauriUpdateRepository();
 
@@ -109,8 +110,12 @@ export class CompositionRoot {
     return new ForceOverwriteUseCase(this.dbInfoRepository);
   }
 
-  provideImportExcelUseCase() {
-    return new ImportExcelUseCase(this.excelRepository);
+  providePreviewImportUseCase() {
+    return new PreviewImportUseCase(this.importRepository);
+  }
+
+  provideConfirmImportUseCase() {
+    return new ConfirmImportUseCase(this.importRepository);
   }
 
   provideGetPersonsUseCase() {

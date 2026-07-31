@@ -8,7 +8,7 @@ import { MonthlyView } from "./components/MonthlyView";
 import { AnnualView } from "./components/AnnualView";
 import { CategoriesConfig } from "./components/CategoriesConfig";
 import { PersonsConfig } from "./components/PersonsConfig";
-import { ImportExcel } from "./components/ImportExcel";
+import { ImportView } from "./components/ImportView";
 import { ConflictDialog } from "./components/ConflictDialog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
@@ -131,7 +131,7 @@ function App() {
           Anual
         </button>
         <button className={tab === "import" ? tabBtnActive : tabBtn} onClick={() => setTab("import")}>
-          Importar Excel
+          Importar
         </button>
         <button
           className={tab === "settings" ? tabBtnActive : tabBtn}
@@ -204,7 +204,7 @@ function App() {
 
         {tab === "import" && (
           <section className={section}>
-            <ImportExcel onImport={state.importExcel} onImported={state.refresh} />
+            <ImportView persons={state.persons} onPreview={state.previewImport} onConfirm={state.confirmImport} />
           </section>
         )}
       </main>
