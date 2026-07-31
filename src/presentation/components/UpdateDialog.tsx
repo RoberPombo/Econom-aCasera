@@ -1,4 +1,5 @@
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
+import { modal, modalActions, modalBtn, modalBtnSecondary, modalOverlay } from "../styles";
 
 interface Props {
   update: UpdateInfo;
@@ -8,8 +9,8 @@ interface Props {
 
 export function UpdateDialog({ update, onConfirm, onCancel }: Props) {
   return (
-    <div className="modal-overlay">
-      <div className="modal">
+    <div className={modalOverlay}>
+      <div className={modal}>
         <h2>Nueva versión disponible</h2>
         <p>
           Hay una nueva versión de <strong>Economía Casera</strong>.
@@ -20,12 +21,12 @@ export function UpdateDialog({ update, onConfirm, onCancel }: Props) {
         <p>
           Nueva versión: <strong>{update.version}</strong>
         </p>
-        <p className="hint">
+        <p className="mt-4 text-[0.85rem] text-muted">
           Se descargará el nuevo ejecutable y se reiniciará la aplicación.
         </p>
-        <div className="modal-actions">
-          <button onClick={onConfirm}>Actualizar ahora</button>
-          <button className="secondary" onClick={onCancel}>
+        <div className={modalActions}>
+          <button className={modalBtn} onClick={onConfirm}>Actualizar ahora</button>
+          <button className={modalBtnSecondary} onClick={onCancel}>
             Más tarde
           </button>
         </div>

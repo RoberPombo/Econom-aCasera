@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Category } from "../../domain/entities";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { inlineForm, inputInline, btn, btnItem, categoryGrid, listReset, listItem, listItemInactive, sectionTitle } from "../styles";
 
 interface Props {
   categories: Category[];
@@ -41,32 +42,37 @@ export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Prop
 
   return (
     <div>
-      <h2>Configuración de categorías</h2>
-      <form onSubmit={handleAdd} className="inline-form">
+      <h2 className={sectionTitle}>Configuración de categorías</h2>
+      <form onSubmit={handleAdd} className={inlineForm}>
         <input
+          className={inputInline}
           type="text"
           placeholder="Nueva categoría"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           required
         />
-        <select value={newType} onChange={(e) => setNewType(e.target.value as "income" | "expense")}>
+        <select
+          className={inputInline}
+          value={newType}
+          onChange={(e) => setNewType(e.target.value as "income" | "expense")}
+        >
           <option value="expense">Gasto</option>
           <option value="income">Ingreso</option>
         </select>
-        <button type="submit">Añadir</button>
+        <button type="submit" className={`${btn} max-mobile:w-full`}>Añadir</button>
       </form>
 
-      <div className="category-grid">
+      <div className={categoryGrid}>
         <div>
           <h3>Ingresos</h3>
-          <ul className="category-list">
+          <ul className={listReset}>
             {income.map((c) => (
-              <li key={c.id} className={c.active ? "" : "inactive"}>
+              <li key={c.id} className={`${listItem} ${c.active ? "" : listItemInactive}`}>
                 {c.name}
                 <div>
-                  <button onClick={() => toggleActive(c)}>{c.active ? "Desactivar" : "Activar"}</button>
-                  <button className="danger" onClick={() => handleDelete(c)}>
+                  <button className={btnItem} onClick={() => toggleActive(c)}>{c.active ? "Desactivar" : "Activar"}</button>
+                  <button className={`${btnItem} bg-[#dc2626]`} onClick={() => handleDelete(c)}>
                     Eliminar
                   </button>
                 </div>
@@ -76,13 +82,13 @@ export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Prop
         </div>
         <div>
           <h3>Gastos</h3>
-          <ul className="category-list">
+          <ul className={listReset}>
             {expense.map((c) => (
-              <li key={c.id} className={c.active ? "" : "inactive"}>
+              <li key={c.id} className={`${listItem} ${c.active ? "" : listItemInactive}`}>
                 {c.name}
                 <div>
-                  <button onClick={() => toggleActive(c)}>{c.active ? "Desactivar" : "Activar"}</button>
-                  <button className="danger" onClick={() => handleDelete(c)}>
+                  <button className={btnItem} onClick={() => toggleActive(c)}>{c.active ? "Desactivar" : "Activar"}</button>
+                  <button className={`${btnItem} bg-[#dc2626]`} onClick={() => handleDelete(c)}>
                     Eliminar
                   </button>
                 </div>
@@ -102,4 +108,3 @@ export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Prop
     </div>
   );
 }
-

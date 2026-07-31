@@ -1,10 +1,60 @@
-body {
-  margin: 0;
-  background: #f6f8fa;
-  color: #1f2937;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+@import "tailwindcss";
+
+@theme inline {
+  --color-page: var(--bg);
+  --color-surface: var(--card);
+  --color-body: var(--text);
+  --color-muted: var(--muted);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-primary: var(--primary);
+  --color-line: var(--border);
+  --shadow-card: var(--shadow);
 }
 
-#root {
-  min-height: 100vh;
+@theme {
+  --breakpoint-mobile: 600px;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  --bg: #f6f8fa;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --income: #059669;
+  --expense: #dc2626;
+  --primary: #2563eb;
+  --border: #e5e7eb;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --bg: #111827;
+  --card: #1f2937;
+  --text: #f9fafb;
+  --muted: #9ca3af;
+  --income: #34d399;
+  --expense: #f87171;
+  --primary: #60a5fa;
+  --border: #374151;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-body;
+  }
+
+  h2 {
+    @apply my-[0.83em] text-[1.5rem] font-bold;
+  }
+
+  h3 {
+    @apply my-[1em] text-[1.17rem] font-bold;
+  }
+
+  p {
+    @apply my-4;
+  }
 }

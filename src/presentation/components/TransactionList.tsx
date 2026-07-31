@@ -1,4 +1,5 @@
 import type { Transaction } from "../../domain/entities";
+import { tableWrap, table, th, td, btnAction, income, expense } from "../styles";
 
 interface Props {
   transactions: Transaction[];
@@ -17,31 +18,31 @@ export function TransactionList({ transactions, onEdit, onDelete }: Props) {
   }
 
   return (
-    <div className="table-wrap">
-      <table>
+    <div className={tableWrap}>
+      <table className={table}>
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Categoría</th>
-            <th>Persona</th>
-            <th>Concepto</th>
-            <th>Importe</th>
-            <th></th>
+            <th className={th}>Fecha</th>
+            <th className={th}>Tipo</th>
+            <th className={th}>Categoría</th>
+            <th className={th}>Persona</th>
+            <th className={th}>Concepto</th>
+            <th className={th}>Importe</th>
+            <th className={th}></th>
           </tr>
         </thead>
         <tbody>
           {transactions.map((t) => (
             <tr key={t.id}>
-              <td>{formatDate(t.date)}</td>
-              <td>{t.type === "income" ? "Ingreso" : "Gasto"}</td>
-              <td>{t.category}</td>
-              <td>{t.person || "—"}</td>
-              <td>{t.concept}</td>
-              <td className={t.type}>{formatMoney(t.amount)}</td>
-              <td className="actions">
-                <button onClick={() => onEdit(t)}>✎</button>
-                <button className="danger" onClick={() => onDelete(Number(t.id))}>
+              <td className={td}>{formatDate(t.date)}</td>
+              <td className={td}>{t.type === "income" ? "Ingreso" : "Gasto"}</td>
+              <td className={td}>{t.category}</td>
+              <td className={td}>{t.person || "—"}</td>
+              <td className={td}>{t.concept}</td>
+              <td className={`${td} ${t.type === "income" ? income : expense}`}>{formatMoney(t.amount)}</td>
+              <td className={`${td} whitespace-nowrap`}>
+                <button className={`${btnAction} bg-[#6b7280]`} onClick={() => onEdit(t)}>✎</button>
+                <button className={`${btnAction} bg-[#dc2626]`} onClick={() => onDelete(Number(t.id))}>
                   🗑
                 </button>
               </td>

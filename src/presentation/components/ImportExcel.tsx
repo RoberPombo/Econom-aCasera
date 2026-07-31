@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { hint, importResult, input } from "../styles";
 
 interface Props {
   onImport: (file: File) => Promise<{ imported: number; errors: string[] }>;
@@ -30,19 +31,19 @@ export function ImportExcel({ onImport, onImported }: Props) {
   return (
     <div>
       <h2>Importar desde Excel</h2>
-      <p className="hint">
+      <p className={hint}>
         Se espera un archivo con una hoja por mes (Ene., Feb., Mar., ...) y una tabla de transacciones con:
         categoría, tipo, día, mes, año, euros y descripción.
       </p>
-      <input ref={inputRef} type="file" accept=".xlsx,.xls" onChange={handleFile} disabled={loading} />
+      <input ref={inputRef} className={input} type="file" accept=".xlsx,.xls" onChange={handleFile} disabled={loading} />
       {loading && <p>Importando...</p>}
       {result && (
-        <div className="import-result">
+        <div className={importResult}>
           <p>Importados: {result.imported}</p>
           {result.errors.length > 0 && (
             <details>
               <summary>Errores ({result.errors.length})</summary>
-              <ul>
+              <ul className="my-4 list-disc pl-10">
                 {result.errors.map((e, i) => (
                   <li key={i}>{e}</li>
                 ))}

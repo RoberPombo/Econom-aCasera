@@ -12,7 +12,26 @@ import { ImportExcel } from "./components/ImportExcel";
 import { ConflictDialog } from "./components/ConflictDialog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
-import "./components/App.css";
+import {
+  app,
+  header,
+  headerTitle,
+  yearSelector,
+  yearBtn,
+  themeToggle,
+  viewControls,
+  viewModeGroup,
+  viewModeBtn,
+  viewModeBtnActive,
+  tabs,
+  tabBtn,
+  tabBtnActive,
+  section,
+  sectionTitle,
+  input,
+  dbInfo,
+  dbInfoHint,
+} from "./styles";
 
 type Tab = "transactions" | "monthly" | "annual" | "settings" | "import";
 
@@ -54,16 +73,16 @@ function App() {
   const editingTx = editingId ? state.transactions.find((t) => t.id === editingId) : null;
 
   return (
-    <div className="app">
-      <header>
-        <h1>Economía Casera</h1>
-        <div className="year-selector">
-          <button onClick={() => state.changeYear(-1)}>◀</button>
+    <div className={app}>
+      <header className={header}>
+        <h1 className={headerTitle}>Economía Casera</h1>
+        <div className={yearSelector}>
+          <button className={yearBtn} onClick={() => state.changeYear(-1)}>◀</button>
           <span>{currentYear}</span>
-          <button onClick={() => state.changeYear(1)}>▶</button>
+          <button className={yearBtn} onClick={() => state.changeYear(1)}>▶</button>
         </div>
         <button
-          className="theme-toggle"
+          className={themeToggle}
           onClick={state.toggleTheme}
           title={`Tema: ${state.settings?.theme ?? "system"}`}
         >
@@ -71,17 +90,27 @@ function App() {
         </button>
       </header>
 
-      <div className="view-controls">
-        <div className="view-mode">
-          <button className={viewMode === "monthly" ? "active" : ""} onClick={() => state.changeViewMode("monthly")}>
+      <div className={viewControls}>
+        <div className={viewModeGroup}>
+          <button
+            className={viewMode === "monthly" ? viewModeBtnActive : viewModeBtn}
+            onClick={() => state.changeViewMode("monthly")}
+          >
             Mensual
           </button>
-          <button className={viewMode === "annual" ? "active" : ""} onClick={() => state.changeViewMode("annual")}>
+          <button
+            className={viewMode === "annual" ? viewModeBtnActive : viewModeBtn}
+            onClick={() => state.changeViewMode("annual")}
+          >
             Anual
           </button>
         </div>
         {viewMode === "monthly" && (
-          <select value={currentMonth} onChange={(e) => state.changeMonth(Number(e.target.value))}>
+          <select
+            className={input}
+            value={currentMonth}
+            onChange={(e) => state.changeMonth(Number(e.target.value))}
+          >
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i + 1} value={i + 1}>
                 {new Date(2000, i).toLocaleString("es-ES", { month: "long" })}
@@ -91,21 +120,21 @@ function App() {
         )}
       </div>
 
-      <nav className="tabs">
-        <button className={tab === "transactions" ? "active" : ""} onClick={() => setTab("transactions")}>
+      <nav className={tabs}>
+        <button className={tab === "transactions" ? tabBtnActive : tabBtn} onClick={() => setTab("transactions")}>
           Movimientos
         </button>
-        <button className={tab === "monthly" ? "active" : ""} onClick={() => setTab("monthly")}>
+        <button className={tab === "monthly" ? tabBtnActive : tabBtn} onClick={() => setTab("monthly")}>
           Mensual
         </button>
-        <button className={tab === "annual" ? "active" : ""} onClick={() => setTab("annual")}>
+        <button className={tab === "annual" ? tabBtnActive : tabBtn} onClick={() => setTab("annual")}>
           Anual
         </button>
-        <button className={tab === "import" ? "active" : ""} onClick={() => setTab("import")}>
+        <button className={tab === "import" ? tabBtnActive : tabBtn} onClick={() => setTab("import")}>
           Importar Excel
         </button>
         <button
-          className={tab === "settings" ? "active" : ""}
+          className={tab === "settings" ? tabBtnActive : tabBtn}
           onClick={() => setTab("settings")}
           title="Configuración"
           aria-label="Configuración"
@@ -125,8 +154,8 @@ function App() {
                   : `Resumen ${currentYear}`
               }
             />
-            <section className="form-section">
-              <h2>{editingId ? "Editar" : "Nuevo"} movimiento</h2>
+            <section className={section}>
+              <h2 className={sectionTitle}>{editingId ? "Editar" : "Nuevo"} movimiento</h2>
               <TransactionForm
                 onSubmit={handleSubmit}
                 onCancel={() => setEditingId(null)}
@@ -137,27 +166,27 @@ function App() {
                 month={currentMonth}
               />
             </section>
-            <section className="list-section">
-              <h2>Movimientos</h2>
+            <section className={section}>
+              <h2 className={sectionTitle}>Movimientos</h2>
               <TransactionList transactions={state.transactions} onEdit={edit} onDelete={handleDelete} />
             </section>
           </>
         )}
 
         {tab === "monthly" && (
-          <section>
+          <section className={section}>
             <MonthlyView monthlySummary={state.monthlySummary} categories={state.categorySummary} year={currentYear} />
           </section>
         )}
 
         {tab === "annual" && (
-          <section>
+          <section className={section}>
             <AnnualView annualSummary={state.annualSummary} />
           </section>
         )}
 
         {tab === "settings" && (
-          <section>
+          <section className={section}>
             <CategoriesConfig
               categories={state.categories}
               onAdd={state.createCategory}
@@ -174,25 +203,25 @@ function App() {
         )}
 
         {tab === "import" && (
-          <section>
+          <section className={section}>
             <ImportExcel onImport={state.importExcel} onImported={state.refresh} />
           </section>
         )}
       </main>
 
       {state.dbInfo && (
-        <footer className="db-info">
+        <footer className={dbInfo}>
           {state.dbInfo.usesDrive ? (
             <>
-              <p>✅ Sincronizado con Google Drive</p>
-              <p className="hint">Base de datos: <span>{state.dbInfo.dbPath}</span></p>
-              <p className="hint">Copia de seguridad local: <span>{state.dbInfo.backupPath}</span></p>
+              <p className={dbInfoHint}>✅ Sincronizado con Google Drive</p>
+              <p className={dbInfoHint}>Base de datos: <span className="break-all">{state.dbInfo.dbPath}</span></p>
+              <p className={dbInfoHint}>Copia de seguridad local: <span className="break-all">{state.dbInfo.backupPath}</span></p>
             </>
           ) : (
             <>
-              <p>⚠️ Google Drive no detectado</p>
-              <p className="hint">Base de datos: <span>{state.dbInfo.dbPath}</span></p>
-              <p className="hint">Copia de seguridad: <span>{state.dbInfo.backupPath}</span></p>
+              <p className={dbInfoHint}>⚠️ Google Drive no detectado</p>
+              <p className={dbInfoHint}>Base de datos: <span className="break-all">{state.dbInfo.dbPath}</span></p>
+              <p className={dbInfoHint}>Copia de seguridad: <span className="break-all">{state.dbInfo.backupPath}</span></p>
             </>
           )}
         </footer>

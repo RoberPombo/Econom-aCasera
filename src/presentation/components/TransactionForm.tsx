@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Transaction, Category, Person } from "../../domain/entities";
+import { input, label, formRow, formActions, btn, btnSecondary } from "../styles";
 
 export type TransactionFormData = {
   date: string;
@@ -61,10 +62,11 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="transaction-form">
-      <div className="form-row">
-        <label>Tipo</label>
+    <form onSubmit={handleSubmit}>
+      <div className={formRow}>
+        <label className={label}>Tipo</label>
         <select
+          className={input}
           value={form.type}
           onChange={(e) => setForm({ ...form, type: e.target.value as "income" | "expense", category: "" })}
           required
@@ -73,18 +75,20 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
           <option value="income">Ingreso</option>
         </select>
       </div>
-      <div className="form-row">
-        <label>Fecha</label>
+      <div className={formRow}>
+        <label className={label}>Fecha</label>
         <input
+          className={`${input} font-[inherit]`}
           type="date"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
           required
         />
       </div>
-      <div className="form-row">
-        <label>Categoría</label>
+      <div className={formRow}>
+        <label className={label}>Categoría</label>
         <select
+          className={input}
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
           required
@@ -97,9 +101,10 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
           ))}
         </select>
       </div>
-      <div className="form-row">
-        <label>Persona</label>
+      <div className={formRow}>
+        <label className={label}>Persona</label>
         <select
+          className={input}
           value={form.person}
           onChange={(e) => setForm({ ...form, person: e.target.value })}
         >
@@ -111,18 +116,20 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
           ))}
         </select>
       </div>
-      <div className="form-row">
-        <label>Concepto</label>
+      <div className={formRow}>
+        <label className={label}>Concepto</label>
         <input
+          className={input}
           type="text"
           value={form.concept}
           onChange={(e) => setForm({ ...form, concept: e.target.value })}
           required
         />
       </div>
-      <div className="form-row">
-        <label>Importe</label>
+      <div className={formRow}>
+        <label className={label}>Importe</label>
         <input
+          className={input}
           type="number"
           step="0.01"
           min="0.01"
@@ -131,10 +138,10 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
           required
         />
       </div>
-      <div className="form-actions">
-        <button type="submit">{initialValue ? "Guardar" : "Añadir"}</button>
+      <div className={formActions}>
+        <button type="submit" className={btn}>{initialValue ? "Guardar" : "Añadir"}</button>
         {initialValue && (
-          <button type="button" className="secondary" onClick={onCancel}>
+          <button type="button" className={btnSecondary} onClick={onCancel}>
             Cancelar
           </button>
         )}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Person } from "../../domain/entities";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { inlineForm, inputInline, btn, btnItem, listReset, listItem, listItemInactive, hint, sectionTitle } from "../styles";
 
 interface Props {
   persons: Person[];
@@ -37,28 +38,29 @@ export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
 
   return (
     <div>
-      <h2>Miembros familiares</h2>
-      <p className="hint">
+      <h2 className={sectionTitle}>Miembros familiares</h2>
+      <p className={hint}>
         Añade las personas de tu unidad familiar para poder asignarles gastos e ingresos.
       </p>
-      <form onSubmit={handleAdd} className="inline-form">
+      <form onSubmit={handleAdd} className={inlineForm}>
         <input
+          className={inputInline}
           type="text"
           placeholder="Nombre"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           required
         />
-        <button type="submit">Añadir</button>
+        <button type="submit" className={`${btn} max-mobile:w-full`}>Añadir</button>
       </form>
 
-      <ul className="category-list">
+      <ul className={listReset}>
         {persons.map((p) => (
-          <li key={p.id} className={p.active ? "" : "inactive"}>
+          <li key={p.id} className={`${listItem} ${p.active ? "" : listItemInactive}`}>
             {p.name}
             <div>
-              <button onClick={() => toggleActive(p)}>{p.active ? "Desactivar" : "Activar"}</button>
-              <button className="danger" onClick={() => handleDelete(p)}>
+              <button className={btnItem} onClick={() => toggleActive(p)}>{p.active ? "Desactivar" : "Activar"}</button>
+              <button className={`${btnItem} bg-[#dc2626]`} onClick={() => handleDelete(p)}>
                 Eliminar
               </button>
             </div>
