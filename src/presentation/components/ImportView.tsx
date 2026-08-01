@@ -86,6 +86,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setParserErrors([]);
     try {
       const result = await onPreview(source, file);
+      console.log("[ImportView] preview result", result);
       setRows(result.transactions.map(transactionToRow));
       setParserErrors(result.errors);
     } catch (err) {
@@ -210,6 +211,10 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
             ))}
           </ul>
         </div>
+      )}
+
+      {!loading && file && rows.length === 0 && parserErrors.length === 0 && (
+        <p className="mb-4 text-muted">No se encontraron movimientos en el archivo. Comprueba que el PDF contenga texto seleccionable.</p>
       )}
 
       {rows.length > 0 && (

@@ -18,6 +18,9 @@ export class TauriImportRepository implements ImportRepository {
       const text = await invoke<string>("extract_pdf_text", {
         pdfBytes: Array.from(new Uint8Array(buffer)),
       });
+      if (!text || !text.trim()) {
+        return { transactions: [], errors: ["No se pudo extraer texto del PDF; puede estar escaneado o protegido."] };
+      }
       return parseIng(text);
     }
 
