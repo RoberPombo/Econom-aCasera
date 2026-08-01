@@ -5,6 +5,11 @@ import type { ImportSource } from "../../domain/entities/ImportSource";
 import { importSources, importSourceLabels, upcomingImportSources } from "../../domain/entities/ImportSource";
 import { btn, btnSecondary, hint, sectionTitle, table, tableWrap, td, th } from "../styles";
 
+const acceptBySource: Record<ImportSource, string> = {
+  excel: ".xlsx,.xls",
+  ing: ".pdf",
+};
+
 export type ImportRow = {
   date: string;
   type: "income" | "expense";
@@ -141,7 +146,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
         ref={inputRef}
         className="hidden"
         type="file"
-        accept=".xlsx,.xls"
+        accept={acceptBySource[source]}
         onChange={handleFileChange}
         disabled={loading}
       />

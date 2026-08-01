@@ -178,3 +178,12 @@ pub async fn sync_database<R: Runtime>(app: AppHandle<R>) -> Result<(), String> 
 
     Ok(())
 }
+
+#[command]
+pub async fn extract_pdf_text(pdf_bytes: Vec<u8>) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        pdf_extract::extract_text_from_mem(&pdf_bytes).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

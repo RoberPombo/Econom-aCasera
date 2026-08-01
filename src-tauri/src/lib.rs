@@ -11,6 +11,7 @@ pub fn run() {
             commands::reload_database,
             commands::force_overwrite,
             commands::sync_database,
+            commands::extract_pdf_text,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
