@@ -1,4 +1,5 @@
 export * from "./GetTransactionsUseCase";
+export * from "./GetTransactionsByDateUseCase";
 export * from "./CreateTransactionUseCase";
 export * from "./UpdateTransactionUseCase";
 export * from "./DeleteTransactionUseCase";

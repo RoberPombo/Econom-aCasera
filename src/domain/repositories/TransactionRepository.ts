@@ -9,6 +9,7 @@ export interface SummaryResult {
 
 export interface TransactionRepository {
   getByYearAndMonth(year: number, month?: number): Promise<Transaction[]>;
+  getByDate(date: string): Promise<Transaction[]>;
   create(transaction: Transaction): Promise<Transaction>;
   update(transaction: Transaction): Promise<Transaction>;
   delete(id: number): Promise<void>;

@@ -7,6 +7,7 @@ import { TauriPersonRepository } from "./data/TauriPersonRepository";
 import { TauriUpdateRepository } from "./data/TauriUpdateRepository";
 import {
   GetTransactionsUseCase,
+  GetTransactionsByDateUseCase,
   CreateTransactionUseCase,
   UpdateTransactionUseCase,
   DeleteTransactionUseCase,
@@ -52,6 +53,10 @@ export class CompositionRoot {
 
   provideGetTransactionsUseCase() {
     return new GetTransactionsUseCase(this.transactionRepository);
+  }
+
+  provideGetTransactionsByDateUseCase() {
+    return new GetTransactionsByDateUseCase(this.transactionRepository);
   }
 
   provideCreateTransactionUseCase() {

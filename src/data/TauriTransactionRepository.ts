@@ -18,19 +18,27 @@ export class TauriTransactionRepository implements TransactionRepository {
     }
     query += " ORDER BY date";
     const rows = await db.select<Transaction[]>(query, params);
-    return rows.map((t) =>
-      Transaction.create({
-        id: Number(t.id),
-        date: t.date,
-        type: t.type,
-        category: t.category,
-        concept: t.concept,
-        amount: Number(t.amount),
-        year: Number(t.year),
-        month: Number(t.month),
-        person: t.person ?? "",
-      })
-    );
+    return rows.map((t) => this.rowToTransaction(t));
+  }
+
+  async getByDate(date: string): Promise<Transaction[]> {
+    const db = await getDatabase();
+    const rows = await db.select<Transaction[]>("SELECT * FROM transactions WHERE date = ? ORDER BY date", [date]);
+    return rows.map((t) => this.rowToTransaction(t));
+  }
+
+  private rowToTransaction(t: Transaction): Transaction {
+    return Transaction.create({
+      id: Number(t.id),
+      date: t.date,
+      type: t.type,
+      category: t.category,
+      concept: t.concept,
+      amount: Number(t.amount),
+      year: Number(t.year),
+      month: Number(t.month),
+      person: t.person ?? "",
+    });
   }
 
   async create(transaction: Transaction): Promise<Transaction> {

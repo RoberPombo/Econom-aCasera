@@ -12,6 +12,7 @@ import { ImportView } from "./components/ImportView";
 import { ConflictDialog } from "./components/ConflictDialog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
+import { SimilarTransactionDialog } from "./components/SimilarTransactionDialog";
 import {
   app,
   header,
@@ -40,6 +41,8 @@ function App() {
   const [tab, setTab] = useState<Tab>("transactions");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [similarMatches, setSimilarMatches] = useState<Transaction[]>([]);
+  const [pendingTransaction, setPendingTransaction] = useState<TransactionFormData | null>(null);
 
   const currentYear = state.settings?.currentYear ?? new Date().getFullYear();
   const currentMonth = state.settings?.currentMonth ?? 1;
@@ -48,10 +51,40 @@ function App() {
   async function handleSubmit(data: TransactionFormData) {
     if (editingId) {
       await state.updateTransaction(editingId, data);
-    } else {
-      await state.saveTransaction(data);
+      setEditingId(null);
+      return;
     }
-    setEditingId(null);
+
+    const matches = await state.findSimilarTransactions(data.date, data.category, data.type);
+    if (matches.length > 0) {
+      setPendingTransaction(data);
+      setSimilarMatches(matches);
+      return;
+    }
+
+    await state.saveTransaction(data);
+  }
+
+  async function confirmAddAsNew() {
+    if (pendingTransaction) {
+      await state.saveTransaction(pendingTransaction);
+    }
+    setPendingTransaction(null);
+    setSimilarMatches([]);
+  }
+
+  async function confirmUpdateExisting(tx: Transaction) {
+    if (pendingTransaction) {
+      const id = typeof tx.id === "number" ? tx.id : Number(tx.id);
+      await state.updateTransaction(id, pendingTransaction);
+    }
+    setPendingTransaction(null);
+    setSimilarMatches([]);
+  }
+
+  function cancelSimilarDialog() {
+    setPendingTransaction(null);
+    setSimilarMatches([]);
   }
 
   async function handleDelete(id: number) {
@@ -248,6 +281,15 @@ function App() {
           message="¿Eliminar este movimiento?"
           onConfirm={confirmDelete}
           onCancel={() => setDeletingId(null)}
+        />
+      )}
+
+      {similarMatches.length > 0 && (
+        <SimilarTransactionDialog
+          matches={similarMatches}
+          onUpdate={confirmUpdateExisting}
+          onAddNew={confirmAddAsNew}
+          onCancel={cancelSimilarDialog}
         />
       )}
     </div>

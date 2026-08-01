@@ -174,6 +174,11 @@ export function useAppState() {
     await loadData();
   }
 
+  async function findSimilarTransactions(date: string, category: string, type: "income" | "expense") {
+    const all = await compositionRoot.provideGetTransactionsByDateUseCase().execute(date);
+    return all.filter((tx) => tx.category === category && tx.type === type);
+  }
+
   async function deleteTransaction(id: number) {
     await compositionRoot.provideDeleteTransactionUseCase().execute(id);
     await loadData();
@@ -256,6 +261,7 @@ export function useAppState() {
     saveTransaction,
     updateTransaction,
     deleteTransaction,
+    findSimilarTransactions,
     createCategory,
     updateCategory,
     removeCategory,
