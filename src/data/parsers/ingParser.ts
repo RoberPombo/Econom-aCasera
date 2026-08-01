@@ -117,7 +117,11 @@ function parseLine(line: string): Transaction {
 }
 
 export function parseIng(text: string): ImportPreview {
-  const lines = text
+  // pdf-extract sometimes returns the whole page as a single line. Insert a
+  // newline before every date so the movement-based tokenizer works reliably.
+  const normalized = text.replace(/(\d{2}\/\d{2}\/\d{4})/g, "\n$1");
+
+  const lines = normalized
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean);
