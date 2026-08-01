@@ -16,7 +16,7 @@ export class TauriImportRepository implements ImportRepository {
     if (source === "ing") {
       const buffer = await file.arrayBuffer();
       const text = await invoke<string>("extract_pdf_text", {
-        pdf_bytes: Array.from(new Uint8Array(buffer)),
+        pdfBytes: Array.from(new Uint8Array(buffer)),
       });
       return parseIng(text);
     }
