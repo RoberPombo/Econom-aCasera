@@ -47,7 +47,7 @@ export function useAppState() {
     setError(null);
     try {
       const year = settings.currentYear;
-      const month = settings.viewMode === "monthly" ? settings.currentMonth : undefined;
+      const month = settings.currentMonth;
 
       const [transactions, categories, persons, { summary, categories: catSummary, monthly, annual }] = await Promise.all([
         compositionRoot.provideGetTransactionsUseCase().execute(year, month),
@@ -123,12 +123,6 @@ export function useAppState() {
     if (!settings) return;
     await compositionRoot.provideUpdateSettingsUseCase().setMonth(month);
     setSettings(settings.withMonth(month));
-  }
-
-  async function changeViewMode(mode: "monthly" | "annual") {
-    if (!settings) return;
-    await compositionRoot.provideUpdateSettingsUseCase().setViewMode(mode);
-    setSettings(settings.withViewMode(mode));
   }
 
   async function toggleTheme() {
@@ -253,7 +247,6 @@ export function useAppState() {
     error,
     changeYear,
     changeMonth,
-    changeViewMode,
     toggleTheme,
     checkForUpdate,
     downloadUpdate,

@@ -3,9 +3,7 @@ import type { Transaction } from "../domain/entities";
 import { useAppState } from "./hooks/useAppState";
 import { TransactionForm, type TransactionFormData } from "./components/TransactionForm";
 import { TransactionList } from "./components/TransactionList";
-import { SummaryCards } from "./components/SummaryCards";
-import { MonthlyView } from "./components/MonthlyView";
-import { AnnualView } from "./components/AnnualView";
+import { BalanceChart } from "./components/BalanceChart";
 import { CategoriesConfig } from "./components/CategoriesConfig";
 import { PersonsConfig } from "./components/PersonsConfig";
 import { ImportView } from "./components/ImportView";
@@ -13,6 +11,7 @@ import { ConflictDialog } from "./components/ConflictDialog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
 import { SimilarTransactionDialog } from "./components/SimilarTransactionDialog";
+import { Modal } from "./components/Modal";
 import {
   app,
   header,
@@ -20,38 +19,86 @@ import {
   yearSelector,
   yearBtn,
   themeToggle,
-  viewControls,
-  viewModeGroup,
-  viewModeBtn,
-  viewModeBtnActive,
-  tabs,
-  tabBtn,
-  tabBtnActive,
+  iconBtn,
+  iconGroup,
+  monthGrid,
+  monthBtn,
+  monthBtnActive,
   section,
   sectionTitle,
-  input,
+  chartGrid,
   dbInfo,
   dbInfoHint,
 } from "./styles";
 
-type Tab = "transactions" | "monthly" | "annual" | "settings" | "import";
+const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+function AddIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function ImportIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
+function ThemeIcon({ resolvedTheme }: { resolvedTheme: "light" | "dark" }) {
+  return resolvedTheme === "dark" ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
 
 function App() {
   const state = useAppState();
-  const [tab, setTab] = useState<Tab>("transactions");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [similarMatches, setSimilarMatches] = useState<Transaction[]>([]);
   const [pendingTransaction, setPendingTransaction] = useState<TransactionFormData | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const currentYear = state.settings?.currentYear ?? new Date().getFullYear();
-  const currentMonth = state.settings?.currentMonth ?? 1;
-  const viewMode = state.settings?.viewMode ?? "monthly";
+  const currentMonth = state.settings?.currentMonth ?? new Date().getMonth() + 1;
 
   async function handleSubmit(data: TransactionFormData) {
     if (editingId) {
       await state.updateTransaction(editingId, data);
       setEditingId(null);
+      setShowAddModal(false);
       return;
     }
 
@@ -63,6 +110,7 @@ function App() {
     }
 
     await state.saveTransaction(data);
+    setShowAddModal(false);
   }
 
   async function confirmAddAsNew() {
@@ -71,6 +119,7 @@ function App() {
     }
     setPendingTransaction(null);
     setSimilarMatches([]);
+    setShowAddModal(false);
   }
 
   async function confirmUpdateExisting(tx: Transaction) {
@@ -80,6 +129,7 @@ function App() {
     }
     setPendingTransaction(null);
     setSimilarMatches([]);
+    setShowAddModal(false);
   }
 
   function cancelSimilarDialog() {
@@ -100,146 +150,98 @@ function App() {
 
   function edit(tx: Transaction) {
     setEditingId(typeof tx.id === "number" ? tx.id : Number(tx.id));
-    setTab("transactions");
+    setShowAddModal(true);
   }
 
   const editingTx = editingId ? state.transactions.find((t) => t.id === editingId) : null;
+
+  const annualData = state.annualSummary.find((a) => a.year === currentYear) ?? {
+    year: currentYear,
+    income: 0,
+    expense: 0,
+    balance: 0,
+  };
+
+  const monthTitle = new Date(currentYear, currentMonth - 1).toLocaleString("es-ES", { month: "long", year: "numeric" });
+  const annualTitle = `Año ${currentYear}`;
+
+  async function confirmImport(transactions: Transaction[]) {
+    const count = await state.confirmImport(transactions);
+    setShowImportModal(false);
+    return count;
+  }
 
   return (
     <div className={app}>
       <header className={header}>
         <h1 className={headerTitle}>Economía Casera</h1>
-        <div className={yearSelector}>
-          <button className={yearBtn} onClick={() => state.changeYear(-1)}>◀</button>
-          <span>{currentYear}</span>
-          <button className={yearBtn} onClick={() => state.changeYear(1)}>▶</button>
+        <div className={iconGroup}>
+          <button className={iconBtn} onClick={() => setShowAddModal(true)} title="Añadir movimiento" aria-label="Añadir movimiento">
+            <AddIcon />
+          </button>
+          <button className={iconBtn} onClick={() => setShowImportModal(true)} title="Importar" aria-label="Importar">
+            <ImportIcon />
+          </button>
+          <button className={iconBtn} onClick={() => setShowSettingsModal(true)} title="Configuración" aria-label="Configuración">
+            <SettingsIcon />
+          </button>
+          <button
+            className={themeToggle}
+            onClick={state.toggleTheme}
+            title={`Tema: ${state.settings?.theme ?? "system"}`}
+            aria-label="Cambiar tema"
+          >
+            <ThemeIcon resolvedTheme={state.resolvedTheme} />
+          </button>
         </div>
-        <button
-          className={themeToggle}
-          onClick={state.toggleTheme}
-          title={`Tema: ${state.settings?.theme ?? "system"}`}
-        >
-          {state.resolvedTheme === "dark" ? "☀️" : "🌙"}
-        </button>
       </header>
 
-      <div className={viewControls}>
-        <div className={viewModeGroup}>
-          <button
-            className={viewMode === "monthly" ? viewModeBtnActive : viewModeBtn}
-            onClick={() => state.changeViewMode("monthly")}
-          >
-            Mensual
+      <nav className={monthGrid}>
+        {MONTHS.map((label, index) => {
+          const month = index + 1;
+          const isActive = month === currentMonth;
+          return (
+            <button
+              key={month}
+              className={isActive ? monthBtnActive : monthBtn}
+              onClick={() => state.changeMonth(month)}
+              aria-pressed={isActive}
+            >
+              {label}
+            </button>
+          );
+        })}
+        <div className={`${yearSelector} ml-auto`}>
+          <button className={yearBtn} onClick={() => state.changeYear(-1)} aria-label="Año anterior">
+            ◀
           </button>
-          <button
-            className={viewMode === "annual" ? viewModeBtnActive : viewModeBtn}
-            onClick={() => state.changeViewMode("annual")}
-          >
-            Anual
+          <span className="min-w-[5ch] text-center">{currentYear}</span>
+          <button className={yearBtn} onClick={() => state.changeYear(1)} aria-label="Año siguiente">
+            ▶
           </button>
         </div>
-        {viewMode === "monthly" && (
-          <select
-            className={input}
-            value={currentMonth}
-            onChange={(e) => state.changeMonth(Number(e.target.value))}
-          >
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {new Date(2000, i).toLocaleString("es-ES", { month: "long" })}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      <nav className={tabs}>
-        <button className={tab === "transactions" ? tabBtnActive : tabBtn} onClick={() => setTab("transactions")}>
-          Movimientos
-        </button>
-        <button className={tab === "monthly" ? tabBtnActive : tabBtn} onClick={() => setTab("monthly")}>
-          Mensual
-        </button>
-        <button className={tab === "annual" ? tabBtnActive : tabBtn} onClick={() => setTab("annual")}>
-          Anual
-        </button>
-        <button className={tab === "import" ? tabBtnActive : tabBtn} onClick={() => setTab("import")}>
-          Importar
-        </button>
-        <button
-          className={tab === "settings" ? tabBtnActive : tabBtn}
-          onClick={() => setTab("settings")}
-          title="Configuración"
-          aria-label="Configuración"
-        >
-          ⚙️
-        </button>
       </nav>
 
       <main>
-        {tab === "transactions" && (
-          <>
-            <SummaryCards
-              summary={state.summary}
-              title={
-                viewMode === "monthly"
-                  ? `Resumen ${new Date(currentYear, currentMonth - 1).toLocaleString("es-ES", { month: "long", year: "numeric" })}`
-                  : `Resumen ${currentYear}`
-              }
-            />
-            <section className={section}>
-              <h2 className={sectionTitle}>{editingId ? "Editar" : "Nuevo"} movimiento</h2>
-              <TransactionForm
-                onSubmit={handleSubmit}
-                onCancel={() => setEditingId(null)}
-                initialValue={editingTx ?? undefined}
-                categories={state.categories}
-                persons={state.persons}
-                year={currentYear}
-                month={currentMonth}
-              />
-            </section>
-            <section className={section}>
-              <h2 className={sectionTitle}>Movimientos</h2>
-              <TransactionList transactions={state.transactions} onEdit={edit} onDelete={handleDelete} />
-            </section>
-          </>
-        )}
+        <section className={chartGrid}>
+          <BalanceChart
+            title={monthTitle.charAt(0).toUpperCase() + monthTitle.slice(1)}
+            income={state.summary.income}
+            expense={state.summary.expense}
+            balance={state.summary.balance}
+          />
+          <BalanceChart
+            title={annualTitle}
+            income={annualData.income}
+            expense={annualData.expense}
+            balance={annualData.balance}
+          />
+        </section>
 
-        {tab === "monthly" && (
-          <section className={section}>
-            <MonthlyView monthlySummary={state.monthlySummary} categories={state.categorySummary} year={currentYear} />
-          </section>
-        )}
-
-        {tab === "annual" && (
-          <section className={section}>
-            <AnnualView annualSummary={state.annualSummary} />
-          </section>
-        )}
-
-        {tab === "settings" && (
-          <section className={section}>
-            <CategoriesConfig
-              categories={state.categories}
-              onAdd={state.createCategory}
-              onUpdate={state.updateCategory}
-              onDelete={state.removeCategory}
-            />
-            <PersonsConfig
-              persons={state.persons}
-              onAdd={state.createPerson}
-              onUpdate={state.updatePerson}
-              onDelete={state.removePerson}
-            />
-          </section>
-        )}
-
-        {tab === "import" && (
-          <section className={section}>
-            <ImportView persons={state.persons} onPreview={state.previewImport} onConfirm={state.confirmImport} />
-          </section>
-        )}
+        <section className={section}>
+          <h2 className={sectionTitle}>Movimientos de {monthTitle}</h2>
+          <TransactionList transactions={state.transactions} onEdit={edit} onDelete={handleDelete} />
+        </section>
       </main>
 
       {state.dbInfo && (
@@ -258,6 +260,43 @@ function App() {
             </>
           )}
         </footer>
+      )}
+
+      {showAddModal && (
+        <Modal title={editingId ? "Editar movimiento" : "Añadir movimiento"} onClose={() => { setShowAddModal(false); setEditingId(null); }}>
+          <TransactionForm
+            onSubmit={handleSubmit}
+            onCancel={() => { setShowAddModal(false); setEditingId(null); }}
+            initialValue={editingTx ?? undefined}
+            categories={state.categories}
+            persons={state.persons}
+            year={currentYear}
+            month={currentMonth}
+          />
+        </Modal>
+      )}
+
+      {showImportModal && (
+        <Modal title="Importar movimientos" onClose={() => setShowImportModal(false)}>
+          <ImportView persons={state.persons} onPreview={state.previewImport} onConfirm={confirmImport} />
+        </Modal>
+      )}
+
+      {showSettingsModal && (
+        <Modal title="Configuración" onClose={() => setShowSettingsModal(false)}>
+          <CategoriesConfig
+            categories={state.categories}
+            onAdd={state.createCategory}
+            onUpdate={state.updateCategory}
+            onDelete={state.removeCategory}
+          />
+          <PersonsConfig
+            persons={state.persons}
+            onAdd={state.createPerson}
+            onUpdate={state.updatePerson}
+            onDelete={state.removePerson}
+          />
+        </Modal>
       )}
 
       {state.showConflict && (
