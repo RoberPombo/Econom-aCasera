@@ -21,7 +21,7 @@ export type ImportRow = {
 
 interface Props {
   persons: Person[];
-  onPreview: (source: ImportSource, file: File) => Promise<{ transactions: Transaction[]; errors: string[] }>;
+  onPreview: (source: ImportSource, file: File) => Promise<{ transactions: Transaction[]; errors: string[]; skipped: number }>;
   onConfirm: (transactions: Transaction[]) => Promise<number>;
 }
 
@@ -73,6 +73,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [parserErrors, setParserErrors] = useState<string[]>([]);
+  const [skipped, setSkipped] = useState(0);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -84,11 +85,13 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setLoading(true);
     setRows([]);
     setParserErrors([]);
+    setSkipped(0);
     try {
       const result = await onPreview(source, file);
       console.log("[ImportView] preview result", result);
       setRows(result.transactions.map(transactionToRow));
       setParserErrors(result.errors);
+      setSkipped(result.skipped);
     } catch (err) {
       setParserErrors([String(err)]);
     } finally {
@@ -191,6 +194,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
               setFile(null);
               setRows([]);
               setParserErrors([]);
+              setSkipped(0);
               if (inputRef.current) inputRef.current.value = "";
             }}
             disabled={loading}
@@ -213,7 +217,11 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
         </div>
       )}
 
-      {!loading && file && rows.length === 0 && parserErrors.length === 0 && (
+      {skipped > 0 && (
+        <p className="mb-4 text-muted">{skipped} movimiento{skipped > 1 ? "s" : ""} omitido{skipped > 1 ? "s" : ""} porque ya existen en la base de datos.</p>
+      )}
+
+      {!loading && file && rows.length === 0 && parserErrors.length === 0 && skipped === 0 && (
         <p className="mb-4 text-muted">No se encontraron movimientos en el archivo. Comprueba que el PDF contenga texto seleccionable.</p>
       )}
 
@@ -320,6 +328,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
               onClick={() => {
                 setRows([]);
                 setParserErrors([]);
+                setSkipped(0);
               }}
             >
               Limpiar

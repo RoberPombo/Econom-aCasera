@@ -151,5 +151,5 @@ export function parseIng(text: string): ImportPreview {
     }
   }
 
-  return { transactions, errors };
+  return { transactions, errors, skipped: 0 };
 }

@@ -60,7 +60,26 @@ async function initDatabase(db: Database): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_transactions_year_month ON transactions(year, month)
   `);
 
+  await migrateDatabase(db);
   await seedDefaults(db);
+}
+
+async function migrateDatabase(db: Database): Promise<void> {
+  try {
+    await db.execute(`ALTER TABLE transactions ADD COLUMN fingerprint TEXT`);
+  } catch {
+    // Column already exists.
+  }
+
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS idx_transactions_fingerprint ON transactions(fingerprint)
+  `);
+
+  await db.execute(`
+    UPDATE transactions
+    SET fingerprint = date || '|' || type || '|' || CAST(ROUND(amount * 100) AS INTEGER) || '|' || concept || '|' || category || '|' || COALESCE(person, '')
+    WHERE fingerprint IS NULL
+  `);
 }
 
 async function seedDefaults(db: Database): Promise<void> {

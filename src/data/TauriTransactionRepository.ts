@@ -2,6 +2,11 @@ import { Transaction } from "../domain/entities";
 import type { SummaryResult, TransactionRepository } from "../domain/repositories/TransactionRepository";
 import { getDatabase } from "./db";
 
+export function computeFingerprint(transaction: { date: string; type: string; amount: number; concept: string; category: string; person: string }): string {
+  const cents = Math.round(transaction.amount * 100);
+  return `${transaction.date}|${transaction.type}|${cents}|${transaction.concept}|${transaction.category}|${transaction.person}`;
+}
+
 export class TauriTransactionRepository implements TransactionRepository {
   async getByYearAndMonth(year: number, month?: number): Promise<Transaction[]> {
     const db = await getDatabase();
@@ -30,18 +35,20 @@ export class TauriTransactionRepository implements TransactionRepository {
 
   async create(transaction: Transaction): Promise<Transaction> {
     const db = await getDatabase();
+    const fingerprint = computeFingerprint(transaction);
     const result = await db.execute(
-      "INSERT INTO transactions (date, type, category, concept, amount, year, month, person) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, transaction.year, transaction.month, transaction.person]
+      "INSERT INTO transactions (date, type, category, concept, amount, year, month, person, fingerprint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, transaction.year, transaction.month, transaction.person, fingerprint]
     );
     return transaction.withUpdates({ id: Number(result.lastInsertId) });
   }
 
   async update(transaction: Transaction): Promise<Transaction> {
     const db = await getDatabase();
+    const fingerprint = computeFingerprint(transaction);
     await db.execute(
-      "UPDATE transactions SET date = ?, type = ?, category = ?, concept = ?, amount = ?, year = ?, month = ?, person = ? WHERE id = ?",
-      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, transaction.year, transaction.month, transaction.person, transaction.id]
+      "UPDATE transactions SET date = ?, type = ?, category = ?, concept = ?, amount = ?, year = ?, month = ?, person = ?, fingerprint = ? WHERE id = ?",
+      [transaction.date, transaction.type, transaction.category, transaction.concept, transaction.amount, transaction.year, transaction.month, transaction.person, fingerprint, transaction.id]
     );
     return transaction;
   }
