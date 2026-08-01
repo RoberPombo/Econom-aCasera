@@ -128,11 +128,13 @@ export function parseIng(text: string): ImportPreview {
 
   const movements: string[] = [];
   let current = "";
+  const amountRegex = /-?\d{1,3}(?:,\d{3})*\.\d{2}|-?\d+\.\d{2}/;
   for (const line of lines) {
-    if (/^\d{2}\/\d{2}\/\d{4}/.test(line)) {
+    const isMovementLine = /^\d{2}\/\d{2}\/\d{4}/.test(line) && amountRegex.test(line);
+    if (isMovementLine) {
       if (current) movements.push(current);
       current = line;
-    } else {
+    } else if (current) {
       current += " " + line;
     }
   }
@@ -142,12 +144,10 @@ export function parseIng(text: string): ImportPreview {
   const errors: string[] = [];
 
   for (const line of movements) {
-    if (!line.includes("IMPORTE") && !line.includes("SALDO")) {
-      try {
-        transactions.push(parseLine(line));
-      } catch (err) {
-        errors.push(String(err));
-      }
+    try {
+      transactions.push(parseLine(line));
+    } catch (err) {
+      errors.push(String(err));
     }
   }
 
