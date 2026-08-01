@@ -174,9 +174,9 @@ export function useAppState() {
     await loadData();
   }
 
-  async function findSimilarTransactions(date: string, category: string, type: "income" | "expense") {
+  async function findSimilarTransactions(date: string, category: string, type: "income" | "expense", amount: number) {
     const all = await compositionRoot.provideGetTransactionsByDateUseCase().execute(date);
-    return all.filter((tx) => tx.category === category && tx.type === type);
+    return all.filter((tx) => tx.category === category && tx.type === type && Math.abs(tx.amount - amount) < 0.005);
   }
 
   async function deleteTransaction(id: number) {

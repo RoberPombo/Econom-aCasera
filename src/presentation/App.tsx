@@ -55,7 +55,7 @@ function App() {
       return;
     }
 
-    const matches = await state.findSimilarTransactions(data.date, data.category, data.type);
+    const matches = await state.findSimilarTransactions(data.date, data.category, data.type, data.amount);
     if (matches.length > 0) {
       setPendingTransaction(data);
       setSimilarMatches(matches);

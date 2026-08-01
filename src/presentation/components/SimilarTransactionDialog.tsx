@@ -16,8 +16,8 @@ export function SimilarTransactionDialog({ matches, onUpdate, onAddNew, onCancel
   return (
     <div className={modalOverlay}>
       <div className={modal}>
-        <h2>Gasto similar encontrado</h2>
-        <p>Ya existe al menos un movimiento con la misma fecha y categoría. ¿Quieres actualizar uno de ellos o añadir uno nuevo?</p>
+        <h2>Movimiento similar encontrado</h2>
+        <p>Ya existe al menos un movimiento con la misma fecha e importe. ¿Quieres actualizar uno de ellos o añadir uno nuevo?</p>
 
         <div className={tableWrap}>
           <table className={table}>
