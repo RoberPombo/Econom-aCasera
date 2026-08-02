@@ -87,7 +87,7 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
       </div>
       <div className={formRow}>
         <label className={label}>Categoría</label>
-        <select
+          <select
           className={input}
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -95,23 +95,23 @@ export function TransactionForm({ onSubmit, onCancel, initialValue, categories, 
         >
           <option value="">Selecciona...</option>
           {filteredCategories.map((c) => (
-            <option key={c.id} value={c.name}>
-              {c.name}
+            <option key={c.id} value={c.key}>
+              {c.label}
             </option>
           ))}
         </select>
       </div>
       <div className={formRow}>
         <label className={label}>Persona</label>
-        <select
+          <select
           className={input}
           value={form.person}
           onChange={(e) => setForm({ ...form, person: e.target.value })}
         >
           <option value="">Sin asignar</option>
           {activePersons.map((p) => (
-            <option key={p.id} value={p.name}>
-              {p.name}
+            <option key={p.id} value={p.key}>
+              {p.label}
             </option>
           ))}
         </select>

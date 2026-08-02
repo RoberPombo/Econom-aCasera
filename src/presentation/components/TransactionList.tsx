@@ -1,13 +1,15 @@
-import type { Transaction } from "../../domain/entities";
+import type { Category, Person, Transaction } from "../../domain/entities";
 import { tableWrap, table, th, td, btnAction, income, expense } from "../styles";
 
 interface Props {
   transactions: Transaction[];
+  categories: Category[];
+  persons: Person[];
   onEdit: (t: Transaction) => void;
   onDelete: (id: number) => void;
 }
 
-export function TransactionList({ transactions, onEdit, onDelete }: Props) {
+export function TransactionList({ transactions, categories, persons, onEdit, onDelete }: Props) {
   function formatMoney(n: number) {
     return n.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
   }
@@ -16,6 +18,9 @@ export function TransactionList({ transactions, onEdit, onDelete }: Props) {
     const [y, m, day] = d.split("-");
     return `${day}/${m}/${y}`;
   }
+
+  const categoryLabels = new Map(categories.map((c) => [c.key, c.label]));
+  const personLabels = new Map(persons.map((p) => [p.key, p.label]));
 
   return (
     <div className={tableWrap}>
@@ -36,8 +41,8 @@ export function TransactionList({ transactions, onEdit, onDelete }: Props) {
             <tr key={t.id}>
               <td className={td}>{formatDate(t.date)}</td>
               <td className={td}>{t.type === "income" ? "Ingreso" : "Gasto"}</td>
-              <td className={td}>{t.category}</td>
-              <td className={td}>{t.person || "—"}</td>
+              <td className={td}>{categoryLabels.get(t.category) || t.category}</td>
+              <td className={td}>{personLabels.get(t.person) || t.person || "—"}</td>
               <td className={td}>{t.concept}</td>
               <td className={`${td} ${t.type === "income" ? income : expense}`}>{formatMoney(t.amount)}</td>
               <td className={`${td} whitespace-nowrap`}>

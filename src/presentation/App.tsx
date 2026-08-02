@@ -240,7 +240,7 @@ function App() {
 
         <section className={section}>
           <h2 className={sectionTitle}>Movimientos de {monthTitle}</h2>
-          <TransactionList transactions={state.transactions} onEdit={edit} onDelete={handleDelete} />
+          <TransactionList transactions={state.transactions} categories={state.categories} persons={state.persons} onEdit={edit} onDelete={handleDelete} />
         </section>
       </main>
 

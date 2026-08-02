@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Transaction } from "../../domain/entities";
 import type { Person } from "../../domain/entities";
+import { normalizeKey } from "../../domain/entities/Key";
 import type { ImportSource } from "../../domain/entities/ImportSource";
 import { importSources, importSourceLabels, upcomingImportSources } from "../../domain/entities/ImportSource";
 import { btn, btnSecondary, hint, sectionTitle, table, tableWrap, td, th } from "../styles";
@@ -40,10 +41,10 @@ function rowToTransaction(row: ImportRow): Transaction {
   return Transaction.create({
     date: row.date,
     type: row.type,
-    category: row.category.trim(),
+    category: normalizeKey(row.category.trim()),
     concept: row.concept.trim(),
     amount: parseFloat(row.amount) || 0,
-    person: row.person.trim(),
+    person: normalizeKey(row.person.trim()),
   });
 }
 
@@ -297,8 +298,8 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                         >
                           <option value="">Sin asignar</option>
                           {activePersons.map((p) => (
-                            <option key={String(p.id)} value={p.name}>
-                              {p.name}
+                            <option key={String(p.id)} value={p.key}>
+                              {p.label}
                             </option>
                           ))}
                         </select>

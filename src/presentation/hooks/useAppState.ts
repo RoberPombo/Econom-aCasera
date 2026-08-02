@@ -178,8 +178,8 @@ export function useAppState() {
     await loadData();
   }
 
-  async function createCategory(name: string, type: "income" | "expense") {
-    await compositionRoot.provideCreateCategoryUseCase().execute(name, type);
+  async function createCategory(label: string, type: "income" | "expense") {
+    await compositionRoot.provideCreateCategoryUseCase().execute(label, type);
     await loadData();
   }
 
@@ -193,8 +193,8 @@ export function useAppState() {
     await loadData();
   }
 
-  async function createPerson(name: string) {
-    await compositionRoot.provideCreatePersonUseCase().execute(name);
+  async function createPerson(label: string) {
+    await compositionRoot.provideCreatePersonUseCase().execute(label);
     await loadData();
   }
 

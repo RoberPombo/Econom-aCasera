@@ -20,8 +20,8 @@ export class CreatePersonUseCase {
     this.repository = repository;
   }
 
-  async execute(name: string): Promise<Person> {
-    return this.repository.create(name);
+  async execute(label: string): Promise<Person> {
+    return this.repository.create(label);
   }
 }
 

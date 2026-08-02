@@ -20,8 +20,8 @@ export class CreateCategoryUseCase {
     this.repository = repository;
   }
 
-  async execute(name: string, type: "income" | "expense"): Promise<Category> {
-    return this.repository.create(name, type);
+  async execute(label: string, type: "income" | "expense"): Promise<Category> {
+    return this.repository.create(label, type);
   }
 }
 

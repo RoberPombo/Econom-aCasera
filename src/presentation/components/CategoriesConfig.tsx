@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Category } from "../../domain/entities";
+import { normalizeKey } from "../../domain/entities/Key";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { inlineForm, inputInline, btn, btnItem, listReset, listItem, listItemInactive, sectionTitle } from "../styles";
+import { inputInline, btn, btnItem, listReset, listItem, listItemInactive, sectionTitle } from "../styles";
 
 interface Props {
   categories: Category[];
@@ -10,9 +11,9 @@ interface Props {
   onDelete: (id: number) => void;
 }
 
-function AddIcon() {
+function AddIcon({ disabled }: { disabled?: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={disabled ? 0.5 : 1}>
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
@@ -23,76 +24,66 @@ function CategorySection({
   title,
   type,
   items,
-  addingType,
-  setAddingType,
-  newName,
-  setNewName,
+  allItems,
   onAdd,
-  onToggle,
+  onUpdate,
   onDelete,
 }: {
   title: string;
   type: "income" | "expense";
   items: Category[];
-  addingType: "income" | "expense" | null;
-  setAddingType: (type: "income" | "expense" | null) => void;
-  newName: string;
-  setNewName: (name: string) => void;
+  allItems: Category[];
   onAdd: (name: string, type: "income" | "expense") => void;
-  onToggle: (cat: Category) => void;
-  onDelete: (cat: Category) => void;
+  onUpdate: (category: Category) => void;
+  onDelete: (category: Category) => void;
 }) {
+  const [newLabel, setNewLabel] = useState("");
+  const keyMap = useMemo(() => new Map(allItems.map((c) => [c.key, c])), [allItems]);
+  const newKey = normalizeKey(newLabel);
+  const existingByKey = newKey ? keyMap.get(newKey) : undefined;
+  const canAdd = newLabel.trim().length > 0 && newKey.length > 0 && (!existingByKey || existingByKey.type !== type);
+  const duplicateInSameType = existingByKey && existingByKey.type === type;
+
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!newName.trim()) return;
-    onAdd(newName.trim(), type);
-    setNewName("");
-    setAddingType(null);
+    if (!canAdd) return;
+    onAdd(newLabel.trim(), type);
+    setNewLabel("");
   }
-
-  const isAdding = addingType === type;
 
   return (
     <div className="mb-6">
-      <div className="mb-3 flex items-center justify-between">
+      <form onSubmit={handleAdd} className="mb-3 flex flex-wrap items-center gap-2">
         <h3 className="m-0 text-[1.1rem] font-bold">{title}</h3>
-        {!isAdding && (
-          <button
-            type="button"
-            className={`${btn} px-2 py-1 text-[0.85rem]`}
-            onClick={() => setAddingType(type)}
-            title={`Añadir categoría de ${title.toLowerCase()}`}
-            aria-label={`Añadir categoría de ${title.toLowerCase()}`}
-          >
-            <AddIcon />
-          </button>
-        )}
-      </div>
+        <input
+          className={`${inputInline} max-w-[220px] text-[0.9rem]`}
+          type="text"
+          placeholder={`Nueva ${title.toLowerCase().slice(0, -1)}`}
+          value={newLabel}
+          onChange={(e) => setNewLabel(e.target.value)}
+        />
+        <button
+          type="submit"
+          className={`${btn} px-2 py-1 text-[0.85rem]`}
+          disabled={!canAdd}
+          title={canAdd ? `Añadir ${title.toLowerCase()}` : "Escribe un nombre válido"}
+        >
+          <AddIcon disabled={!canAdd} />
+        </button>
+      </form>
 
-      {isAdding && (
-        <form onSubmit={handleAdd} className={`${inlineForm} mb-3`}>
-          <input
-            className={inputInline}
-            type="text"
-            placeholder={`Nueva categoría de ${title.toLowerCase()}`}
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            required
-            autoFocus
-          />
-          <button type="submit" className={`${btn} text-[0.85rem]`}>Añadir</button>
-          <button type="button" className={`${btn} bg-muted text-[0.85rem]`} onClick={() => setAddingType(null)}>
-            Cancelar
-          </button>
-        </form>
+      {duplicateInSameType && (
+        <p className="mb-2 text-[0.85rem] text-expense">
+          Ya existe "{existingByKey.label}". Edita la etiqueta si quieres cambiarla.
+        </p>
       )}
 
       <ul className={listReset}>
         {items.map((c) => (
           <li key={c.id} className={`${listItem} ${c.active ? "" : listItemInactive}`}>
-            {c.name}
+            <EditableLabel value={c.label} onSave={(label) => onUpdate(c.withLabel(label))} />
             <div>
-              <button className={btnItem} onClick={() => onToggle(c)}>
+              <button className={btnItem} onClick={() => onUpdate(c.toggleActive())}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
               <button className={`${btnItem} bg-[#dc2626]`} onClick={() => onDelete(c)}>
@@ -106,14 +97,51 @@ function CategorySection({
   );
 }
 
-export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Props) {
-  const [newName, setNewName] = useState("");
-  const [addingType, setAddingType] = useState<"income" | "expense" | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<Category | null>(null);
+function EditableLabel({ value, onSave }: { value: string; onSave: (value: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
 
-  function toggleActive(cat: Category) {
-    onUpdate(cat.toggleActive());
+  if (editing) {
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const trimmed = draft.trim();
+          if (trimmed && trimmed !== value) {
+            onSave(trimmed);
+          }
+          setEditing(false);
+        }}
+        className="flex items-center gap-2"
+      >
+        <input
+          className="w-full min-w-[120px] rounded-lg border border-line bg-surface p-1 text-[0.95rem] text-body"
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          autoFocus
+          onBlur={() => setEditing(false)}
+        />
+      </form>
+    );
   }
+
+  return (
+    <span
+      className="cursor-pointer hover:underline"
+      onClick={() => {
+        setDraft(value);
+        setEditing(true);
+      }}
+      title="Haz clic para editar"
+    >
+      {value}
+    </span>
+  );
+}
+
+export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Props) {
+  const [pendingDelete, setPendingDelete] = useState<Category | null>(null);
 
   function handleDelete(cat: Category) {
     setPendingDelete(cat);
@@ -131,18 +159,15 @@ export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Prop
 
   return (
     <div>
-      <h2 className={sectionTitle}>Configuración de categorías</h2>
+      <h2 className={sectionTitle}>Categorías</h2>
 
       <CategorySection
         title="Gastos"
         type="expense"
         items={expense}
-        addingType={addingType}
-        setAddingType={setAddingType}
-        newName={newName}
-        setNewName={setNewName}
+        allItems={categories}
         onAdd={onAdd}
-        onToggle={toggleActive}
+        onUpdate={onUpdate}
         onDelete={handleDelete}
       />
 
@@ -150,18 +175,15 @@ export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Prop
         title="Ingresos"
         type="income"
         items={income}
-        addingType={addingType}
-        setAddingType={setAddingType}
-        newName={newName}
-        setNewName={setNewName}
+        allItems={categories}
         onAdd={onAdd}
-        onToggle={toggleActive}
+        onUpdate={onUpdate}
         onDelete={handleDelete}
       />
 
       {pendingDelete && (
         <ConfirmDialog
-          message={`¿Eliminar "${pendingDelete.name}"?`}
+          message={`¿Eliminar "${pendingDelete.label}"?`}
           onConfirm={confirmDelete}
           onCancel={() => setPendingDelete(null)}
         />
