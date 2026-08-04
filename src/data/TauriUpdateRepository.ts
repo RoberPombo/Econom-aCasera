@@ -4,14 +4,19 @@ import type { UpdateInfo, UpdateRepository } from "../domain/repositories/Update
 
 export class TauriUpdateRepository implements UpdateRepository {
   async check(): Promise<UpdateInfo | null> {
-    const update = await check();
-    if (!update) return null;
-    const currentVersion = await getVersion();
-    return {
-      version: update.version,
-      downloadUrl: "",
-      currentVersion,
-    };
+    try {
+      const update = await check();
+      if (!update) return null;
+      const currentVersion = await getVersion();
+      return {
+        version: update.version,
+        downloadUrl: "",
+        currentVersion,
+      };
+    } catch {
+      // Updater endpoint may not be available yet (e.g. dev mode or no releases published).
+      return null;
+    }
   }
 
   async download(): Promise<{ ok: boolean; error?: string }> {
