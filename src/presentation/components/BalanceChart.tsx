@@ -24,7 +24,7 @@ export function BalanceChart({ title, income, expense, balance }: BalanceChartPr
     <div className="rounded-lg border border-line bg-surface p-4 shadow-card">
       <h3 className="mb-3 text-center text-[1rem] font-semibold">{title}</h3>
 
-      <svg viewBox="0 0 200 200" className="mx-auto block h-auto w-full max-w-[220px]">
+      <svg viewBox="0 0 200 200" className="mx-auto block h-auto w-full max-w-[220px] tablet:max-w-[260px] ultrawide:max-w-[320px]">
         {/* background ring */}
         <circle
           cx={cx}

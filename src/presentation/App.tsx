@@ -27,6 +27,8 @@ import {
   section,
   sectionTitle,
   chartGrid,
+  chartSection,
+  mainLayout,
   dbInfo,
   dbInfoHint,
 } from "./styles";
@@ -222,20 +224,22 @@ function App() {
         </div>
       </nav>
 
-      <main>
-        <section className={chartGrid}>
-          <BalanceChart
-            title={monthTitle.charAt(0).toUpperCase() + monthTitle.slice(1)}
-            income={state.summary.income}
-            expense={state.summary.expense}
-            balance={state.summary.balance}
-          />
-          <BalanceChart
-            title={annualTitle}
-            income={annualData.income}
-            expense={annualData.expense}
-            balance={annualData.balance}
-          />
+      <main className={mainLayout}>
+        <section className={chartSection}>
+          <div className={chartGrid}>
+            <BalanceChart
+              title={monthTitle.charAt(0).toUpperCase() + monthTitle.slice(1)}
+              income={state.summary.income}
+              expense={state.summary.expense}
+              balance={state.summary.balance}
+            />
+            <BalanceChart
+              title={annualTitle}
+              income={annualData.income}
+              expense={annualData.expense}
+              balance={annualData.balance}
+            />
+          </div>
         </section>
 
         <section className={section}>
@@ -277,7 +281,7 @@ function App() {
       )}
 
       {showImportModal && (
-        <Modal title="Importar movimientos" onClose={() => setShowImportModal(false)}>
+        <Modal title="Importar movimientos" onClose={() => setShowImportModal(false)} wide>
           <ImportView persons={state.persons} onPreview={state.previewImport} onConfirm={confirmImport} />
         </Modal>
       )}
