@@ -86,7 +86,7 @@ function CategorySection({
               <button className={btnItem} onClick={() => onUpdate(c.toggleActive())}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
-              <button className={`${btnItem} bg-[#dc2626]`} onClick={() => onDelete(c)}>
+              <button className={`${btnItem} bg-[#dc2626] text-white`} onClick={() => onDelete(c)}>
                 Eliminar
               </button>
             </div>

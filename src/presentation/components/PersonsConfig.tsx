@@ -126,7 +126,7 @@ export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
               <button className={btnItem} onClick={() => onUpdate(p.toggleActive())}>
                 {p.active ? "Desactivar" : "Activar"}
               </button>
-              <button className={`${btnItem} bg-[#dc2626]`} onClick={() => handleDelete(p)}>
+              <button className={`${btnItem} bg-[#dc2626] text-white`} onClick={() => handleDelete(p)}>
                 Eliminar
               </button>
             </div>
