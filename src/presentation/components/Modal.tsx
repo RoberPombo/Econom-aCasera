@@ -1,15 +1,16 @@
-import { modal, modalOverlay } from "../styles";
+import { modal, modalOverlay, modalWide } from "../styles";
 
 interface ModalProps {
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  wide?: boolean;
 }
 
-export function Modal({ title, children, onClose }: ModalProps) {
+export function Modal({ title, children, onClose, wide }: ModalProps) {
   return (
     <div className={modalOverlay} onClick={onClose}>
-      <div className={`${modal} max-h-[90vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
+      <div className={`${modal} ${wide ? modalWide : ""} max-h-[90vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="m-0 text-[1.25rem] font-bold">{title}</h2>
           <button

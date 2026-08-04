@@ -26,13 +26,19 @@ interface Props {
   onConfirm: (transactions: Transaction[]) => Promise<number>;
 }
 
+function formatAmount(value: number | string): string {
+  const num = typeof value === "number" ? value : parseFloat(value.replace(",", "."));
+  if (isNaN(num)) return String(value);
+  return num.toFixed(2).replace(".", ",");
+}
+
 function transactionToRow(tx: Transaction): ImportRow {
   return {
     date: tx.date,
     type: tx.type,
     category: tx.category,
     concept: tx.concept,
-    amount: String(tx.amount),
+    amount: formatAmount(tx.amount),
     person: tx.person,
   };
 }
@@ -43,7 +49,7 @@ function rowToTransaction(row: ImportRow): Transaction {
     type: row.type,
     category: normalizeKey(row.category.trim()),
     concept: row.concept.trim(),
-    amount: parseFloat(row.amount) || 0,
+    amount: parseFloat(row.amount.replace(",", ".")) || 0,
     person: normalizeKey(row.person.trim()),
   });
 }
@@ -62,7 +68,7 @@ function validateRow(row: ImportRow, index: number): string[] {
   if (!row.concept.trim()) {
     errors.push(`Fila ${index + 1}: concepto vacío`);
   }
-  const amount = parseFloat(row.amount);
+  const amount = parseFloat(row.amount.replace(",", "."));
   if (isNaN(amount) || amount <= 0) {
     errors.push(`Fila ${index + 1}: importe inválido`);
   }
@@ -229,16 +235,16 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
       {rows.length > 0 && (
         <>
           <div className={tableWrap}>
-            <table className={table}>
+            <table className={`${table} table-fixed`}>
               <thead>
                 <tr>
-                  <th className={th}>Fecha</th>
-                  <th className={th}>Tipo</th>
-                  <th className={th}>Categoría</th>
-                  <th className={th}>Concepto</th>
-                  <th className={th}>Importe</th>
-                  <th className={th}>Persona</th>
-                  <th className={th}></th>
+                  <th className={`${th} w-[120px]`}>Fecha</th>
+                  <th className={`${th} w-[120px]`}>Tipo</th>
+                  <th className={`${th} w-[130px]`}>Categoría</th>
+                  <th className={`${th} min-w-[220px]`}>Concepto</th>
+                  <th className={`${th} w-[115px]`}>Importe (€)</th>
+                  <th className={`${th} w-[160px]`}>Persona</th>
+                  <th className={`${th} w-[80px]`}></th>
                 </tr>
               </thead>
               <tbody>
@@ -246,7 +252,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                   const rowErrors = validateRow(row, index).length > 0;
                   return (
                     <tr key={index} className={rowErrors ? "bg-expense/10" : undefined}>
-                      <td className={td}>
+                      <td className={`${td} align-top`}>
                         <input
                           className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
                           type="date"
@@ -254,7 +260,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                           onChange={(e) => updateRow(index, { date: e.target.value })}
                         />
                       </td>
-                      <td className={td}>
+                      <td className={`${td} align-top`}>
                         <select
                           className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
                           value={row.type}
@@ -264,7 +270,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                           <option value="expense">Gasto</option>
                         </select>
                       </td>
-                      <td className={td}>
+                      <td className={`${td} align-top`}>
                         <input
                           className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
                           type="text"
@@ -272,25 +278,25 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                           onChange={(e) => updateRow(index, { category: e.target.value })}
                         />
                       </td>
-                      <td className={td}>
-                        <input
-                          className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
-                          type="text"
+                      <td className={`${td} align-top`}>
+                        <textarea
+                          className="w-full min-h-[3rem] resize-y rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
+                          rows={2}
                           value={row.concept}
-                          onChange={(e) => updateRow(index, { concept: e.target.value })}
+                          onChange={(e) => updateRow(index, { concept: e.target.value.replace(/\n/g, " ") })}
                         />
                       </td>
-                      <td className={td}>
+                      <td className={`${td} align-top`}>
                         <input
-                          className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
-                          type="number"
-                          step="0.01"
-                          min="0.01"
+                          className="w-full rounded-lg border border-line bg-surface p-2 text-right text-[0.95rem] text-body"
+                          type="text"
+                          inputMode="decimal"
                           value={row.amount}
                           onChange={(e) => updateRow(index, { amount: e.target.value })}
+                          onBlur={() => updateRow(index, { amount: formatAmount(row.amount) })}
                         />
                       </td>
-                      <td className={td}>
+                      <td className={`${td} align-top`}>
                         <select
                           className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
                           value={row.person}
@@ -304,7 +310,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                           ))}
                         </select>
                       </td>
-                      <td className={td}>
+                      <td className={`${td} align-top`}>
                         <button className={`${btnSecondary} px-2 py-1 text-[0.85rem]`} onClick={() => removeRow(index)}>
                           Quitar
                         </button>
