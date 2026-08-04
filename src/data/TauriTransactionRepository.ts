@@ -1,11 +1,9 @@
 import { Transaction } from "../domain/entities";
 import type { SummaryResult, TransactionRepository } from "../domain/repositories/TransactionRepository";
 import { getDatabase } from "./db";
+import { computeFingerprint } from "./computeFingerprint";
 
-export function computeFingerprint(transaction: { date: string; type: string; amount: number; concept: string; category: string; person: string }): string {
-  const cents = Math.round(transaction.amount * 100);
-  return `${transaction.date}|${transaction.type}|${cents}|${transaction.concept}|${transaction.category}|${transaction.person}`;
-}
+export { computeFingerprint };
 
 export class TauriTransactionRepository implements TransactionRepository {
   async getByYearAndMonth(year: number, month?: number): Promise<Transaction[]> {

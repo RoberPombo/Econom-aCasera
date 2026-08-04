@@ -1,5 +1,6 @@
 import Database from "@tauri-apps/plugin-sql";
 import { normalizeKey } from "../domain/entities/Key";
+import { computeFingerprint } from "./computeFingerprint";
 
 let dbInstance: Database | null = null;
 
@@ -68,6 +69,7 @@ async function initDatabase(db: Database): Promise<void> {
 }
 
 async function migrateDatabase(db: Database): Promise<void> {
+  await migrateTransactionsColumns(db);
   await migrateConfigTable(db, "categories", ["type"]);
   await migrateConfigTable(db, "persons", []);
 
@@ -81,11 +83,37 @@ async function migrateDatabase(db: Database): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_transactions_fingerprint ON transactions(fingerprint)
   `);
 
-  await db.execute(`
-    UPDATE transactions
-    SET fingerprint = date || '|' || type || '|' || CAST(ROUND(amount * 100) AS INTEGER) || '|' || concept || '|' || category || '|' || COALESCE(person, '')
-    WHERE fingerprint IS NULL
-  `);
+  const rows = await db.select<{ id: number; date: string; type: string; amount: number; concept: string; category: string; person: string }[]>(
+    "SELECT id, date, type, amount, concept, category, COALESCE(person, '') as person FROM transactions"
+  );
+  for (const row of rows) {
+    const fingerprint = computeFingerprint(row);
+    await db.execute("UPDATE transactions SET fingerprint = ? WHERE id = ?", [fingerprint, row.id]);
+  }
+}
+
+async function migrateTransactionsColumns(db: Database): Promise<void> {
+  const columns = await db.select<{ name: string }[]>(`PRAGMA table_info(transactions)`);
+  const hasYear = columns.some((c) => c.name === "year");
+
+  if (!hasYear) {
+    await db.execute(`ALTER TABLE transactions ADD COLUMN year INTEGER NOT NULL DEFAULT 0`);
+    await db.execute(`ALTER TABLE transactions ADD COLUMN month INTEGER NOT NULL DEFAULT 0`);
+  }
+
+  if (!columns.some((c) => c.name === "person")) {
+    await db.execute(`ALTER TABLE transactions ADD COLUMN person TEXT DEFAULT ''`);
+  }
+
+  if (!hasYear) {
+    await db.execute(`
+      UPDATE transactions
+      SET year = CAST(substr(date, 1, 4) AS INTEGER),
+          month = CAST(substr(date, 6, 2) AS INTEGER),
+          person = COALESCE(person, '')
+      WHERE year = 0 OR month = 0
+    `);
+  }
 }
 
 async function migrateConfigTable(db: Database, table: string, extraColumns: string[]): Promise<void> {

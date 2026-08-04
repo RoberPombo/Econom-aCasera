@@ -5,7 +5,7 @@ import type { ImportSource } from "../domain/entities/ImportSource";
 import { getDatabase } from "./db";
 import { parseExcel } from "./excelParser";
 import { parseIng } from "./parsers/ingParser";
-import { computeFingerprint } from "./TauriTransactionRepository";
+import { computeFingerprint } from "./computeFingerprint";
 
 export class TauriImportRepository implements ImportRepository {
   async preview(source: ImportSource, file: File): Promise<ImportPreview> {
@@ -53,14 +53,23 @@ export class TauriImportRepository implements ImportRepository {
   async confirm(transactions: ImportPreview["transactions"]): Promise<number> {
     const db = await getDatabase();
 
+    const existingRows = await db.select<{ fingerprint: string }[]>("SELECT fingerprint FROM transactions WHERE fingerprint IS NOT NULL");
+    const existing = new Set(existingRows.map((r) => r.fingerprint));
+
+    let inserted = 0;
     for (const tx of transactions) {
       const fingerprint = computeFingerprint(tx);
+      if (existing.has(fingerprint)) {
+        continue;
+      }
       await db.execute(
         "INSERT INTO transactions (date, type, category, concept, amount, year, month, person, fingerprint) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [tx.date, tx.type, tx.category, tx.concept || tx.category, tx.amount, tx.year, tx.month, tx.person || "", fingerprint]
       );
+      existing.add(fingerprint);
+      inserted++;
     }
 
-    return transactions.length;
+    return inserted;
   }
 }
