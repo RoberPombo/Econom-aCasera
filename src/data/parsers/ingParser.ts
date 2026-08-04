@@ -31,6 +31,12 @@ const descriptionMarkers = [
   "Devolución",
 ].sort((a, b) => b.length - a.length);
 
+const ING_NUMBER_PATTERN = "-?\\d{1,3}(?:,\\d{3})*\\.\\d{2}";
+
+function getIngNumberRegex(): RegExp {
+  return new RegExp(ING_NUMBER_PATTERN, "g");
+}
+
 function extractCategory(detail: string): string {
   for (const cat of ingCategories) {
     if (detail.startsWith(cat)) {
@@ -75,44 +81,108 @@ function parseNumber(value: string): number {
   return parseFloat(normalized);
 }
 
+function roundCents(value: number): number {
+  return Number(value.toFixed(2));
+}
+
 function parseDate(value: string): string {
   const [day, month, year] = value.split("/");
   return `${year}-${month}-${day}`;
 }
 
-function parseLine(line: string): Transaction {
+function formatWithCommas(amount: number, negative: boolean): string {
+  const [intPart, decPart] = amount.toFixed(2).split(".");
+  const intWithCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${negative ? "-" : ""}${intWithCommas}.${decPart}`;
+}
+
+function formatWithoutCommas(amount: number, negative: boolean): string {
+  return `${negative ? "-" : ""}${amount.toFixed(2)}`;
+}
+
+function removeAmountFromDetail(detail: string, amount: number): string {
+  const trimmed = detail.trimEnd();
+  const absAmount = Math.abs(amount);
+  const negative = amount < 0;
+
+  const candidates = [
+    formatWithCommas(absAmount, negative),
+    formatWithoutCommas(absAmount, negative),
+  ];
+
+  for (const candidate of candidates) {
+    if (trimmed.endsWith(candidate)) {
+      return trimmed.substring(0, trimmed.length - candidate.length).trimEnd();
+    }
+  }
+
+  // Fallback: return the detail untouched if we cannot locate the amount.
+  return detail;
+}
+
+interface ParsedMovement {
+  date: string;
+  detail: string;
+  balance: number;
+  line: string;
+}
+
+function parseMovementLine(line: string): ParsedMovement | null {
   const dateMatch = line.match(/^(\d{2}\/\d{2}\/\d{4})/);
   if (!dateMatch) {
-    throw new Error(`No se reconoce la fecha en la línea: ${line}`);
+    return null;
   }
 
-  const numberRegex = /-?\d{1,3}(?:,\d{3})*\.\d{2}|-?\d+\.\d{2}/g;
-  const numbers = [...line.matchAll(numberRegex)].map((m) => m[0]);
-  if (numbers.length < 2) {
-    throw new Error(`No se encontraron importe y saldo en la línea: ${line}`);
+  const matches = [...line.matchAll(getIngNumberRegex())];
+  if (matches.length === 0) {
+    return null;
   }
 
-  const amountStr = numbers[numbers.length - 2];
-  const amountIndex = line.lastIndexOf(amountStr);
-  const detail = line.substring(dateMatch[0].length, amountIndex).trim();
-
-  const signedAmount = parseNumber(amountStr);
-  if (isNaN(signedAmount) || signedAmount === 0) {
-    throw new Error(`Importe inválido en la línea: ${line}`);
+  const balanceMatch = matches[matches.length - 1];
+  const balanceStr = balanceMatch[0];
+  const balanceIndex = balanceMatch.index ?? line.lastIndexOf(balanceStr);
+  const balance = parseNumber(balanceStr);
+  if (isNaN(balance)) {
+    return null;
   }
 
-  const type = signedAmount > 0 ? "income" : "expense";
-  const amount = Math.abs(signedAmount);
-  const category = extractCategory(detail);
-  const concept = extractConcept(detail, category);
+  const detail = line.substring(dateMatch[0].length, balanceIndex).trim();
+
+  return {
+    date: parseDate(dateMatch[1]),
+    detail,
+    balance,
+    line,
+  };
+}
+
+function parseAmountFromLine(line: string): number | null {
+  const matches = [...line.matchAll(getIngNumberRegex())];
+  if (matches.length < 2) {
+    return null;
+  }
+  const amountStr = matches[matches.length - 2][0];
+  const amount = parseNumber(amountStr);
+  return isNaN(amount) ? null : amount;
+}
+
+function buildTransaction(movement: ParsedMovement, amount: number): Transaction {
+  if (amount === 0 || isNaN(amount)) {
+    throw new Error(`Importe inválido en la línea: ${movement.line}`);
+  }
+
+  const type = amount > 0 ? "income" : "expense";
+  const detailWithoutAmount = removeAmountFromDetail(movement.detail, amount);
+  const category = extractCategory(detailWithoutAmount);
+  const concept = extractConcept(detailWithoutAmount, category);
   const appCategory = mapCategory(category, type);
 
   return Transaction.create({
-    date: parseDate(dateMatch[1]),
+    date: movement.date,
     type,
     category: appCategory,
     concept,
-    amount,
+    amount: Math.abs(amount),
   });
 }
 
@@ -126,26 +196,42 @@ export function parseIng(text: string): ImportPreview {
     .map((l) => l.trim())
     .filter(Boolean);
 
-  const movements: string[] = [];
-  let current = "";
-  const amountRegex = /-?\d{1,3}(?:,\d{3})*\.\d{2}|-?\d+\.\d{2}/;
+  const movements: ParsedMovement[] = [];
+  let currentLine = "";
   for (const line of lines) {
-    const isMovementLine = /^\d{2}\/\d{2}\/\d{4}/.test(line) && amountRegex.test(line);
+    const isMovementLine = /^\d{2}\/\d{2}\/\d{4}/.test(line) && new RegExp(ING_NUMBER_PATTERN).test(line);
     if (isMovementLine) {
-      if (current) movements.push(current);
-      current = line;
-    } else if (current) {
-      current += " " + line;
+      if (currentLine) {
+        const parsed = parseMovementLine(currentLine);
+        if (parsed) movements.push(parsed);
+      }
+      currentLine = line;
+    } else if (currentLine) {
+      currentLine += " " + line;
     }
   }
-  if (current) movements.push(current);
+  if (currentLine) {
+    const parsed = parseMovementLine(currentLine);
+    if (parsed) movements.push(parsed);
+  }
 
   const transactions: Transaction[] = [];
   const errors: string[] = [];
 
-  for (const line of movements) {
+  for (let i = 0; i < movements.length; i++) {
     try {
-      transactions.push(parseLine(line));
+      const movement = movements[i];
+      let amount: number;
+      if (i < movements.length - 1) {
+        amount = roundCents(movement.balance - movements[i + 1].balance);
+      } else {
+        const parsed = parseAmountFromLine(movement.line);
+        if (parsed === null) {
+          throw new Error(`No se pudo determinar el importe en la línea: ${movement.line}`);
+        }
+        amount = roundCents(parsed);
+      }
+      transactions.push(buildTransaction(movement, amount));
     } catch (err) {
       errors.push(String(err));
     }
