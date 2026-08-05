@@ -1,22 +1,50 @@
 import type { Category } from "../entities";
-import type { ICategoryRepository } from "../repositories/ICategoryRepository";
+import type { CategoryRepository } from "../repositories/CategoryRepository";
 
-export class CategoryUseCases {
-  constructor(private readonly repository: ICategoryRepository) {}
+export class GetCategoriesUseCase {
+  private readonly repository: CategoryRepository;
 
-  list(): Category[] {
-    return this.repository.list();
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
   }
 
-  create(name: string, type: "income" | "expense"): Category {
-    return this.repository.create(name, type);
+  async execute(): Promise<Category[]> {
+    return this.repository.getAll();
+  }
+}
+
+export class CreateCategoryUseCase {
+  private readonly repository: CategoryRepository;
+
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
   }
 
-  update(id: number, name: string, type: "income" | "expense", active: number): void {
-    this.repository.update(id, name, type, active);
+  async execute(label: string, type: "income" | "expense"): Promise<Category> {
+    return this.repository.create(label, type);
+  }
+}
+
+export class UpdateCategoryUseCase {
+  private readonly repository: CategoryRepository;
+
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
   }
 
-  delete(id: number): void {
-    this.repository.delete(id);
+  async execute(category: Category): Promise<void> {
+    return this.repository.update(category);
+  }
+}
+
+export class DeleteCategoryUseCase {
+  private readonly repository: CategoryRepository;
+
+  constructor(repository: CategoryRepository) {
+    this.repository = repository;
+  }
+
+  async execute(id: number): Promise<void> {
+    return this.repository.delete(id);
   }
 }

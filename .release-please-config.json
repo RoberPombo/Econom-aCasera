@@ -19,7 +19,7 @@
         { "type": "revert", "section": "Reverts" }
       ]
     },
-    "tauri/src-tauri": {
+    "src-tauri": {
       "release-type": "rust",
       "package-name": "economiacasera-tauri",
       "include-component-in-tag": false,

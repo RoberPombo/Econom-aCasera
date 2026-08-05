@@ -1,26 +1,38 @@
 import type { Settings, Theme } from "../entities";
-import type { ISettingsRepository } from "../repositories/ISettingsRepository";
+import type { SettingsRepository } from "../repositories/SettingsRepository";
 
-export class SettingsUseCases {
-  constructor(private readonly repository: ISettingsRepository) {}
+export class GetSettingsUseCase {
+  private readonly repository: SettingsRepository;
 
-  get(): Settings {
+  constructor(repository: SettingsRepository) {
+    this.repository = repository;
+  }
+
+  async execute(): Promise<Settings> {
     return this.repository.get();
   }
+}
 
-  setCurrentYear(year: number): void {
-    this.repository.setCurrentYear(year);
+export class UpdateSettingsUseCase {
+  private readonly repository: SettingsRepository;
+
+  constructor(repository: SettingsRepository) {
+    this.repository = repository;
   }
 
-  setCurrentMonth(month: number): void {
-    this.repository.setCurrentMonth(month);
+  async setYear(year: number): Promise<void> {
+    await this.repository.setCurrentYear(year);
   }
 
-  setViewMode(mode: "monthly" | "annual"): void {
-    this.repository.setViewMode(mode);
+  async setMonth(month: number): Promise<void> {
+    await this.repository.setCurrentMonth(month);
   }
 
-  setTheme(theme: Theme): void {
-    this.repository.setTheme(theme);
+  async setViewMode(mode: "monthly" | "annual"): Promise<void> {
+    await this.repository.setViewMode(mode);
+  }
+
+  async setTheme(theme: Theme): Promise<void> {
+    await this.repository.setTheme(theme);
   }
 }

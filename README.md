@@ -46,34 +46,32 @@ La app detecta automáticamente si el usuario tiene Google Drive instalado:
 ## Requisitos para desarrollar
 
 - [Node.js](https://nodejs.org/) (LTS)
+- [pnpm](https://pnpm.io/)
 - [Rust](https://www.rust-lang.org/tools/install)
 - Dependencias del sistema para Tauri: https://tauri.app/start/prerequisites/
 
 ## Instalación de dependencias
 
 ```bash
-cd tauri
-npm install
+pnpm install
 ```
 
 ## Ejecutar en desarrollo
 
 ```bash
-cd tauri
 cargo tauri dev
 ```
 
 ## Compilar ejecutable para distribución
 
 ```bash
-cd tauri
 cargo tauri build
 ```
 
-El resultado estará en `tauri/src-tauri/target/release/bundle/`:
+El resultado estará en `src-tauri/target/release/bundle/`:
 
 ```
-tauri/src-tauri/target/release/bundle/
+src-tauri/target/release/bundle/
 ├── deb/                  # Linux Debian/Ubuntu
 ├── rpm/                  # Linux Fedora/openSUSE
 ├── appimage/             # Linux AppImage
@@ -137,10 +135,9 @@ BREAKING CHANGE: rename API endpoint for transactions
 
 ### Compilar localmente con una versión concreta
 
-Edita `tauri/src-tauri/tauri.conf.json` y cambia el campo `version` antes de compilar:
+Edita `src-tauri/tauri.conf.json` y cambia el campo `version` antes de compilar:
 
 ```bash
-cd tauri
 cargo tauri build
 ```
 
@@ -188,21 +185,18 @@ Si no usas Probot Settings, configura esto en la web de GitHub:
 
 ```
 .
-├── tauri/             # Aplicación principal (Tauri v2 + React)
-│   ├── src/
-│   │   ├── main.tsx
-│   │   ├── CompositionRoot.ts
-│   │   ├── data/      # Repositorios Tauri (SQLite, filesystem, updater)
-│   │   ├── domain/    # Entidades y casos de uso
-│   │   └── presentation/  # Componentes React, hooks y contexto
-│   ├── src-tauri/     # Rust + configuración Tauri
-│   └── index.html
-├── frontend/          # Versión anterior (Bun + Vite), conservada como referencia
-├── src/               # Backend anterior (Bun), conservado como referencia
+├── src/               # Frontend React + TypeScript
+│   ├── main.tsx
+│   ├── CompositionRoot.ts
+│   ├── data/          # Repositorios Tauri (SQLite, filesystem, updater)
+│   ├── domain/        # Entidades y casos de uso
+│   └── presentation/  # Componentes React, hooks y contexto
+├── src-tauri/         # Rust + configuración Tauri
+├── index.html
+├── package.json
+├── vite.config.ts
 ├── .github/           # Workflows y configuración del repo
 ├── LICENSE            # MIT
 └── README.md
 ```
-
-> **Nota:** La versión activa del proyecto es la de `tauri/`. Las carpetas `frontend/` y `src/` contienen la implementación anterior con Bun y se mantienen temporalmente como referencia.
 
