@@ -1,5 +1,5 @@
 import { Transaction } from "../domain/entities";
-import * as XLSX from "xlsx";
+import readXlsxFile from "read-excel-file/browser";
 
 const monthNames = ["Ene.", "Feb.", "Mar.", "Abr.", "May.", "Jun.", "Jul.", "Ago.", "Sep.", "Oct.", "Nov.", "Dic."];
 
@@ -60,22 +60,20 @@ function parseRow(row: any[], defaultMonth: number, defaultYear: number): Transa
   });
 }
 
-export function parseExcel(buffer: ArrayBuffer): ExcelParseResult {
+export async function parseExcel(buffer: ArrayBuffer): Promise<ExcelParseResult> {
   const errors: string[] = [];
   const transactions: Transaction[] = [];
-  const workbook = XLSX.read(new Uint8Array(buffer), { type: "array" });
+  const sheets = await readXlsxFile(buffer);
 
-  for (const sheetName of workbook.SheetNames) {
-    const monthIndex = monthNames.findIndex((m) => m.toLowerCase() === sheetName.toLowerCase());
+  for (const sheet of sheets) {
+    const monthIndex = monthNames.findIndex((m) => m.toLowerCase() === sheet.sheet.toLowerCase());
     if (monthIndex === -1) continue;
     const month = monthIndex + 1;
 
-    const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }) as any[][];
-
+    const data = sheet.data as any[][];
     const headerRow = findHeaderRow(data);
     if (headerRow === -1) {
-      errors.push(`Hoja ${sheetName}: no se encontró la cabecera de transacciones`);
+      errors.push(`Hoja ${sheet.sheet}: no se encontró la cabecera de transacciones`);
       continue;
     }
 

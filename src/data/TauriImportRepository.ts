@@ -14,7 +14,7 @@ export class TauriImportRepository implements ImportRepository {
 
     if (source === "excel") {
       const buffer = await file.arrayBuffer();
-      const result = parseExcel(buffer);
+      const result = await parseExcel(buffer);
       candidates = result.transactions;
       errors = result.errors;
     } else if (source === "ing") {
