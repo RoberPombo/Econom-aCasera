@@ -1,1 +1,5 @@
-minimumReleaseAge: 0
+minimumReleaseAge: 2880
+minimumReleaseAgeExclude:
+  - worker-f
+onlyBuiltDependencies:
+  - esbuild
