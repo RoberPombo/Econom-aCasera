@@ -64,3 +64,12 @@ export const chartSection = "mb-6 ultrawide:mb-0";
 export const chartGrid = "grid grid-cols-1 gap-4 tablet:grid-cols-2 ultrawide:grid-cols-1";
 export const dbInfo = section;
 export const dbInfoHint = "my-1";
+
+export const filtersBar = "mb-4 rounded-lg bg-surface p-4 shadow-card";
+export const filtersRow = "mb-3 flex flex-wrap items-end gap-3 last:mb-0";
+export const filtersGroup = "flex min-w-[140px] flex-1 flex-col gap-1";
+export const filtersLabel = "text-[0.85rem] font-medium text-muted";
+export const periodToggle = "mb-3 flex flex-wrap gap-2";
+
+export const receiptDropzone = "rounded-lg border border-dashed border-line bg-surface p-3";
+export const receiptPreview = "max-h-48 max-w-full rounded-lg border border-line object-contain";

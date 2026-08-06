@@ -79,6 +79,12 @@ async function migrateDatabase(db: Database): Promise<void> {
     // Column already exists.
   }
 
+  try {
+    await db.execute(`ALTER TABLE transactions ADD COLUMN receipt_path TEXT`);
+  } catch {
+    // Column already exists.
+  }
+
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_transactions_fingerprint ON transactions(fingerprint)
   `);

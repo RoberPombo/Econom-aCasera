@@ -3,6 +3,7 @@ import type { Transaction } from "../domain/entities";
 import { useAppState } from "./hooks/useAppState";
 import { TransactionForm, type TransactionFormData } from "./components/TransactionForm";
 import { TransactionList } from "./components/TransactionList";
+import { TransactionFiltersBar } from "./components/TransactionFiltersBar";
 import { BalanceChart } from "./components/BalanceChart";
 import { CategoriesConfig } from "./components/CategoriesConfig";
 import { PersonsConfig } from "./components/PersonsConfig";
@@ -11,19 +12,15 @@ import { ConflictDialog } from "./components/ConflictDialog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
 import { SimilarTransactionDialog } from "./components/SimilarTransactionDialog";
+import { ReceiptViewer } from "./components/ReceiptViewer";
 import { Modal } from "./components/Modal";
 import {
   app,
   header,
   headerTitle,
-  yearSelector,
-  yearBtn,
   themeToggle,
   iconBtn,
   iconGroup,
-  monthGrid,
-  monthBtn,
-  monthBtnActive,
   section,
   sectionTitle,
   chartGrid,
@@ -32,8 +29,6 @@ import {
   dbInfo,
   dbInfoHint,
 } from "./styles";
-
-const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 function AddIcon() {
   return (
@@ -83,23 +78,59 @@ function ThemeIcon({ resolvedTheme }: { resolvedTheme: "light" | "dark" }) {
   );
 }
 
+function formatPeriodTitle(filters: NonNullable<ReturnType<typeof useAppState>["filters"]>): string {
+  if (filters.period.mode === "month") {
+    const title = new Date(filters.period.year, filters.period.month - 1).toLocaleString("es-ES", {
+      month: "long",
+      year: "numeric",
+    });
+    return title.charAt(0).toUpperCase() + title.slice(1);
+  }
+
+  const { from, to } = filters.period;
+  if (!from && !to) return "Todo el historial";
+  if (from && to) return `${from} — ${to}`;
+  if (from) return `Desde ${from}`;
+  return `Hasta ${to}`;
+}
+
 function App() {
   const state = useAppState();
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [similarMatches, setSimilarMatches] = useState<Transaction[]>([]);
   const [pendingTransaction, setPendingTransaction] = useState<TransactionFormData | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [receiptViewUrl, setReceiptViewUrl] = useState<string | null>(null);
+  const [editingReceiptUrl, setEditingReceiptUrl] = useState<string | null>(null);
 
   const currentYear = state.settings?.currentYear ?? new Date().getFullYear();
   const currentMonth = state.settings?.currentMonth ?? new Date().getMonth() + 1;
+  const filters = state.filters;
+
+  function toSavePayload(data: TransactionFormData) {
+    return {
+      date: data.date,
+      type: data.type,
+      category: data.category,
+      concept: data.concept,
+      amount: data.amount,
+      person: data.person,
+      receipt: data.receipt
+        ? { bytes: data.receipt.bytes, extension: data.receipt.extension }
+        : null,
+      removeReceipt: data.removeReceipt,
+    };
+  }
 
   async function handleSubmit(data: TransactionFormData) {
-    if (editingId) {
-      await state.updateTransaction(editingId, data);
-      setEditingId(null);
+    if (editingTx) {
+      const id = typeof editingTx.id === "number" ? editingTx.id : Number(editingTx.id);
+      await state.updateTransaction(id, toSavePayload(data));
+      setEditingTx(null);
+      setEditingReceiptUrl(null);
       setShowAddModal(false);
       return;
     }
@@ -111,13 +142,13 @@ function App() {
       return;
     }
 
-    await state.saveTransaction(data);
+    await state.saveTransaction(toSavePayload(data));
     setShowAddModal(false);
   }
 
   async function confirmAddAsNew() {
     if (pendingTransaction) {
-      await state.saveTransaction(pendingTransaction);
+      await state.saveTransaction(toSavePayload(pendingTransaction));
     }
     setPendingTransaction(null);
     setSimilarMatches([]);
@@ -127,7 +158,7 @@ function App() {
   async function confirmUpdateExisting(tx: Transaction) {
     if (pendingTransaction) {
       const id = typeof tx.id === "number" ? tx.id : Number(tx.id);
-      await state.updateTransaction(id, pendingTransaction);
+      await state.updateTransaction(id, toSavePayload(pendingTransaction));
     }
     setPendingTransaction(null);
     setSimilarMatches([]);
@@ -150,22 +181,32 @@ function App() {
     setDeletingId(null);
   }
 
-  function edit(tx: Transaction) {
-    setEditingId(typeof tx.id === "number" ? tx.id : Number(tx.id));
+  async function edit(tx: Transaction) {
+    setEditingTx(tx);
+    setEditingReceiptUrl(null);
+    if (tx.receiptPath) {
+      try {
+        setEditingReceiptUrl(await state.loadReceiptDataUrl(tx.receiptPath));
+      } catch {
+        setEditingReceiptUrl(null);
+      }
+    }
     setShowAddModal(true);
   }
 
-  const editingTx = editingId ? state.transactions.find((t) => t.id === editingId) : null;
+  async function viewReceipt(tx: Transaction) {
+    if (!tx.receiptPath) return;
+    try {
+      const url = await state.loadReceiptDataUrl(tx.receiptPath);
+      setReceiptViewUrl(url);
+    } catch {
+      setReceiptViewUrl(null);
+    }
+  }
 
-  const annualData = state.annualSummary.find((a) => a.year === currentYear) ?? {
-    year: currentYear,
-    income: 0,
-    expense: 0,
-    balance: 0,
-  };
-
-  const monthTitle = new Date(currentYear, currentMonth - 1).toLocaleString("es-ES", { month: "long", year: "numeric" });
-  const annualTitle = `Año ${currentYear}`;
+  const periodTitle = filters ? formatPeriodTitle(filters) : "";
+  const secondaryTitle =
+    filters?.period.mode === "month" ? `Año ${filters.period.year}` : "Totales filtrados";
 
   async function confirmImport(transactions: Transaction[]) {
     const count = await state.confirmImport(transactions);
@@ -198,53 +239,49 @@ function App() {
         </div>
       </header>
 
-      <nav className={monthGrid}>
-        {MONTHS.map((label, index) => {
-          const month = index + 1;
-          const isActive = month === currentMonth;
-          return (
-            <button
-              key={month}
-              className={isActive ? monthBtnActive : monthBtn}
-              onClick={() => state.changeMonth(month)}
-              aria-pressed={isActive}
-            >
-              {label}
-            </button>
-          );
-        })}
-        <div className={`${yearSelector} ml-auto`}>
-          <button className={yearBtn} onClick={() => state.changeYear(-1)} aria-label="Año anterior">
-            ◀
-          </button>
-          <span className="min-w-[5ch] text-center">{currentYear}</span>
-          <button className={yearBtn} onClick={() => state.changeYear(1)} aria-label="Año siguiente">
-            ▶
-          </button>
-        </div>
-      </nav>
+      {filters && (
+        <TransactionFiltersBar
+          filters={filters}
+          categories={state.categories}
+          persons={state.persons}
+          resultCount={state.transactions.length}
+          onChange={state.updateFilters}
+          onClear={state.clearFilters}
+          onPeriodModeChange={state.changePeriodMode}
+          onMonthChange={state.changeMonth}
+          onYearChange={state.changeYear}
+          onRangeChange={state.changeRange}
+        />
+      )}
 
       <main className={mainLayout}>
         <section className={chartSection}>
           <div className={chartGrid}>
             <BalanceChart
-              title={monthTitle.charAt(0).toUpperCase() + monthTitle.slice(1)}
+              title={periodTitle}
               income={state.summary.income}
               expense={state.summary.expense}
               balance={state.summary.balance}
             />
             <BalanceChart
-              title={annualTitle}
-              income={annualData.income}
-              expense={annualData.expense}
-              balance={annualData.balance}
+              title={secondaryTitle}
+              income={state.yearSummary.income}
+              expense={state.yearSummary.expense}
+              balance={state.yearSummary.balance}
             />
           </div>
         </section>
 
         <section className={section}>
-          <h2 className={sectionTitle}>Movimientos de {monthTitle}</h2>
-          <TransactionList transactions={state.transactions} categories={state.categories} persons={state.persons} onEdit={edit} onDelete={handleDelete} />
+          <h2 className={sectionTitle}>Movimientos · {periodTitle}</h2>
+          <TransactionList
+            transactions={state.transactions}
+            categories={state.categories}
+            persons={state.persons}
+            onEdit={edit}
+            onDelete={handleDelete}
+            onViewReceipt={viewReceipt}
+          />
         </section>
       </main>
 
@@ -267,17 +304,33 @@ function App() {
       )}
 
       {showAddModal && (
-        <Modal title={editingId ? "Editar movimiento" : "Añadir movimiento"} onClose={() => { setShowAddModal(false); setEditingId(null); }}>
+        <Modal
+          title={editingTx ? "Editar movimiento" : "Añadir movimiento"}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingTx(null);
+            setEditingReceiptUrl(null);
+          }}
+        >
           <TransactionForm
             onSubmit={handleSubmit}
-            onCancel={() => { setShowAddModal(false); setEditingId(null); }}
+            onCancel={() => {
+              setShowAddModal(false);
+              setEditingTx(null);
+              setEditingReceiptUrl(null);
+            }}
             initialValue={editingTx ?? undefined}
             categories={state.categories}
             persons={state.persons}
             year={currentYear}
             month={currentMonth}
+            existingReceiptUrl={editingReceiptUrl}
           />
         </Modal>
+      )}
+
+      {receiptViewUrl && (
+        <ReceiptViewer src={receiptViewUrl} onClose={() => setReceiptViewUrl(null)} />
       )}
 
       {showImportModal && (

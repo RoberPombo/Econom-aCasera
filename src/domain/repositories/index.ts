@@ -5,3 +5,4 @@ export * from "./DbInfoRepository";
 export * from "./ImportRepository";
 export * from "./PersonRepository";
 export * from "./UpdateRepository";
+export * from "./ReceiptRepository";

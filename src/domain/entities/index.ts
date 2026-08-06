@@ -1,6 +1,7 @@
 export * from "./Entity";
 export * from "./Amount";
 export * from "./Transaction";
+export * from "./TransactionFilters";
 export * from "./Category";
 export * from "./Summary";
 export * from "./Settings";

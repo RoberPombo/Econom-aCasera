@@ -14,4 +14,8 @@ export class TauriDbInfoRepository implements DbInfoRepository {
   async forceOverwrite(): Promise<{ ok: boolean; dbPath: string; usesDrive: boolean }> {
     return invoke("force_overwrite");
   }
+
+  async sync(): Promise<void> {
+    await invoke("sync_database");
+  }
 }

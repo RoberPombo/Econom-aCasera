@@ -1,6 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAppContext } from "../context/useAppContext";
-import type { Transaction, Category, CategorySummary, MonthlySummary, AnnualSummary, Summary, Settings, DbInfo, Theme, Person } from "../../domain/entities";
+import type {
+  Transaction,
+  Category,
+  CategorySummary,
+  MonthlySummary,
+  AnnualSummary,
+  Summary,
+  Settings,
+  DbInfo,
+  Theme,
+  Person,
+  PeriodMode,
+} from "../../domain/entities";
+import { TransactionFilters } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 
@@ -8,8 +21,22 @@ export function useAppState() {
   const { compositionRoot } = useAppContext();
 
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [periodMode, setPeriodMode] = useState<PeriodMode>("month");
+  const [rangeFrom, setRangeFrom] = useState<string | undefined>(undefined);
+  const [rangeTo, setRangeTo] = useState<string | undefined>(undefined);
+  const [filterDraft, setFilterDraft] = useState({
+    types: [] as ("income" | "expense")[],
+    categoryKeys: [] as string[],
+    personKeys: [] as string[],
+    minAmount: null as number | null,
+    maxAmount: null as number | null,
+    search: "",
+  });
+
+  const emptySummary: Summary = { income: 0, expense: 0, balance: 0 };
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [summary, setSummary] = useState<Summary>({ income: 0, expense: 0, balance: 0 });
+  const [summary, setSummary] = useState<Summary>(emptySummary);
+  const [yearSummary, setYearSummary] = useState<Summary>(emptySummary);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
@@ -22,6 +49,27 @@ export function useAppState() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const filters = useMemo(() => {
+    if (!settings) return null;
+    try {
+      const period =
+        periodMode === "month"
+          ? { mode: "month" as const, year: settings.currentYear, month: settings.currentMonth }
+          : { mode: "range" as const, from: rangeFrom, to: rangeTo };
+      return TransactionFilters.create({
+        period,
+        types: filterDraft.types,
+        categoryKeys: filterDraft.categoryKeys,
+        personKeys: filterDraft.personKeys,
+        minAmount: filterDraft.minAmount,
+        maxAmount: filterDraft.maxAmount,
+        search: filterDraft.search,
+      });
+    } catch {
+      return null;
+    }
+  }, [settings, periodMode, rangeFrom, rangeTo, filterDraft]);
+
   const resolveTheme = useCallback((theme: Theme): "light" | "dark" => {
     if (theme === "system") {
       return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -30,9 +78,9 @@ export function useAppState() {
   }, []);
 
   const loadSettings = useCallback(async () => {
-    const settings = await compositionRoot.provideGetSettingsUseCase().execute();
-    setSettings(settings);
-    return settings;
+    const next = await compositionRoot.provideGetSettingsUseCase().execute();
+    setSettings(next);
+    return next;
   }, [compositionRoot]);
 
   const loadDbInfo = useCallback(async () => {
@@ -41,34 +89,38 @@ export function useAppState() {
   }, [compositionRoot]);
 
   const loadData = useCallback(async () => {
-    if (!settings) return;
+    if (!filters) return;
 
     setLoading(true);
     setError(null);
     try {
-      const year = settings.currentYear;
-      const month = settings.currentMonth;
+      const yearFilters =
+        filters.period.mode === "month"
+          ? filters.forYear(filters.period.year)
+          : filters;
 
-      const [transactions, categories, persons, { summary, categories: catSummary, monthly, annual }] = await Promise.all([
-        compositionRoot.provideGetTransactionsUseCase().execute(year, month),
+      const [txs, cats, pers, periodResult, yearResult] = await Promise.all([
+        compositionRoot.provideGetTransactionsUseCase().execute(filters),
         compositionRoot.provideGetCategoriesUseCase().execute(),
         compositionRoot.provideGetPersonsUseCase().execute(),
-        compositionRoot.provideGetSummaryUseCase().execute(year, month),
+        compositionRoot.provideGetSummaryUseCase().execute(filters),
+        compositionRoot.provideGetSummaryUseCase().execute(yearFilters),
       ]);
 
-      setTransactions(transactions);
-      setCategories(categories);
-      setPersons(persons);
-      setSummary(summary);
-      setCategorySummary(catSummary);
-      setMonthlySummary(monthly);
-      setAnnualSummary(annual);
+      setTransactions(txs);
+      setCategories(cats);
+      setPersons(pers);
+      setSummary(periodResult.summary);
+      setYearSummary(yearResult.summary);
+      setCategorySummary(periodResult.categories);
+      setMonthlySummary(periodResult.monthly);
+      setAnnualSummary(yearResult.annual);
     } catch (err) {
       setError(String(err));
     } finally {
       setLoading(false);
     }
-  }, [compositionRoot, settings]);
+  }, [compositionRoot, filters]);
 
   useEffect(() => {
     loadSettings();
@@ -79,7 +131,12 @@ export function useAppState() {
   }, [loadSettings, loadDbInfo, compositionRoot]);
 
   useEffect(() => {
-    loadData();
+    // Debounce filter-driven reloads so typing amounts / picking dates
+    // does not thrash the UI or keep native pickers open.
+    const timer = window.setTimeout(() => {
+      void loadData();
+    }, 200);
+    return () => window.clearTimeout(timer);
   }, [loadData]);
 
   useEffect(() => {
@@ -125,6 +182,44 @@ export function useAppState() {
     setSettings(settings.withMonth(month));
   }
 
+  function changePeriodMode(mode: PeriodMode) {
+    setPeriodMode(mode);
+  }
+
+  function changeRange(from?: string, to?: string) {
+    setRangeFrom(from);
+    setRangeTo(to);
+  }
+
+  function updateFilters(next: TransactionFilters) {
+    setFilterDraft({
+      types: [...next.types],
+      categoryKeys: [...next.categoryKeys],
+      personKeys: [...next.personKeys],
+      minAmount: next.minAmount,
+      maxAmount: next.maxAmount,
+      search: next.search,
+    });
+    if (next.period.mode === "range") {
+      setPeriodMode("range");
+      setRangeFrom(next.period.from);
+      setRangeTo(next.period.to);
+    } else {
+      setPeriodMode("month");
+    }
+  }
+
+  function clearFilters() {
+    setFilterDraft({
+      types: [],
+      categoryKeys: [],
+      personKeys: [],
+      minAmount: null,
+      maxAmount: null,
+      search: "",
+    });
+  }
+
   async function toggleTheme() {
     if (!settings) return;
     const order: Theme[] = ["light", "dark", "system"];
@@ -151,6 +246,7 @@ export function useAppState() {
     person?: string;
     year?: number;
     month?: number;
+    receipt?: { bytes: Uint8Array; extension: string } | null;
   }) {
     await compositionRoot.provideCreateTransactionUseCase().execute(data);
     await loadData();
@@ -163,9 +259,15 @@ export function useAppState() {
     concept?: string;
     amount?: number;
     person?: string;
+    receipt?: { bytes: Uint8Array; extension: string } | null;
+    removeReceipt?: boolean;
   }) {
     await compositionRoot.provideUpdateTransactionUseCase().execute(id, data);
     await loadData();
+  }
+
+  async function loadReceiptDataUrl(relativePath: string): Promise<string> {
+    return compositionRoot.provideReceiptRepository().readAsDataUrl(relativePath);
   }
 
   async function findSimilarTransactions(date: string, category: string, type: "income" | "expense", amount: number) {
@@ -232,8 +334,11 @@ export function useAppState() {
 
   return {
     settings,
+    filters,
+    periodMode,
     transactions,
     summary,
+    yearSummary,
     categories,
     categorySummary,
     monthlySummary,
@@ -247,6 +352,10 @@ export function useAppState() {
     error,
     changeYear,
     changeMonth,
+    changePeriodMode,
+    changeRange,
+    updateFilters,
+    clearFilters,
     toggleTheme,
     checkForUpdate,
     downloadUpdate,
@@ -254,6 +363,7 @@ export function useAppState() {
     saveTransaction,
     updateTransaction,
     deleteTransaction,
+    loadReceiptDataUrl,
     findSimilarTransactions,
     createCategory,
     updateCategory,

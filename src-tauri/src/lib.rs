@@ -11,6 +11,9 @@ pub fn run() {
             commands::reload_database,
             commands::force_overwrite,
             commands::sync_database,
+            commands::save_receipt,
+            commands::read_receipt,
+            commands::delete_receipt,
             commands::extract_pdf_text,
         ])
         .run(tauri::generate_context!())
