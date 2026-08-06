@@ -1,5 +1,7 @@
 use std::fs;
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
+use calamine::Reader;
 use tauri::{command, AppHandle, Manager, Runtime};
 
 const APP_NAME: &str = "EconomiaCasera";
@@ -382,9 +384,40 @@ fn base64_encode(bytes: &[u8]) -> String {
 }
 
 #[command]
-pub async fn extract_pdf_text(pdf_bytes: Vec<u8>) -> Result<String, String> {
+pub async fn read_excel_cells(file_bytes: Vec<u8>) -> Result<Vec<Vec<serde_json::Value>>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        pdf_extract::extract_text_from_mem(&pdf_bytes).map_err(|e| e.to_string())
+        let mut workbook = calamine::open_workbook_auto_from_rs(Cursor::new(file_bytes))
+            .map_err(|e| format!("El archivo no es un Excel válido: {e}"))?;
+        let sheet_name = workbook
+            .sheet_names()
+            .first()
+            .cloned()
+            .ok_or_else(|| "El Excel no contiene hojas".to_string())?;
+        let range = workbook
+            .worksheet_range(&sheet_name)
+            .map_err(|e| e.to_string())?;
+        let mut rows = Vec::with_capacity(range.rows().len());
+        for row in range.rows() {
+            let cells: Vec<serde_json::Value> = row
+                .iter()
+                .map(|cell| match cell {
+                    calamine::Data::Empty => serde_json::Value::Null,
+                    calamine::Data::Int(i) => serde_json::Value::from(*i),
+                    calamine::Data::Float(f) => serde_json::json!(f),
+                    calamine::Data::String(s) => serde_json::Value::from(s.as_str()),
+                    calamine::Data::Bool(b) => serde_json::Value::from(*b),
+                    calamine::Data::DateTime(dt) => {
+                        let (y, m, d, _, _, _, _) = dt.to_ymd_hms_milli();
+                        serde_json::Value::from(format!("{y:04}-{m:02}-{d:02}"))
+                    }
+                    calamine::Data::DateTimeIso(s) => serde_json::Value::from(s.to_string()),
+                    calamine::Data::DurationIso(s) => serde_json::Value::from(s.to_string()),
+                    calamine::Data::Error(_) => serde_json::Value::Null,
+                })
+                .collect();
+            rows.push(cells);
+        }
+        Ok(rows)
     })
     .await
     .map_err(|e| e.to_string())?

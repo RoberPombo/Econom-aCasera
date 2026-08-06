@@ -4,7 +4,7 @@ import type { ImportRepository, ImportPreview } from "../domain/repositories/Imp
 import type { ImportSource } from "../domain/entities/ImportSource";
 import { getDatabase } from "./db";
 import { parseExcel } from "./excelParser";
-import { parseIng } from "./parsers/ingParser";
+import { parseIngExcel, type ExcelCell } from "./parsers/ingParser";
 import { computeFingerprint } from "./computeFingerprint";
 
 export class TauriImportRepository implements ImportRepository {
@@ -19,13 +19,10 @@ export class TauriImportRepository implements ImportRepository {
       errors = result.errors;
     } else if (source === "ing") {
       const buffer = await file.arrayBuffer();
-      const text = await invoke<string>("extract_pdf_text", {
-        pdfBytes: Array.from(new Uint8Array(buffer)),
+      const rows = await invoke<ExcelCell[][]>("read_excel_cells", {
+        fileBytes: Array.from(new Uint8Array(buffer)),
       });
-      if (!text || !text.trim()) {
-        return { transactions: [], errors: ["No se pudo extraer texto del PDF; puede estar escaneado o protegido."], skipped: 0 };
-      }
-      const result = parseIng(text);
+      const result = parseIngExcel(rows);
       candidates = result.transactions;
       errors = result.errors;
     } else {
