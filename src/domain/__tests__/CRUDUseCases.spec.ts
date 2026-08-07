@@ -195,7 +195,8 @@ describe("DbInfo use cases", () => {
 
     const result = await getDbInfo.execute();
 
-    expect(result.id).toBe("a");
+    expect(result.dbPath).toBe("/db.sqlite");
+    expect(result.hasConflict).toBe(false);
   });
 
   test("ReloadDatabaseUseCase delegates to the repository", async () => {
@@ -279,7 +280,7 @@ describe("Import use cases", () => {
     );
 
     const result = await previewImport.execute(
-      "manual",
+      "excel",
       new File([], "datos.csv"),
     );
 

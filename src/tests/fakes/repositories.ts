@@ -1,5 +1,6 @@
 import {
   Category,
+  type DbInfo,
   Person,
   Settings,
   Transaction,
@@ -238,9 +239,20 @@ export class InMemoryReceiptRepository implements ReceiptRepository {
 
 export class InMemoryDbInfoRepository implements DbInfoRepository {
   syncCount = 0;
+  hasConflict = false;
 
-  async get(): Promise<{ id: string; path: string; usesDrive: boolean }> {
-    return { id: "a", path: "/db.sqlite", usesDrive: false };
+  constructor(options: { hasConflict?: boolean } = {}) {
+    this.hasConflict = options.hasConflict ?? false;
+  }
+
+  async get(): Promise<DbInfo> {
+    return {
+      dbPath: "/db.sqlite",
+      backupPath: "",
+      usesDrive: false,
+      driveFolder: null,
+      hasConflict: this.hasConflict,
+    };
   }
 
   async reload(): Promise<{ ok: boolean; dbPath: string; usesDrive: boolean }> {
@@ -278,14 +290,20 @@ export class FakeUpdateRepository implements UpdateRepository {
 }
 
 export class FakeImportRepository implements ImportRepository {
+  previewResult: ImportPreview;
+  confirmResult: number;
+
   constructor(
-    private readonly previewResult: ImportPreview = {
+    previewResult: ImportPreview = {
       transactions: [],
       errors: [],
       skipped: 0,
     },
-    private readonly confirmResult = 0,
-  ) {}
+    confirmResult = 0,
+  ) {
+    this.previewResult = previewResult;
+    this.confirmResult = confirmResult;
+  }
 
   async preview(_source: ImportSource, _file: File): Promise<ImportPreview> {
     return this.previewResult;
