@@ -11,6 +11,7 @@ describe("Transaction receipt", () => {
       amount: 12,
       receiptPath: "receipts/1.jpg",
     });
+
     expect(tx.receiptPath).toBe("receipts/1.jpg");
     expect(tx.hasReceipt).toBe(true);
   });
@@ -37,7 +38,9 @@ describe("Transaction receipt", () => {
       amount: 12,
       receiptPath: "receipts/1.jpg",
     });
+
     const updated = tx.withUpdates({ type: "income", category: "nomina" });
+
     expect(updated.receiptPath).toBeNull();
     expect(updated.hasReceipt).toBe(false);
   });
