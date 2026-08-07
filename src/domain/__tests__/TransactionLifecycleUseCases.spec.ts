@@ -208,4 +208,16 @@ describe("DeleteTransactionUseCase", () => {
     await expect(repo.getById(1)).resolves.toBeNull();
     expect(receipts.deleted).toEqual(["receipts/1.png"]);
   });
+
+  test("deleting an unknown id does not throw and still syncs", async () => {
+    const repo = new InMemoryTransactionRepository();
+    const receipts = new InMemoryReceiptRepository();
+    const dbInfo = new InMemoryDbInfoRepository();
+    const remove = new DeleteTransactionUseCase(repo, receipts, dbInfo);
+
+    await remove.execute(99);
+
+    expect(receipts.deleted).toHaveLength(0);
+    expect(dbInfo.syncCount).toBe(1);
+  });
 });

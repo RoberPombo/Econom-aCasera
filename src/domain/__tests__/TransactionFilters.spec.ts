@@ -45,6 +45,71 @@ describe("TransactionFilters", () => {
     });
   });
 
+  test("rejects an invalid month", () => {
+    expect(() =>
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 13 },
+      }),
+    ).toThrow("El mes no es válido");
+  });
+
+  test("withPeriod changes the period and keeps the extra filters", () => {
+    const filters = TransactionFilters.create({
+      period: { mode: "month", year: 2026, month: 3 },
+      types: ["income"],
+      search: "nomina",
+    });
+
+    const changed = filters.withPeriod({
+      mode: "range",
+      from: "2026-01-01",
+      to: "2026-12-31",
+    });
+
+    expect(changed.period).toEqual({
+      mode: "range",
+      from: "2026-01-01",
+      to: "2026-12-31",
+    });
+    expect(changed.types).toEqual(["income"]);
+    expect(changed.search).toBe("nomina");
+  });
+
+  test("withUpdates overrides only the provided fields", () => {
+    const filters = TransactionFilters.create({
+      period: { mode: "month", year: 2026, month: 3 },
+      personKeys: ["ana"],
+      minAmount: 10,
+      maxAmount: null,
+    });
+
+    const updated = filters.withUpdates({
+      search: " taxi ",
+      minAmount: null,
+      personKeys: undefined,
+    });
+
+    expect(updated.search).toBe("taxi");
+    expect(updated.minAmount).toBeNull();
+    expect(updated.personKeys).toEqual(["ana"]);
+    expect(updated.period).toEqual(filters.period);
+  });
+
+  test("withUpdates keeps the previous values when a field is omitted", () => {
+    const filters = TransactionFilters.create({
+      period: { mode: "month", year: 2026, month: 3 },
+      minAmount: 10,
+      maxAmount: 100,
+      search: "taxi",
+    });
+
+    const updated = filters.withUpdates({ minAmount: 20 });
+
+    expect(updated.minAmount).toBe(20);
+    expect(updated.maxAmount).toBe(100);
+    expect(updated.search).toBe("taxi");
+  });
+
   test("forYear keeps non-period filters", () => {
     const filters = TransactionFilters.create({
       period: { mode: "month", year: 2026, month: 3 },

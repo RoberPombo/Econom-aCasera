@@ -90,4 +90,19 @@ describe("GetTransactionsUseCase with filters", () => {
     expect(summary.income).toBe(0);
     expect(summary.balance).toBe(-40);
   });
+
+  test("executeByYearAndMonth delegates to the monthly summary", async () => {
+    const { summary } = await getSummary.executeByYearAndMonth(2026, 8);
+
+    expect(summary.income).toBe(1500);
+    expect(summary.expense).toBe(40);
+    expect(summary.balance).toBe(1460);
+  });
+
+  test("executeByYearAndMonth filters by year and month", async () => {
+    const result = await getTx.executeByYearAndMonth(2026, 7);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].concept).toBe("Gasolina");
+  });
 });

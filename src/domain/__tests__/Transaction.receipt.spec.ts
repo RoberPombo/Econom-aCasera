@@ -29,6 +29,18 @@ describe("Transaction receipt", () => {
     ).toThrow(/gastos/i);
   });
 
+  test("rejects an invalid date", () => {
+    expect(() =>
+      Transaction.create({
+        date: "not-a-date",
+        type: "expense",
+        category: "comida",
+        concept: "Ticket",
+        amount: 12,
+      }),
+    ).toThrow("La fecha no es válida");
+  });
+
   test("clears receipt when changing type to income", () => {
     const tx = Transaction.create({
       date: "2026-08-01",

@@ -101,4 +101,50 @@ describe("parseIngExcel", () => {
 
     expect(result.transactions).toHaveLength(0);
   });
+
+  test("maps the remaining ING categories", () => {
+    const rows: ExcelCell[][] = [
+      headerRow,
+      ["2026-08-06", "Vehículo y transporte", "", "Gasolina", "", -50, 1000],
+      ["2026-08-07", "Ocio y viajes", "", "Cine", "", -12, 988],
+      ["2026-08-08", "Hogar", "", "Comunidad", "", -75, 913],
+      ["2026-08-09", "Otros gastos", "", "Gastos varios", "", -20, 893],
+    ];
+
+    const result = parseIngExcel(rows);
+
+    expect(result.transactions.map((t) => t.category)).toEqual([
+      "Transporte",
+      "Ocio",
+      "Hogar",
+      "Hogar",
+    ]);
+  });
+
+  test("reports rows with an invalid date as errors", () => {
+    const rows: ExcelCell[][] = [
+      headerRow,
+      ["2026-99-99", "Hogar", "", "Comunidad", "", -75, 1200],
+      ["2026-08-06", "Hogar", "", "Comunidad", "", -75, 1125],
+    ];
+
+    const result = parseIngExcel(rows);
+
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatch(/Fila 2/i);
+    expect(result.transactions).toHaveLength(1);
+  });
+
+  test("skips rows whose amount is not a number", () => {
+    const rows: ExcelCell[][] = [
+      headerRow,
+      ["2026-08-06", "Hogar", "", "Comunidad", "", true, 1000],
+      ["2026-08-06", "Hogar", "", "Comunidad", "", 500, 1500],
+    ];
+
+    const result = parseIngExcel(rows);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].amount).toBe(500);
+  });
 });
