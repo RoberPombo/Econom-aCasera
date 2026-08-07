@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import type { Category, Person, TransactionFilters, TransactionType, PeriodMode } from "../../domain/entities";
+import type {
+  Category,
+  PeriodMode,
+  Person,
+  TransactionFilters,
+  TransactionType,
+} from "../../domain/entities";
 import {
-  filtersBar,
-  filtersRow,
-  filtersGroup,
-  filtersLabel,
-  input,
-  inputInline,
   btnGhost,
   btnGhostActive,
   btnSecondary,
+  filtersBar,
+  filtersGroup,
+  filtersLabel,
+  filtersRow,
+  input,
+  inputInline,
   label,
   periodToggle,
 } from "../styles";
@@ -29,10 +35,25 @@ export interface TransactionFiltersBarProps {
   onRangeChange: (from?: string, to?: string) => void;
 }
 
-const MONTHS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const MONTHS = [
+  "Ene",
+  "Feb",
+  "Mar",
+  "Abr",
+  "May",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dic",
+];
 
 function toggleInList<T>(list: T[], value: T): T[] {
-  return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+  return list.includes(value)
+    ? list.filter((item) => item !== value)
+    : [...list, value];
 }
 
 function amountToDraft(value: number | null): string {
@@ -61,8 +82,12 @@ export function TransactionFiltersBar({
   const periodMode = filters.period.mode;
   const activeCategories = categories.filter((c) => c.active);
   const activePersons = persons.filter((p) => p.active);
-  const [minAmountDraft, setMinAmountDraft] = useState(amountToDraft(filters.minAmount));
-  const [maxAmountDraft, setMaxAmountDraft] = useState(amountToDraft(filters.maxAmount));
+  const [minAmountDraft, setMinAmountDraft] = useState(
+    amountToDraft(filters.minAmount),
+  );
+  const [maxAmountDraft, setMaxAmountDraft] = useState(
+    amountToDraft(filters.maxAmount),
+  );
 
   useEffect(() => {
     setMinAmountDraft(amountToDraft(filters.minAmount));
@@ -85,7 +110,11 @@ export function TransactionFiltersBar({
       onChange(filters.withUpdates({ categoryKeys: [] }));
       return;
     }
-    onChange(filters.withUpdates({ categoryKeys: toggleInList(filters.categoryKeys, value) }));
+    onChange(
+      filters.withUpdates({
+        categoryKeys: toggleInList(filters.categoryKeys, value),
+      }),
+    );
   }
 
   function setPerson(value: string) {
@@ -93,7 +122,11 @@ export function TransactionFiltersBar({
       onChange(filters.withUpdates({ personKeys: [] }));
       return;
     }
-    onChange(filters.withUpdates({ personKeys: toggleInList(filters.personKeys, value) }));
+    onChange(
+      filters.withUpdates({
+        personKeys: toggleInList(filters.personKeys, value),
+      }),
+    );
   }
 
   function commitAmount(which: "min" | "max", draft: string) {
@@ -105,8 +138,10 @@ export function TransactionFiltersBar({
     }
   }
 
-  const rangeFrom = filters.period.mode === "range" ? filters.period.from ?? "" : "";
-  const rangeTo = filters.period.mode === "range" ? filters.period.to ?? "" : "";
+  const rangeFrom =
+    filters.period.mode === "range" ? (filters.period.from ?? "") : "";
+  const rangeTo =
+    filters.period.mode === "range" ? (filters.period.to ?? "") : "";
 
   function isoToDate(iso?: string): Date | null {
     if (!iso) return null;
@@ -122,16 +157,25 @@ export function TransactionFiltersBar({
     return `${y}-${m}-${d}`;
   }
 
-  const currentYear = filters.period.mode === "month" ? filters.period.year : new Date().getFullYear();
-  const currentMonth = filters.period.mode === "month" ? filters.period.month : new Date().getMonth() + 1;
+  const currentYear =
+    filters.period.mode === "month"
+      ? filters.period.year
+      : new Date().getFullYear();
+  const currentMonth =
+    filters.period.mode === "month"
+      ? filters.period.month
+      : new Date().getMonth() + 1;
 
   const amountInverted =
-    filters.minAmount !== null && filters.maxAmount !== null && filters.minAmount > filters.maxAmount;
-  const dateInverted = periodMode === "range" && !!rangeFrom && !!rangeTo && rangeFrom > rangeTo;
+    filters.minAmount !== null &&
+    filters.maxAmount !== null &&
+    filters.minAmount > filters.maxAmount;
+  const dateInverted =
+    periodMode === "range" && !!rangeFrom && !!rangeTo && rangeFrom > rangeTo;
 
   return (
     <div className={filtersBar}>
-      <div className={periodToggle} role="group" aria-label="Modo de periodo">
+      <fieldset className={periodToggle} aria-label="Modo de periodo">
         <button
           type="button"
           className={periodMode === "month" ? btnGhostActive : btnGhost}
@@ -148,7 +192,7 @@ export function TransactionFiltersBar({
         >
           Por rango
         </button>
-      </div>
+      </fieldset>
 
       {periodMode === "month" ? (
         <div className={filtersRow}>
@@ -170,11 +214,21 @@ export function TransactionFiltersBar({
             })}
           </div>
           <div className="ml-auto flex items-center gap-2 text-xl font-semibold">
-            <button type="button" className={btnGhost} onClick={() => onYearChange(-1)} aria-label="Año anterior">
+            <button
+              type="button"
+              className={btnGhost}
+              onClick={() => onYearChange(-1)}
+              aria-label="Año anterior"
+            >
               ◀
             </button>
             <span className="min-w-[5ch] text-center">{currentYear}</span>
-            <button type="button" className={btnGhost} onClick={() => onYearChange(1)} aria-label="Año siguiente">
+            <button
+              type="button"
+              className={btnGhost}
+              onClick={() => onYearChange(1)}
+              aria-label="Año siguiente"
+            >
               ▶
             </button>
           </div>
@@ -183,11 +237,15 @@ export function TransactionFiltersBar({
         <div className={filtersRow}>
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
-              <label className={label} htmlFor="filter-from">Desde</label>
+              <label className={label} htmlFor="filter-from">
+                Desde
+              </label>
               <DatePicker
                 id="filter-from"
                 selected={isoToDate(rangeFrom)}
-                onChange={(date: Date | null) => onRangeChange(dateToIso(date), rangeTo || undefined)}
+                onChange={(date: Date | null) =>
+                  onRangeChange(dateToIso(date), rangeTo || undefined)
+                }
                 dateFormat="yyyy-MM-dd"
                 placeholderText="Desde"
                 className={inputInline}
@@ -198,11 +256,15 @@ export function TransactionFiltersBar({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className={label} htmlFor="filter-to">Hasta</label>
+              <label className={label} htmlFor="filter-to">
+                Hasta
+              </label>
               <DatePicker
                 id="filter-to"
                 selected={isoToDate(rangeTo)}
-                onChange={(date: Date | null) => onRangeChange(rangeFrom || undefined, dateToIso(date))}
+                onChange={(date: Date | null) =>
+                  onRangeChange(rangeFrom || undefined, dateToIso(date))
+                }
                 className={inputInline}
                 placeholderText="Hasta"
                 dateFormat="yyyy-MM-dd"
@@ -215,7 +277,10 @@ export function TransactionFiltersBar({
             </div>
           </div>
           {dateInverted && (
-            <p className="m-0 self-end pb-2 text-[0.85rem] text-expense" role="alert">
+            <p
+              className="m-0 self-end pb-2 text-[0.85rem] text-expense"
+              role="alert"
+            >
               El inicio es posterior al fin. Rango no aplicado.
             </p>
           )}
@@ -228,8 +293,13 @@ export function TransactionFiltersBar({
       )}
 
       {amountInverted && (
-        <p className="mb-3 rounded-lg border border-expense bg-expense/10 p-2 text-[0.85rem] text-expense" role="alert">
-          {filters.minAmount !== null && filters.maxAmount !== null && filters.minAmount > filters.maxAmount
+        <p
+          className="mb-3 rounded-lg border border-expense bg-expense/10 p-2 text-[0.85rem] text-expense"
+          role="alert"
+        >
+          {filters.minAmount !== null &&
+          filters.maxAmount !== null &&
+          filters.minAmount > filters.maxAmount
             ? "El importe mínimo es mayor que el máximo. El filtro de importes no se aplica hasta corregirlo."
             : ""}
         </p>
@@ -237,19 +307,25 @@ export function TransactionFiltersBar({
 
       <div className={filtersRow}>
         <div className={filtersGroup}>
-          <label className={filtersLabel} htmlFor="filter-search">Buscar</label>
+          <label className={filtersLabel} htmlFor="filter-search">
+            Buscar
+          </label>
           <input
             id="filter-search"
             className={input}
             type="search"
             placeholder="Concepto, categoría o persona…"
             value={filters.search}
-            onChange={(e) => onChange(filters.withUpdates({ search: e.target.value }))}
+            onChange={(e) =>
+              onChange(filters.withUpdates({ search: e.target.value }))
+            }
           />
         </div>
 
         <div className={filtersGroup}>
-          <label className={filtersLabel} htmlFor="filter-type">Tipo</label>
+          <label className={filtersLabel} htmlFor="filter-type">
+            Tipo
+          </label>
           <select
             id="filter-type"
             className={inputInline}
@@ -263,7 +339,9 @@ export function TransactionFiltersBar({
         </div>
 
         <div className={filtersGroup}>
-          <label className={filtersLabel} htmlFor="filter-category">Categoría</label>
+          <label className={filtersLabel} htmlFor="filter-category">
+            Categoría
+          </label>
           <select
             id="filter-category"
             className={inputInline}
@@ -285,7 +363,9 @@ export function TransactionFiltersBar({
         </div>
 
         <div className={filtersGroup}>
-          <label className={filtersLabel} htmlFor="filter-person">Persona</label>
+          <label className={filtersLabel} htmlFor="filter-person">
+            Persona
+          </label>
           <select
             id="filter-person"
             className={inputInline}
@@ -307,7 +387,9 @@ export function TransactionFiltersBar({
         </div>
 
         <div className={filtersGroup}>
-          <label className={filtersLabel} htmlFor="filter-min-amount">Importe min</label>
+          <label className={filtersLabel} htmlFor="filter-min-amount">
+            Importe min
+          </label>
           <input
             id="filter-min-amount"
             className={inputInline}
@@ -318,7 +400,10 @@ export function TransactionFiltersBar({
             onChange={(e) => {
               const draft = e.target.value;
               setMinAmountDraft(draft);
-              if (draft.trim() === "" || Number.isFinite(Number(draft.replace(",", ".")))) {
+              if (
+                draft.trim() === "" ||
+                Number.isFinite(Number(draft.replace(",", ".")))
+              ) {
                 commitAmount("min", draft);
               }
             }}
@@ -329,7 +414,9 @@ export function TransactionFiltersBar({
         </div>
 
         <div className={filtersGroup}>
-          <label className={filtersLabel} htmlFor="filter-max-amount">Importe max</label>
+          <label className={filtersLabel} htmlFor="filter-max-amount">
+            Importe max
+          </label>
           <input
             id="filter-max-amount"
             className={inputInline}
@@ -340,7 +427,10 @@ export function TransactionFiltersBar({
             onChange={(e) => {
               const draft = e.target.value;
               setMaxAmountDraft(draft);
-              if (draft.trim() === "" || Number.isFinite(Number(draft.replace(",", ".")))) {
+              if (
+                draft.trim() === "" ||
+                Number.isFinite(Number(draft.replace(",", ".")))
+              ) {
                 commitAmount("max", draft);
               }
             }}
@@ -351,7 +441,12 @@ export function TransactionFiltersBar({
         </div>
 
         <div className="flex items-end gap-2">
-          <button type="button" className={btnSecondary} onClick={onClear} disabled={!filters.hasExtraFilters}>
+          <button
+            type="button"
+            className={btnSecondary}
+            onClick={onClear}
+            disabled={!filters.hasExtraFilters}
+          >
             Limpiar filtros
           </button>
           <span className="text-[0.9rem] text-muted pb-2" aria-live="polite">
@@ -369,7 +464,15 @@ export function TransactionFiltersBar({
                 key={`cat-${key}`}
                 type="button"
                 className={btnGhostActive}
-                onClick={() => onChange(filters.withUpdates({ categoryKeys: filters.categoryKeys.filter((k) => k !== key) }))}
+                onClick={() =>
+                  onChange(
+                    filters.withUpdates({
+                      categoryKeys: filters.categoryKeys.filter(
+                        (k) => k !== key,
+                      ),
+                    }),
+                  )
+                }
               >
                 {cat?.label ?? key} ×
               </button>
@@ -382,7 +485,13 @@ export function TransactionFiltersBar({
                 key={`person-${key}`}
                 type="button"
                 className={btnGhostActive}
-                onClick={() => onChange(filters.withUpdates({ personKeys: filters.personKeys.filter((k) => k !== key) }))}
+                onClick={() =>
+                  onChange(
+                    filters.withUpdates({
+                      personKeys: filters.personKeys.filter((k) => k !== key),
+                    }),
+                  )
+                }
               >
                 {person?.label ?? key} ×
               </button>

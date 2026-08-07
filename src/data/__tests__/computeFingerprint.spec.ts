@@ -18,8 +18,14 @@ describe("computeFingerprint", () => {
   });
 
   test("collapses consecutive whitespace in the concept", () => {
-    const collapsed = computeFingerprint({ ...base, concept: "Pago   en   MERCADONA" });
-    const single = computeFingerprint({ ...base, concept: "Pago en MERCADONA" });
+    const collapsed = computeFingerprint({
+      ...base,
+      concept: "Pago   en   MERCADONA",
+    });
+    const single = computeFingerprint({
+      ...base,
+      concept: "Pago en MERCADONA",
+    });
     expect(collapsed).toBe(single);
   });
 

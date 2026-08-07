@@ -1,7 +1,7 @@
 import type { Transaction } from "../entities";
+import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 import type { ReceiptRepository } from "../repositories/ReceiptRepository";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
-import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 import type { ReceiptInput } from "./CreateTransactionUseCase";
 
 export class UpdateTransactionUseCase {
@@ -12,7 +12,7 @@ export class UpdateTransactionUseCase {
   constructor(
     repository: TransactionRepository,
     receiptRepository: ReceiptRepository,
-    dbInfoRepository: DbInfoRepository
+    dbInfoRepository: DbInfoRepository,
   ) {
     this.repository = repository;
     this.receiptRepository = receiptRepository;
@@ -32,7 +32,7 @@ export class UpdateTransactionUseCase {
       month?: number;
       receipt?: ReceiptInput | undefined;
       removeReceipt?: boolean;
-    }
+    },
   ): Promise<Transaction> {
     const current = await this.repository.getById(id);
     if (!current) throw new Error("Transaction not found");
@@ -51,7 +51,11 @@ export class UpdateTransactionUseCase {
       if (receiptPath) {
         await this.receiptRepository.delete(receiptPath);
       }
-      receiptPath = await this.receiptRepository.save(id, data.receipt.bytes, data.receipt.extension);
+      receiptPath = await this.receiptRepository.save(
+        id,
+        data.receipt.bytes,
+        data.receipt.extension,
+      );
     }
 
     const updated = current.withUpdates({

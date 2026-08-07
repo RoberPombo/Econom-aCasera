@@ -1,6 +1,6 @@
+import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 import type { ReceiptRepository } from "../repositories/ReceiptRepository";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
-import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 
 export class DeleteTransactionUseCase {
   private readonly repository: TransactionRepository;
@@ -10,7 +10,7 @@ export class DeleteTransactionUseCase {
   constructor(
     repository: TransactionRepository,
     receiptRepository: ReceiptRepository,
-    dbInfoRepository: DbInfoRepository
+    dbInfoRepository: DbInfoRepository,
   ) {
     this.repository = repository;
     this.receiptRepository = receiptRepository;

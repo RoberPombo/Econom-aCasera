@@ -45,7 +45,9 @@ export class TransactionFilters {
 
   static create(data: TransactionFiltersData): TransactionFilters {
     const types = data.types?.length ? [...data.types] : [];
-    const categoryKeys = data.categoryKeys?.length ? [...data.categoryKeys] : [];
+    const categoryKeys = data.categoryKeys?.length
+      ? [...data.categoryKeys]
+      : [];
     const personKeys = data.personKeys?.length ? [...data.personKeys] : [];
     const minAmount = data.minAmount ?? null;
     const maxAmount = data.maxAmount ?? null;
@@ -60,9 +62,14 @@ export class TransactionFilters {
     // Allow temporary inverted ranges while the user is still typing/selecting.
     // Query builder ignores amount/date bounds until they are coherent.
     return new TransactionFilters({
-      period: data.period.mode === "month"
-        ? { mode: "month", year: data.period.year, month: data.period.month }
-        : { mode: "range", from: data.period.from || undefined, to: data.period.to || undefined },
+      period:
+        data.period.mode === "month"
+          ? { mode: "month", year: data.period.year, month: data.period.month }
+          : {
+              mode: "range",
+              from: data.period.from || undefined,
+              to: data.period.to || undefined,
+            },
       types,
       categoryKeys,
       personKeys,
@@ -73,7 +80,9 @@ export class TransactionFilters {
   }
 
   static defaultMonth(year: number, month: number): TransactionFilters {
-    return TransactionFilters.create({ period: { mode: "month", year, month } });
+    return TransactionFilters.create({
+      period: { mode: "month", year, month },
+    });
   }
 
   get hasExtraFilters(): boolean {

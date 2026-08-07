@@ -8,7 +8,7 @@ export class Amount {
   }
 
   static create(value: number): Amount {
-    if (isNaN(value)) {
+    if (Number.isNaN(value)) {
       throw new InvalidAmountError("El importe debe ser un número");
     }
     if (value <= 0) {

@@ -5,7 +5,12 @@ interface BalanceChartProps {
   balance: number;
 }
 
-export function BalanceChart({ title, income, expense, balance }: BalanceChartProps) {
+export function BalanceChart({
+  title,
+  income,
+  expense,
+  balance,
+}: BalanceChartProps) {
   function formatMoney(n: number) {
     return n.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
   }
@@ -24,7 +29,11 @@ export function BalanceChart({ title, income, expense, balance }: BalanceChartPr
     <div className="rounded-lg border border-line bg-surface p-4 shadow-card">
       <h3 className="mb-3 text-center text-[1rem] font-semibold">{title}</h3>
 
-      <svg viewBox="0 0 200 200" className="mx-auto block h-auto w-full max-w-[220px] tablet:max-w-[260px] ultrawide:max-w-[320px]">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 200 200"
+        className="mx-auto block h-auto w-full max-w-[220px] tablet:max-w-[260px] ultrawide:max-w-[320px]"
+      >
         {/* background ring */}
         <circle
           cx={cx}
@@ -81,13 +90,19 @@ export function BalanceChart({ title, income, expense, balance }: BalanceChartPr
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-surface p-2">
           <div className="text-[0.75rem] text-muted">Ingresos</div>
-          <div className="text-[0.85rem] font-semibold" style={{ color: "var(--color-income)" }}>
+          <div
+            className="text-[0.85rem] font-semibold"
+            style={{ color: "var(--color-income)" }}
+          >
             {formatMoney(income)}
           </div>
         </div>
         <div className="rounded-lg bg-surface p-2">
           <div className="text-[0.75rem] text-muted">Gastos</div>
-          <div className="text-[0.85rem] font-semibold" style={{ color: "var(--color-expense)" }}>
+          <div
+            className="text-[0.85rem] font-semibold"
+            style={{ color: "var(--color-expense)" }}
+          >
             {formatMoney(-expense)}
           </div>
         </div>
@@ -95,7 +110,12 @@ export function BalanceChart({ title, income, expense, balance }: BalanceChartPr
           <div className="text-[0.75rem] text-muted">Balance</div>
           <div
             className="text-[0.85rem] font-semibold"
-            style={{ color: balance >= 0 ? "var(--color-balance-positive)" : "var(--color-balance-negative)" }}
+            style={{
+              color:
+                balance >= 0
+                  ? "var(--color-balance-positive)"
+                  : "var(--color-balance-negative)",
+            }}
           >
             {formatMoney(balance)}
           </div>

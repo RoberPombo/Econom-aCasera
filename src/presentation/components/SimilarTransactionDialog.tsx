@@ -1,5 +1,15 @@
 import type { Transaction } from "../../domain/entities";
-import { btn, btnSecondary, modal, modalActions, modalOverlay, table, tableWrap, td, th } from "../styles";
+import {
+  btn,
+  btnSecondary,
+  modal,
+  modalActions,
+  modalOverlay,
+  table,
+  tableWrap,
+  td,
+  th,
+} from "../styles";
 
 interface Props {
   matches: Transaction[];
@@ -8,7 +18,12 @@ interface Props {
   onCancel: () => void;
 }
 
-export function SimilarTransactionDialog({ matches, onUpdate, onAddNew, onCancel }: Props) {
+export function SimilarTransactionDialog({
+  matches,
+  onUpdate,
+  onAddNew,
+  onCancel,
+}: Props) {
   function formatMoney(n: number) {
     return n.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
   }
@@ -17,7 +32,10 @@ export function SimilarTransactionDialog({ matches, onUpdate, onAddNew, onCancel
     <div className={modalOverlay}>
       <div className={modal}>
         <h2>Movimiento similar encontrado</h2>
-        <p>Ya existe al menos un movimiento con la misma fecha e importe. ¿Quieres actualizar uno de ellos o añadir uno nuevo?</p>
+        <p>
+          Ya existe al menos un movimiento con la misma fecha e importe.
+          ¿Quieres actualizar uno de ellos o añadir uno nuevo?
+        </p>
 
         <div className={tableWrap}>
           <table className={table}>
@@ -36,7 +54,11 @@ export function SimilarTransactionDialog({ matches, onUpdate, onAddNew, onCancel
                   <td className={td}>{tx.concept}</td>
                   <td className={td}>{formatMoney(tx.amount)}</td>
                   <td className={td}>
-                    <button className={`${btn} px-2 py-1 text-[0.85rem]`} onClick={() => onUpdate(tx)}>
+                    <button
+                      type="button"
+                      className={`${btn} px-2 py-1 text-[0.85rem]`}
+                      onClick={() => onUpdate(tx)}
+                    >
                       Actualizar
                     </button>
                   </td>
@@ -47,8 +69,12 @@ export function SimilarTransactionDialog({ matches, onUpdate, onAddNew, onCancel
         </div>
 
         <div className={modalActions}>
-          <button className={btn} onClick={onAddNew}>Añadir como nuevo</button>
-          <button className={btnSecondary} onClick={onCancel}>Cancelar</button>
+          <button type="button" className={btn} onClick={onAddNew}>
+            Añadir como nuevo
+          </button>
+          <button type="button" className={btnSecondary} onClick={onCancel}>
+            Cancelar
+          </button>
         </div>
       </div>
     </div>

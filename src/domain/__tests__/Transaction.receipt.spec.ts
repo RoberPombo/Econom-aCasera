@@ -24,7 +24,7 @@ describe("Transaction receipt", () => {
         concept: "Sueldo",
         amount: 1000,
         receiptPath: "receipts/1.jpg",
-      })
+      }),
     ).toThrow(/gastos/i);
   });
 

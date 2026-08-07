@@ -20,12 +20,14 @@ function headerKey(value: ExcelCell): string {
     .replace(/\s+/g, " ");
 }
 
-function findHeaderRow(rows: ExcelCell[][]): { index: number; headers: IngHeaders } | null {
+function findHeaderRow(
+  rows: ExcelCell[][],
+): { index: number; headers: IngHeaders } | null {
   const limit = Math.min(rows.length, 30);
   for (let i = 0; i < limit; i++) {
     const keys = rows[i].map(headerKey);
     const dateCandidates = ["F VALOR", "F. VALOR", "FECHA VALOR", "FECHA"];
-    const dateIndex = keys.findIndex((k) => dateCandidates.some((c) => k === c));
+    const dateIndex = keys.findIndex((k) => dateCandidates.includes(k));
     const amountIndex = keys.findIndex((k) => k.includes("IMPORTE"));
     if (dateIndex === -1 || amountIndex === -1) continue;
     const categoryIndex = keys.findIndex((k) => k.includes("CATEGOR"));
@@ -74,9 +76,6 @@ function mapCategory(category: string, type: "income" | "expense"): string {
       return "Ocio";
     case "Hogar":
       return "Hogar";
-    case "Compras":
-    case "Otros gastos":
-    case "Movimientos excluidos":
     default:
       return "Hogar";
   }
@@ -116,7 +115,7 @@ export function parseIngExcel(rows: ExcelCell[][]): ImportPreview {
           category: mapCategory(category, type),
           concept: description || category,
           amount: Math.abs(amount),
-        })
+        }),
       );
     } catch (err) {
       errors.push(`Fila ${i + 1}: ${String(err)}`);

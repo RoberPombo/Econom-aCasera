@@ -1,15 +1,47 @@
 import { describe, expect, test } from "vitest";
-import { parseIngExcel, type ExcelCell } from "../parsers/ingParser";
+import { type ExcelCell, parseIngExcel } from "../parsers/ingParser";
 
-const headerRow: ExcelCell[] = ["F. VALOR", "CATEGORÍA", "SUBCATEGORÍA", "DESCRIPCIÓN", "COMENTARIO", "IMPORTE (€)", "SALDO (€)"];
+const headerRow: ExcelCell[] = [
+  "F. VALOR",
+  "CATEGORÍA",
+  "SUBCATEGORÍA",
+  "DESCRIPCIÓN",
+  "COMENTARIO",
+  "IMPORTE (€)",
+  "SALDO (€)",
+];
 
 describe("parseIngExcel", () => {
   test("parses rows from the ING export grid", () => {
     const rows: ExcelCell[][] = [
-      ["Movimientos de la Cuenta", "", "Número de cuenta:", "1465 0100 9917 14421211", "", "", ""],
+      [
+        "Movimientos de la Cuenta",
+        "",
+        "Número de cuenta:",
+        "1465 0100 9917 14421211",
+        "",
+        "",
+        "",
+      ],
       headerRow,
-      ["2026-08-06", "Alimentación", "Supermercados", "Pago en MERCADONA A CORUA ES", "", -34.5, 3712.78],
-      ["2026-08-05", "Otros gastos", "Transferencias", "Ingreso nómina", "", 1500.0, 3747.28],
+      [
+        "2026-08-06",
+        "Alimentación",
+        "Supermercados",
+        "Pago en MERCADONA A CORUA ES",
+        "",
+        -34.5,
+        3712.78,
+      ],
+      [
+        "2026-08-05",
+        "Otros gastos",
+        "Transferencias",
+        "Ingreso nómina",
+        "",
+        1500.0,
+        3747.28,
+      ],
     ];
 
     const result = parseIngExcel(rows);
@@ -30,7 +62,10 @@ describe("parseIngExcel", () => {
   });
 
   test("returns an error when the header row is missing", () => {
-    const result = parseIngExcel([["foo", "bar"], ["x", "y"]]);
+    const result = parseIngExcel([
+      ["foo", "bar"],
+      ["x", "y"],
+    ]);
 
     expect(result.transactions).toHaveLength(0);
     expect(result.errors).toHaveLength(1);
@@ -60,10 +95,7 @@ describe("parseIngExcel", () => {
   });
 
   test("skips empty rows", () => {
-    const rows: ExcelCell[][] = [
-      headerRow,
-      ["", "", "", "", "", "", ""],
-    ];
+    const rows: ExcelCell[][] = [headerRow, ["", "", "", "", "", "", ""]];
 
     const result = parseIngExcel(rows);
 

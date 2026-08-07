@@ -1,8 +1,16 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Category } from "../../domain/entities";
 import { normalizeKey } from "../../domain/entities/Key";
+import {
+  btn,
+  btnItem,
+  inputInline,
+  listItem,
+  listItemInactive,
+  listReset,
+  sectionTitle,
+} from "../styles";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { inputInline, btn, btnItem, listReset, listItem, listItemInactive, sectionTitle } from "../styles";
 
 interface Props {
   categories: Category[];
@@ -13,7 +21,18 @@ interface Props {
 
 function AddIcon({ disabled }: { disabled?: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={disabled ? 0.5 : 1}>
+    <svg
+      aria-hidden="true"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity={disabled ? 0.5 : 1}
+    >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
@@ -38,10 +57,16 @@ function CategorySection({
   onDelete: (category: Category) => void;
 }) {
   const [newLabel, setNewLabel] = useState("");
-  const keyMap = useMemo(() => new Map(allItems.map((c) => [c.key, c])), [allItems]);
+  const keyMap = useMemo(
+    () => new Map(allItems.map((c) => [c.key, c])),
+    [allItems],
+  );
   const newKey = normalizeKey(newLabel);
   const existingByKey = newKey ? keyMap.get(newKey) : undefined;
-  const canAdd = newLabel.trim().length > 0 && newKey.length > 0 && (!existingByKey || existingByKey.type !== type);
+  const canAdd =
+    newLabel.trim().length > 0 &&
+    newKey.length > 0 &&
+    (!existingByKey || existingByKey.type !== type);
   const duplicateInSameType = existingByKey && existingByKey.type === type;
 
   function handleAdd(e: React.FormEvent) {
@@ -53,7 +78,10 @@ function CategorySection({
 
   return (
     <div className="mb-6">
-      <form onSubmit={handleAdd} className="mb-3 flex flex-wrap items-center gap-2">
+      <form
+        onSubmit={handleAdd}
+        className="mb-3 flex flex-wrap items-center gap-2"
+      >
         <h3 className="m-0 text-[1.1rem] font-bold">{title}</h3>
         <input
           className={`${inputInline} max-w-[220px] text-[0.9rem]`}
@@ -66,7 +94,11 @@ function CategorySection({
           type="submit"
           className={`${btn} px-2 py-1 text-[0.85rem]`}
           disabled={!canAdd}
-          title={canAdd ? `Añadir ${title.toLowerCase()}` : "Escribe un nombre válido"}
+          title={
+            canAdd
+              ? `Añadir ${title.toLowerCase()}`
+              : "Escribe un nombre válido"
+          }
         >
           <AddIcon disabled={!canAdd} />
         </button>
@@ -74,19 +106,34 @@ function CategorySection({
 
       {duplicateInSameType && (
         <p className="mb-2 text-[0.85rem] text-expense">
-          Ya existe "{existingByKey.label}". Edita la etiqueta si quieres cambiarla.
+          Ya existe "{existingByKey.label}". Edita la etiqueta si quieres
+          cambiarla.
         </p>
       )}
 
       <ul className={listReset}>
         {items.map((c) => (
-          <li key={c.id} className={`${listItem} ${c.active ? "" : listItemInactive}`}>
-            <EditableLabel value={c.label} onSave={(label) => onUpdate(c.withLabel(label))} />
+          <li
+            key={c.id}
+            className={`${listItem} ${c.active ? "" : listItemInactive}`}
+          >
+            <EditableLabel
+              value={c.label}
+              onSave={(label) => onUpdate(c.withLabel(label))}
+            />
             <div>
-              <button className={btnItem} onClick={() => onUpdate(c.toggleActive())}>
+              <button
+                type="button"
+                className={btnItem}
+                onClick={() => onUpdate(c.toggleActive())}
+              >
                 {c.active ? "Desactivar" : "Activar"}
               </button>
-              <button className={`${btnItem} bg-[#dc2626] text-white`} onClick={() => onDelete(c)}>
+              <button
+                type="button"
+                className={`${btnItem} bg-[#dc2626] text-white`}
+                onClick={() => onDelete(c)}
+              >
                 Eliminar
               </button>
             </div>
@@ -97,7 +144,13 @@ function CategorySection({
   );
 }
 
-function EditableLabel({ value, onSave }: { value: string; onSave: (value: string) => void }) {
+function EditableLabel({
+  value,
+  onSave,
+}: {
+  value: string;
+  onSave: (value: string) => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -119,7 +172,6 @@ function EditableLabel({ value, onSave }: { value: string; onSave: (value: strin
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          autoFocus
           onBlur={() => setEditing(false)}
         />
       </form>
@@ -127,8 +179,9 @@ function EditableLabel({ value, onSave }: { value: string; onSave: (value: strin
   }
 
   return (
-    <span
-      className="cursor-pointer hover:underline"
+    <button
+      type="button"
+      className="cursor-pointer border-0 bg-transparent p-0 text-inherit hover:underline"
       onClick={() => {
         setDraft(value);
         setEditing(true);
@@ -136,11 +189,16 @@ function EditableLabel({ value, onSave }: { value: string; onSave: (value: strin
       title="Haz clic para editar"
     >
       {value}
-    </span>
+    </button>
   );
 }
 
-export function CategoriesConfig({ categories, onAdd, onUpdate, onDelete }: Props) {
+export function CategoriesConfig({
+  categories,
+  onAdd,
+  onUpdate,
+  onDelete,
+}: Props) {
   const [pendingDelete, setPendingDelete] = useState<Category | null>(null);
 
   function handleDelete(cat: Category) {

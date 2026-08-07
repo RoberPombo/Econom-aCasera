@@ -1,5 +1,8 @@
-import type { ImportRepository, ImportPreview } from "../repositories/ImportRepository";
 import type { ImportSource } from "../entities/ImportSource";
+import type {
+  ImportPreview,
+  ImportRepository,
+} from "../repositories/ImportRepository";
 
 export class PreviewImportUseCase {
   private readonly repository: ImportRepository;

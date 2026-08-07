@@ -5,7 +5,9 @@ export interface FilterQuery {
   params: (string | number)[];
 }
 
-export function buildTransactionFilterQuery(filters: TransactionFilters): FilterQuery {
+export function buildTransactionFilterQuery(
+  filters: TransactionFilters,
+): FilterQuery {
   const clauses: string[] = [];
   const params: (string | number)[] = [];
 
@@ -40,7 +42,9 @@ export function buildTransactionFilterQuery(filters: TransactionFilters): Filter
     clauses.push("t.category = ?");
     params.push(filters.categoryKeys[0]);
   } else if (filters.categoryKeys.length > 1) {
-    clauses.push(`t.category IN (${filters.categoryKeys.map(() => "?").join(", ")})`);
+    clauses.push(
+      `t.category IN (${filters.categoryKeys.map(() => "?").join(", ")})`,
+    );
     params.push(...filters.categoryKeys);
   }
 
@@ -48,13 +52,16 @@ export function buildTransactionFilterQuery(filters: TransactionFilters): Filter
     clauses.push("t.person = ?");
     params.push(filters.personKeys[0]);
   } else if (filters.personKeys.length > 1) {
-    clauses.push(`t.person IN (${filters.personKeys.map(() => "?").join(", ")})`);
+    clauses.push(
+      `t.person IN (${filters.personKeys.map(() => "?").join(", ")})`,
+    );
     params.push(...filters.personKeys);
   }
 
   const minAmount = filters.minAmount;
   const maxAmount = filters.maxAmount;
-  const amountOk = minAmount === null || maxAmount === null || minAmount <= maxAmount;
+  const amountOk =
+    minAmount === null || maxAmount === null || minAmount <= maxAmount;
   if (amountOk && minAmount !== null) {
     clauses.push("t.amount >= ?");
     params.push(minAmount);

@@ -89,26 +89,47 @@ async function migrateDatabase(db: Database): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_transactions_fingerprint ON transactions(fingerprint)
   `);
 
-  const rows = await db.select<{ id: number; date: string; type: string; amount: number; concept: string; category: string; person: string }[]>(
-    "SELECT id, date, type, amount, concept, category, COALESCE(person, '') as person FROM transactions"
+  const rows = await db.select<
+    {
+      id: number;
+      date: string;
+      type: string;
+      amount: number;
+      concept: string;
+      category: string;
+      person: string;
+    }[]
+  >(
+    "SELECT id, date, type, amount, concept, category, COALESCE(person, '') as person FROM transactions",
   );
   for (const row of rows) {
     const fingerprint = computeFingerprint(row);
-    await db.execute("UPDATE transactions SET fingerprint = ? WHERE id = ?", [fingerprint, row.id]);
+    await db.execute("UPDATE transactions SET fingerprint = ? WHERE id = ?", [
+      fingerprint,
+      row.id,
+    ]);
   }
 }
 
 async function migrateTransactionsColumns(db: Database): Promise<void> {
-  const columns = await db.select<{ name: string }[]>(`PRAGMA table_info(transactions)`);
+  const columns = await db.select<{ name: string }[]>(
+    `PRAGMA table_info(transactions)`,
+  );
   const hasYear = columns.some((c) => c.name === "year");
 
   if (!hasYear) {
-    await db.execute(`ALTER TABLE transactions ADD COLUMN year INTEGER NOT NULL DEFAULT 0`);
-    await db.execute(`ALTER TABLE transactions ADD COLUMN month INTEGER NOT NULL DEFAULT 0`);
+    await db.execute(
+      `ALTER TABLE transactions ADD COLUMN year INTEGER NOT NULL DEFAULT 0`,
+    );
+    await db.execute(
+      `ALTER TABLE transactions ADD COLUMN month INTEGER NOT NULL DEFAULT 0`,
+    );
   }
 
   if (!columns.some((c) => c.name === "person")) {
-    await db.execute(`ALTER TABLE transactions ADD COLUMN person TEXT DEFAULT ''`);
+    await db.execute(
+      `ALTER TABLE transactions ADD COLUMN person TEXT DEFAULT ''`,
+    );
   }
 
   if (!hasYear) {
@@ -122,12 +143,19 @@ async function migrateTransactionsColumns(db: Database): Promise<void> {
   }
 }
 
-async function migrateConfigTable(db: Database, table: string, extraColumns: string[]): Promise<void> {
-  const columns = await db.select<{ name: string }[]>(`PRAGMA table_info(${table})`);
+async function migrateConfigTable(
+  db: Database,
+  table: string,
+  extraColumns: string[],
+): Promise<void> {
+  const columns = await db.select<{ name: string }[]>(
+    `PRAGMA table_info(${table})`,
+  );
   if (columns.some((c) => c.name === "label")) return;
 
   const extraDefs = extraColumns.map((col) => `${col} TEXT`).join(", ");
-  const extraSelect = extraColumns.length > 0 ? `, ${extraColumns.join(", ")}` : "";
+  const extraSelect =
+    extraColumns.length > 0 ? `, ${extraColumns.join(", ")}` : "";
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS ${table}_new (
@@ -140,7 +168,7 @@ async function migrateConfigTable(db: Database, table: string, extraColumns: str
   `);
 
   const rows = await db.select<Record<string, string | number>[]>(
-    `SELECT id, name${extraSelect}, active FROM ${table}`
+    `SELECT id, name${extraSelect}, active FROM ${table}`,
   );
 
   for (const row of rows) {
@@ -154,10 +182,16 @@ async function migrateConfigTable(db: Database, table: string, extraColumns: str
     }
     const extras = extraColumns.map((col) => `, ${col}`).join("");
     const extraValues = extraColumns.map(() => ", ?").join("");
-    const params = [row.id, label, key, ...extraColumns.map((col) => row[col]), row.active];
+    const params = [
+      row.id,
+      label,
+      key,
+      ...extraColumns.map((col) => row[col]),
+      row.active,
+    ];
     await db.execute(
       `INSERT INTO ${table}_new (id, label, key${extras}, active) VALUES (?, ?, ?${extraValues}, ?)`,
-      params
+      params,
     );
   }
 
@@ -165,16 +199,22 @@ async function migrateConfigTable(db: Database, table: string, extraColumns: str
   await db.execute(`ALTER TABLE ${table}_new RENAME TO ${table}`);
 }
 
-async function keyExists(db: Database, table: string, key: string): Promise<boolean> {
+async function keyExists(
+  db: Database,
+  table: string,
+  key: string,
+): Promise<boolean> {
   const result = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM ${table} WHERE key = ?`,
-    [key]
+    [key],
   );
   return result[0].count > 0;
 }
 
 async function seedDefaults(db: Database): Promise<void> {
-  const categories = await db.select<{ count: number }[]>("SELECT COUNT(*) as count FROM categories");
+  const categories = await db.select<{ count: number }[]>(
+    "SELECT COUNT(*) as count FROM categories",
+  );
   if (categories[0].count === 0) {
     await db.execute(`
       INSERT INTO categories (label, key, type, active) VALUES
@@ -187,7 +227,9 @@ async function seedDefaults(db: Database): Promise<void> {
     `);
   }
 
-  const persons = await db.select<{ count: number }[]>("SELECT COUNT(*) as count FROM persons");
+  const persons = await db.select<{ count: number }[]>(
+    "SELECT COUNT(*) as count FROM persons",
+  );
   if (persons[0].count === 0) {
     await db.execute(`
       INSERT INTO persons (label, key, active) VALUES

@@ -12,7 +12,10 @@ export class GetTransactionsUseCase {
     return this.repository.getFiltered(filters);
   }
 
-  async executeByYearAndMonth(year: number, month?: number): Promise<Transaction[]> {
+  async executeByYearAndMonth(
+    year: number,
+    month?: number,
+  ): Promise<Transaction[]> {
     return this.repository.getByYearAndMonth(year, month);
   }
 }

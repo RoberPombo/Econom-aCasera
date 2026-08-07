@@ -1,6 +1,16 @@
-import { useState, useEffect, useRef } from "react";
-import type { Transaction, Category, Person } from "../../domain/entities";
-import { input, label, formRow, formActions, btn, btnSecondary, btnGhost, receiptDropzone, receiptPreview } from "../styles";
+import { useEffect, useRef, useState } from "react";
+import type { Category, Person, Transaction } from "../../domain/entities";
+import {
+  btn,
+  btnGhost,
+  btnSecondary,
+  formActions,
+  formRow,
+  input,
+  label,
+  receiptDropzone,
+  receiptPreview,
+} from "../styles";
 
 export type ReceiptFormData = {
   bytes: Uint8Array;
@@ -53,7 +63,9 @@ export function TransactionForm({
   existingReceiptUrl,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState<Omit<TransactionFormData, "receipt" | "removeReceipt">>({
+  const [form, setForm] = useState<
+    Omit<TransactionFormData, "receipt" | "removeReceipt">
+  >({
     date: `${year}-${String(month).padStart(2, "0")}-01`,
     type: "expense",
     category: "",
@@ -97,14 +109,21 @@ export function TransactionForm({
     };
   }, [receipt]);
 
-  const filteredCategories = categories.filter((c) => c.type === form.type && c.active);
+  const filteredCategories = categories.filter(
+    (c) => c.type === form.type && c.active,
+  );
   const activePersons = persons.filter((p) => p.active);
   const showReceipt = form.type === "expense";
-  const previewSrc = receipt?.previewUrl ?? (!removeReceipt ? existingReceiptUrl ?? null : null);
+  const previewSrc =
+    receipt?.previewUrl ??
+    (!removeReceipt ? (existingReceiptUrl ?? null) : null);
 
   async function applyImageFile(file: File) {
     setReceiptError(null);
-    if (!ALLOWED.includes(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) {
+    if (
+      !ALLOWED.includes(file.type) &&
+      !/\.(jpe?g|png|webp)$/i.test(file.name)
+    ) {
       setReceiptError("Formato no soportado. Usa JPG, PNG o WebP.");
       return;
     }
@@ -115,7 +134,11 @@ export function TransactionForm({
     const buffer = new Uint8Array(await file.arrayBuffer());
     const previewUrl = URL.createObjectURL(file);
     if (receipt?.previewUrl) URL.revokeObjectURL(receipt.previewUrl);
-    setReceipt({ bytes: buffer, extension: extensionFromFile(file), previewUrl });
+    setReceipt({
+      bytes: buffer,
+      extension: extensionFromFile(file),
+      previewUrl,
+    });
     setRemoveReceipt(false);
   }
 
@@ -159,9 +182,12 @@ export function TransactionForm({
       }}
     >
       <div className={formRow}>
-        <label className={label}>Tipo</label>
+        <label className={label} htmlFor="tx-type">
+          Tipo
+        </label>
         <select
           className={input}
+          id="tx-type"
           value={form.type}
           onChange={(e) => {
             const type = e.target.value as "income" | "expense";
@@ -175,9 +201,12 @@ export function TransactionForm({
         </select>
       </div>
       <div className={formRow}>
-        <label className={label}>Fecha</label>
+        <label className={label} htmlFor="tx-date">
+          Fecha
+        </label>
         <input
           className={`${input} font-[inherit]`}
+          id="tx-date"
           type="date"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -185,9 +214,12 @@ export function TransactionForm({
         />
       </div>
       <div className={formRow}>
-        <label className={label}>Categoría</label>
+        <label className={label} htmlFor="tx-category">
+          Categoría
+        </label>
         <select
           className={input}
+          id="tx-category"
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
           required
@@ -201,9 +233,12 @@ export function TransactionForm({
         </select>
       </div>
       <div className={formRow}>
-        <label className={label}>Persona</label>
+        <label className={label} htmlFor="tx-person">
+          Persona
+        </label>
         <select
           className={input}
+          id="tx-person"
           value={form.person}
           onChange={(e) => setForm({ ...form, person: e.target.value })}
         >
@@ -216,9 +251,12 @@ export function TransactionForm({
         </select>
       </div>
       <div className={formRow}>
-        <label className={label}>Concepto</label>
+        <label className={label} htmlFor="tx-concept">
+          Concepto
+        </label>
         <input
           className={input}
+          id="tx-concept"
           type="text"
           value={form.concept}
           onChange={(e) => setForm({ ...form, concept: e.target.value })}
@@ -226,22 +264,30 @@ export function TransactionForm({
         />
       </div>
       <div className={formRow}>
-        <label className={label}>Importe</label>
+        <label className={label} htmlFor="tx-amount">
+          Importe
+        </label>
         <input
           className={input}
+          id="tx-amount"
           type="number"
           step="0.01"
           min="0.01"
           value={form.amount || ""}
-          onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
+          onChange={(e) =>
+            setForm({ ...form, amount: parseFloat(e.target.value) || 0 })
+          }
           required
         />
       </div>
 
       {showReceipt && (
         <div className={formRow}>
-          <label className={label}>Ticket</label>
+          <label className={label} htmlFor="tx-receipt">
+            Ticket
+          </label>
           <div className="flex flex-col gap-2">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: drag & drop is optional; the "Elegir archivo" button provides a keyboard alternative */}
             <div
               className={`${receiptDropzone} ${dragOver ? "border-primary bg-primary/5" : ""}`}
               onDragOver={(e) => {
@@ -268,13 +314,18 @@ export function TransactionForm({
                   Elegir archivo
                 </button>
                 {previewSrc && (
-                  <button type="button" className={btnSecondary} onClick={clearReceipt}>
+                  <button
+                    type="button"
+                    className={btnSecondary}
+                    onClick={clearReceipt}
+                  >
                     Quitar foto
                   </button>
                 )}
               </div>
               <input
                 ref={fileInputRef}
+                id="tx-receipt"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
@@ -286,15 +337,23 @@ export function TransactionForm({
               />
             </div>
             {previewSrc && (
-              <img src={previewSrc} alt="Vista previa del ticket" className={receiptPreview} />
+              <img
+                src={previewSrc}
+                alt="Vista previa del ticket"
+                className={receiptPreview}
+              />
             )}
-            {receiptError && <p className="m-0 text-[0.85rem] text-expense">{receiptError}</p>}
+            {receiptError && (
+              <p className="m-0 text-[0.85rem] text-expense">{receiptError}</p>
+            )}
           </div>
         </div>
       )}
 
       <div className={formActions}>
-        <button type="submit" className={btn}>{initialValue ? "Guardar" : "Añadir"}</button>
+        <button type="submit" className={btn}>
+          {initialValue ? "Guardar" : "Añadir"}
+        </button>
         {onCancel && (
           <button type="button" className={btnSecondary} onClick={onCancel}>
             Cancelar

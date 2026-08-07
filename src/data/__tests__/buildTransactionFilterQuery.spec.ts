@@ -5,7 +5,7 @@ import { buildTransactionFilterQuery } from "../buildTransactionFilterQuery";
 describe("buildTransactionFilterQuery", () => {
   test("builds month period clauses", () => {
     const { where, params } = buildTransactionFilterQuery(
-      TransactionFilters.defaultMonth(2026, 8)
+      TransactionFilters.defaultMonth(2026, 8),
     );
     expect(where).toContain("t.year = ?");
     expect(where).toContain("t.month = ?");
@@ -14,7 +14,7 @@ describe("buildTransactionFilterQuery", () => {
 
   test("builds open range (all history) with no date clauses", () => {
     const { where, params } = buildTransactionFilterQuery(
-      TransactionFilters.create({ period: { mode: "range" } })
+      TransactionFilters.create({ period: { mode: "range" } }),
     );
     expect(where).toBe("");
     expect(params).toEqual([]);
@@ -30,7 +30,7 @@ describe("buildTransactionFilterQuery", () => {
         minAmount: 10,
         maxAmount: 100,
         search: "Mercadona",
-      })
+      }),
     );
 
     expect(where.startsWith("WHERE ")).toBe(true);
@@ -67,7 +67,7 @@ describe("buildTransactionFilterQuery", () => {
         period: { mode: "month", year: 2026, month: 8 },
         minAmount: 50,
         maxAmount: 10,
-      })
+      }),
     );
     expect(where).not.toContain("t.amount");
     expect(params).toEqual([2026, 8]);
@@ -77,7 +77,7 @@ describe("buildTransactionFilterQuery", () => {
     const { where, params } = buildTransactionFilterQuery(
       TransactionFilters.create({
         period: { mode: "range", from: "2026-08-10", to: "2026-08-01" },
-      })
+      }),
     );
     expect(where).toBe("");
     expect(params).toEqual([]);

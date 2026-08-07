@@ -34,7 +34,11 @@ describe("TransactionFilters", () => {
     const filters = TransactionFilters.create({
       period: { mode: "range", from: "2026-08-10", to: "2026-08-01" },
     });
-    expect(filters.period).toEqual({ mode: "range", from: "2026-08-10", to: "2026-08-01" });
+    expect(filters.period).toEqual({
+      mode: "range",
+      from: "2026-08-10",
+      to: "2026-08-01",
+    });
   });
 
   test("forYear keeps non-period filters", () => {
@@ -45,7 +49,11 @@ describe("TransactionFilters", () => {
       search: "nomina",
     });
     const year = filters.forYear(2026);
-    expect(year.period).toEqual({ mode: "range", from: "2026-01-01", to: "2026-12-31" });
+    expect(year.period).toEqual({
+      mode: "range",
+      from: "2026-01-01",
+      to: "2026-12-31",
+    });
     expect(year.types).toEqual(["income"]);
     expect(year.categoryKeys).toEqual(["comida"]);
     expect(year.search).toBe("nomina");

@@ -1,21 +1,21 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useAppContext } from "../context/useAppContext";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
-  Transaction,
+  AnnualSummary,
   Category,
   CategorySummary,
-  MonthlySummary,
-  AnnualSummary,
-  Summary,
-  Settings,
   DbInfo,
-  Theme,
-  Person,
+  MonthlySummary,
   PeriodMode,
+  Person,
+  Settings,
+  Summary,
+  Theme,
+  Transaction,
 } from "../../domain/entities";
 import { TransactionFilters } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
+import { useAppContext } from "../context/useAppContext";
 
 export function useAppState() {
   const { compositionRoot } = useAppContext();
@@ -54,7 +54,11 @@ export function useAppState() {
     try {
       const period =
         periodMode === "month"
-          ? { mode: "month" as const, year: settings.currentYear, month: settings.currentMonth }
+          ? {
+              mode: "month" as const,
+              year: settings.currentYear,
+              month: settings.currentMonth,
+            }
           : { mode: "range" as const, from: rangeFrom, to: rangeTo };
       return TransactionFilters.create({
         period,
@@ -72,7 +76,9 @@ export function useAppState() {
 
   const resolveTheme = useCallback((theme: Theme): "light" | "dark" => {
     if (theme === "system") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
     }
     return theme;
   }, []);
@@ -125,9 +131,12 @@ export function useAppState() {
   useEffect(() => {
     loadSettings();
     loadDbInfo();
-    compositionRoot.provideCheckForUpdateUseCase().execute().then((info) => {
-      if (info) setUpdateInfo(info);
-    });
+    compositionRoot
+      .provideCheckForUpdateUseCase()
+      .execute()
+      .then((info) => {
+        if (info) setUpdateInfo(info);
+      });
   }, [loadSettings, loadDbInfo, compositionRoot]);
 
   useEffect(() => {
@@ -252,27 +261,44 @@ export function useAppState() {
     await loadData();
   }
 
-  async function updateTransaction(id: number, data: {
-    date?: string;
-    type?: "income" | "expense";
-    category?: string;
-    concept?: string;
-    amount?: number;
-    person?: string;
-    receipt?: { bytes: Uint8Array; extension: string } | null;
-    removeReceipt?: boolean;
-  }) {
+  async function updateTransaction(
+    id: number,
+    data: {
+      date?: string;
+      type?: "income" | "expense";
+      category?: string;
+      concept?: string;
+      amount?: number;
+      person?: string;
+      receipt?: { bytes: Uint8Array; extension: string } | null;
+      removeReceipt?: boolean;
+    },
+  ) {
     await compositionRoot.provideUpdateTransactionUseCase().execute(id, data);
     await loadData();
   }
 
   async function loadReceiptDataUrl(relativePath: string): Promise<string> {
-    return compositionRoot.provideReceiptRepository().readAsDataUrl(relativePath);
+    return compositionRoot
+      .provideReceiptRepository()
+      .readAsDataUrl(relativePath);
   }
 
-  async function findSimilarTransactions(date: string, category: string, type: "income" | "expense", amount: number) {
-    const all = await compositionRoot.provideGetTransactionsByDateUseCase().execute(date);
-    return all.filter((tx) => tx.category === category && tx.type === type && Math.abs(tx.amount - amount) < 0.005);
+  async function findSimilarTransactions(
+    date: string,
+    category: string,
+    type: "income" | "expense",
+    amount: number,
+  ) {
+    const all = await compositionRoot
+      .provideGetTransactionsByDateUseCase()
+      .execute(date);
+    return all.filter(
+      (tx) =>
+        tx.category === category &&
+        tx.type === type &&
+        Math.abs(tx.amount - amount) < 0.005,
+    );
   }
 
   async function deleteTransaction(id: number) {
@@ -315,7 +341,9 @@ export function useAppState() {
   }
 
   async function confirmImport(transactions: Transaction[]) {
-    const count = await compositionRoot.provideConfirmImportUseCase().execute(transactions);
+    const count = await compositionRoot
+      .provideConfirmImportUseCase()
+      .execute(transactions);
     await loadData();
     return count;
   }

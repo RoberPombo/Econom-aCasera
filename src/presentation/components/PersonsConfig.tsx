@@ -1,8 +1,16 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Person } from "../../domain/entities";
 import { normalizeKey } from "../../domain/entities/Key";
+import {
+  btn,
+  btnItem,
+  inputInline,
+  listItem,
+  listItemInactive,
+  listReset,
+  sectionTitle,
+} from "../styles";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { inputInline, btn, btnItem, listReset, listItem, listItemInactive, sectionTitle } from "../styles";
 
 interface Props {
   persons: Person[];
@@ -13,14 +21,31 @@ interface Props {
 
 function AddIcon({ disabled }: { disabled?: boolean }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity={disabled ? 0.5 : 1}>
+    <svg
+      aria-hidden="true"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      opacity={disabled ? 0.5 : 1}
+    >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
 }
 
-function EditableLabel({ value, onSave }: { value: string; onSave: (value: string) => void }) {
+function EditableLabel({
+  value,
+  onSave,
+}: {
+  value: string;
+  onSave: (value: string) => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -42,7 +67,6 @@ function EditableLabel({ value, onSave }: { value: string; onSave: (value: strin
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          autoFocus
           onBlur={() => setEditing(false)}
         />
       </form>
@@ -50,8 +74,9 @@ function EditableLabel({ value, onSave }: { value: string; onSave: (value: strin
   }
 
   return (
-    <span
-      className="cursor-pointer hover:underline"
+    <button
+      type="button"
+      className="cursor-pointer border-0 bg-transparent p-0 text-inherit hover:underline"
       onClick={() => {
         setDraft(value);
         setEditing(true);
@@ -59,17 +84,21 @@ function EditableLabel({ value, onSave }: { value: string; onSave: (value: strin
       title="Haz clic para editar"
     >
       {value}
-    </span>
+    </button>
   );
 }
 
 export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
   const [newLabel, setNewLabel] = useState("");
   const [pendingDelete, setPendingDelete] = useState<Person | null>(null);
-  const keyMap = useMemo(() => new Map(persons.map((p) => [p.key, p])), [persons]);
+  const keyMap = useMemo(
+    () => new Map(persons.map((p) => [p.key, p])),
+    [persons],
+  );
   const newKey = normalizeKey(newLabel);
   const existingByKey = newKey ? keyMap.get(newKey) : undefined;
-  const canAdd = newLabel.trim().length > 0 && newKey.length > 0 && !existingByKey;
+  const canAdd =
+    newLabel.trim().length > 0 && newKey.length > 0 && !existingByKey;
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -93,7 +122,10 @@ export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
     <div>
       <h2 className={sectionTitle}>Miembros familiares</h2>
 
-      <form onSubmit={handleAdd} className="mb-3 flex flex-wrap items-center gap-2">
+      <form
+        onSubmit={handleAdd}
+        className="mb-3 flex flex-wrap items-center gap-2"
+      >
         <h3 className="m-0 text-[1.1rem] font-bold">Miembros</h3>
         <input
           className={`${inputInline} max-w-[220px] text-[0.9rem]`}
@@ -114,19 +146,34 @@ export function PersonsConfig({ persons, onAdd, onUpdate, onDelete }: Props) {
 
       {existingByKey && (
         <p className="mb-2 text-[0.85rem] text-expense">
-          Ya existe "{existingByKey.label}". Edita la etiqueta si quieres cambiarla.
+          Ya existe "{existingByKey.label}". Edita la etiqueta si quieres
+          cambiarla.
         </p>
       )}
 
       <ul className={listReset}>
         {persons.map((p) => (
-          <li key={p.id} className={`${listItem} ${p.active ? "" : listItemInactive}`}>
-            <EditableLabel value={p.label} onSave={(label) => onUpdate(p.withLabel(label))} />
+          <li
+            key={p.id}
+            className={`${listItem} ${p.active ? "" : listItemInactive}`}
+          >
+            <EditableLabel
+              value={p.label}
+              onSave={(label) => onUpdate(p.withLabel(label))}
+            />
             <div>
-              <button className={btnItem} onClick={() => onUpdate(p.toggleActive())}>
+              <button
+                type="button"
+                className={btnItem}
+                onClick={() => onUpdate(p.toggleActive())}
+              >
                 {p.active ? "Desactivar" : "Activar"}
               </button>
-              <button className={`${btnItem} bg-[#dc2626] text-white`} onClick={() => handleDelete(p)}>
+              <button
+                type="button"
+                className={`${btnItem} bg-[#dc2626] text-white`}
+                onClick={() => handleDelete(p)}
+              >
                 Eliminar
               </button>
             </div>

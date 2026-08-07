@@ -15,7 +15,8 @@
   --breakpoint-tablet: 900px;
   --breakpoint-desktop: 1200px;
   --breakpoint-ultrawide: 1600px;
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @layer utilities {

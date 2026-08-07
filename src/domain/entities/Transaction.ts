@@ -1,5 +1,5 @@
-import { Entity } from "./Entity";
 import { Amount } from "./Amount";
+import { Entity } from "./Entity";
 
 export type TransactionType = "income" | "expense";
 
@@ -27,7 +27,13 @@ export class Transaction extends Entity {
   readonly person: string;
   readonly receiptPath: string | null;
 
-  private constructor(data: TransactionData & { year: number; month: number; receiptPath: string | null }) {
+  private constructor(
+    data: TransactionData & {
+      year: number;
+      month: number;
+      receiptPath: string | null;
+    },
+  ) {
     super(data.id ?? crypto.randomUUID());
 
     this.date = data.date;
@@ -43,7 +49,7 @@ export class Transaction extends Entity {
 
   static create(data: TransactionData): Transaction {
     const date = new Date(data.date);
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       throw new Error("La fecha no es válida");
     }
 

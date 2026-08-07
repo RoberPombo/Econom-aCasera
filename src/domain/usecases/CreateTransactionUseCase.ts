@@ -1,7 +1,7 @@
 import { Transaction } from "../entities";
+import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 import type { ReceiptRepository } from "../repositories/ReceiptRepository";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
-import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 
 export type ReceiptInput = {
   bytes: Uint8Array;
@@ -16,7 +16,7 @@ export class CreateTransactionUseCase {
   constructor(
     repository: TransactionRepository,
     receiptRepository: ReceiptRepository,
-    dbInfoRepository: DbInfoRepository
+    dbInfoRepository: DbInfoRepository,
   ) {
     this.repository = repository;
     this.receiptRepository = receiptRepository;
@@ -48,11 +48,15 @@ export class CreateTransactionUseCase {
 
     const created = await this.repository.create(transaction);
 
-    if (data.type === "expense" && data.receipt && typeof created.id === "number") {
+    if (
+      data.type === "expense" &&
+      data.receipt &&
+      typeof created.id === "number"
+    ) {
       const path = await this.receiptRepository.save(
         created.id,
         data.receipt.bytes,
-        data.receipt.extension
+        data.receipt.extension,
       );
       const withReceipt = created.withUpdates({ receiptPath: path });
       const updated = await this.repository.update(withReceipt);
