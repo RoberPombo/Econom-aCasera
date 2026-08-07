@@ -91,17 +91,28 @@ For detailed frontend guidance invoke the skill `clean-architecture-frontend`.
 
 When writing or refactoring frontend tests, invoke the skill `testing-frontend`.
 
-- Stack: Vitest, jsdom, React Testing Library, jest-dom.
-- Domain tests go in `src/domain/__tests__/`.
-- Component/hook tests go in `src/presentation/__tests__/`.
-- Use in-memory fakes for repositories; do not hit the real backend in unit tests.
-- Prefer `screen.getByRole`, `getByLabelText` and `userEvent` over test IDs.
+### TDD
 
-Run tests before committing:
+- New implementation must be written test-first (Red-Green-Refactor): write a failing test, run it to confirm it fails, then implement the minimal code to make it pass.
+- Characterization tests (existing behavior) are the exception and do not need a prior failing run.
+- Run the test once after writing it, before and after the implementation change.
+
+### Test writing
+
+- Stack: Vitest, jsdom, React Testing Library, jest-dom.
+- Domain tests go in `src/domain/__tests__/`; data-layer tests go in `src/data/__tests__/`; component/hook tests go in `src/presentation/__tests__/`.
+- Use the shared in-memory fakes from `src/tests/fakes/repositories.ts`; do not duplicate fake implementations per spec or hit the real backend.
+- Structure every test in AAA blocks separated by a blank line: setup → execution → validation (`const result = await useCase.execute(...)`). Tests with no setup or execution may skip those blocks.
+- Test names and descriptions in English; `describe`/`test`; prefer `screen.getByRole`, `getByLabelText` and `userEvent` over test IDs.
+- Unit tests must stay green and increase (or at least keep) coverage. Check with:
 
 ```bash
 npm run test
+npm run test:coverage
+npm run lint
 ```
+
+Run them before committing.
 
 ## Release Rules
 
