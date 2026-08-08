@@ -9,6 +9,7 @@ import { computeFingerprint } from "./computeFingerprint";
 import { getDatabase } from "./db";
 import { parseExcel } from "./excelParser";
 import { type ExcelCell, parseIngExcel } from "./parsers/ingParser";
+import { classifySavings } from "./savingsClassifier";
 
 export class TauriImportRepository implements ImportRepository {
   async preview(source: ImportSource, file: File): Promise<ImportPreview> {
@@ -49,7 +50,11 @@ export class TauriImportRepository implements ImportRepository {
       }
     }
 
-    return { transactions, errors, skipped };
+    return {
+      transactions: classifySavings(transactions, source),
+      errors,
+      skipped,
+    };
   }
 
   async confirm(transactions: ImportPreview["transactions"]): Promise<number> {
