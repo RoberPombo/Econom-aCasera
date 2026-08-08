@@ -121,4 +121,23 @@ describe("ReceiptViewer", () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  test("ignores other keys", () => {
+    const onClose = vi.fn();
+
+    render(<ReceiptViewer src="x" onClose={onClose} />);
+
+    fireEvent.keyDown(window, { key: "Enter" });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  test("closes when the backdrop itself is clicked", () => {
+    const onClose = vi.fn();
+    const { container } = render(<ReceiptViewer src="x" onClose={onClose} />);
+
+    fireEvent.click(container.firstChild as HTMLElement);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

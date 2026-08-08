@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 import {
@@ -379,5 +385,269 @@ describe("App", () => {
     expect(
       screen.queryByRole("heading", { name: "Nueva versión disponible" }),
     ).not.toBeInTheDocument();
+  });
+
+  test("titles the period with the range filters", async () => {
+    const user = userEvent.setup();
+    renderApp({ settings: augustSettings });
+    await settled();
+
+    await user.click(screen.getByRole("button", { name: "Por rango" }));
+
+    expect(
+      await screen.findByText("Todo el historial", undefined, {
+        timeout: 3000,
+      }),
+    ).toBeInTheDocument();
+
+    const to = screen.getByLabelText("Hasta");
+    fireEvent.change(to, { target: { value: "2026-08-31" } });
+    fireEvent.keyDown(to, { key: "Enter", code: "Enter", keyCode: 13 });
+
+    expect(
+      await screen.findByText("Hasta 2026-08-31", undefined, {
+        timeout: 3000,
+      }),
+    ).toBeInTheDocument();
+
+    const from = screen.getByLabelText("Desde");
+    fireEvent.change(from, { target: { value: "2026-08-05" } });
+    fireEvent.keyDown(from, { key: "Enter", code: "Enter", keyCode: 13 });
+
+    expect(
+      await screen.findByText("2026-08-05 — 2026-08-31", undefined, {
+        timeout: 3000,
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(to, { target: { value: "" } });
+    fireEvent.keyDown(to, { key: "Enter", code: "Enter", keyCode: 13 });
+
+    expect(
+      await screen.findByText("Desde 2026-08-05", undefined, { timeout: 3000 }),
+    ).toBeInTheDocument();
+  });
+
+  test("cancels the similar transaction dialog", async () => {
+    const user = userEvent.setup();
+    const root = renderApp({
+      settings: augustSettings,
+      transactions: [expense(1, "2026-08-01", "comida", 12)],
+      categories: defaultCategories,
+    });
+    await settled();
+    await screen.findByText("Mercadona");
+
+    await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+    const dialog = modalPanel("Añadir movimiento");
+    await user.selectOptions(
+      within(dialog).getByLabelText("Categoría"),
+      "comida",
+    );
+    await user.type(within(dialog).getByLabelText("Concepto"), "Cine");
+    await user.type(within(dialog).getByLabelText("Importe"), "12");
+    await user.click(within(dialog).getByRole("button", { name: "Añadir" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Movimiento similar encontrado" }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(modalPanel("Movimiento similar encontrado")).getByRole("button", {
+        name: "Cancelar",
+      }),
+    );
+
+    expect(
+      screen.queryByRole("heading", { name: "Movimiento similar encontrado" }),
+    ).not.toBeInTheDocument();
+    expect(await augustCount(root)).toBe(1);
+  });
+
+  test("loads the receipt of the transaction being edited", async () => {
+    const user = userEvent.setup();
+    renderApp({
+      settings: augustSettings,
+      transactions: [
+        expense(1, "2026-08-05", "comida", 40, {
+          receiptPath: "receipts/1.png",
+        }),
+      ],
+      categories: [],
+    });
+    await settled();
+    await screen.findByText("Mercadona");
+
+    await user.click(screen.getByRole("button", { name: "✎" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Editar movimiento" }),
+    ).toBeInTheDocument();
+    const preview = await screen.findByAltText("Vista previa del ticket");
+    expect(preview).toHaveAttribute("src", "data:image/png;base64,ZGVtbw==");
+  });
+
+  test("edits a transaction whose receipt cannot be read", async () => {
+    const user = userEvent.setup();
+    renderApp({
+      settings: augustSettings,
+      transactions: [
+        expense(1, "2026-08-05", "comida", 40, {
+          receiptPath: "fail:r/1.png",
+        }),
+      ],
+      categories: [],
+    });
+    await settled();
+    await screen.findByText("Mercadona");
+
+    await user.click(screen.getByRole("button", { name: "✎" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Editar movimiento" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Arrastra una imagen, pégala (Ctrl+V) o elige un archivo",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByAltText("Vista previa del ticket"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("does not open the viewer when the receipt fails to load", async () => {
+    const user = userEvent.setup();
+    renderApp({
+      settings: augustSettings,
+      transactions: [
+        expense(1, "2026-08-05", "comida", 40, {
+          receiptPath: "fail:r/1.png",
+        }),
+      ],
+      categories: [],
+    });
+    await settled();
+    await screen.findByText("Mercadona");
+
+    await user.click(
+      screen.getByRole("button", { name: "Ver ticket de Mercadona" }),
+    );
+
+    expect(
+      screen.queryByRole("dialog", { name: "Foto del ticket" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("closes the add and edit modals through their close actions", async () => {
+    const user = userEvent.setup();
+    renderApp({
+      settings: augustSettings,
+      transactions: [expense(1, "2026-08-05", "comida", 40)],
+      categories: [],
+    });
+    await settled();
+    await screen.findByText("Mercadona");
+
+    await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(
+      screen.queryByRole("heading", { name: "Añadir movimiento" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "🗑" }));
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(
+      screen.queryByText("¿Eliminar este movimiento?"),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "✎" }));
+    await user.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(
+      screen.queryByRole("heading", { name: "Editar movimiento" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("confirms an import from the modal", async () => {
+    const user = userEvent.setup();
+    const root = renderApp({
+      settings: augustSettings,
+      categories: defaultCategories,
+    });
+    await settled();
+
+    root.imports.previewResult = {
+      transactions: [expense(9, "2026-08-05", "comida", 40)],
+      errors: [],
+      skipped: 0,
+    };
+
+    await user.click(screen.getByRole("button", { name: "Importar" }));
+    fireEvent.change(
+      document.querySelector("input[type=file]") as HTMLInputElement,
+      { target: { files: [new File(["x"], "datos.xlsx")] } },
+    );
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "Importar movimientos" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(root.imports.confirmCalls).toBe(1);
+  });
+  test("saves a new transaction with a receipt attached", async () => {
+    const user = userEvent.setup();
+    const root = renderApp({
+      settings: augustSettings,
+      categories: defaultCategories,
+    });
+    await settled();
+
+    await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
+    const dialog = modalPanel("Añadir movimiento");
+    await user.upload(
+      within(dialog).getByLabelText("Ticket"),
+      new File(["x"], "ticket.png", { type: "image/png" }),
+    );
+    await within(dialog).findByRole("option", { name: "Comida" });
+    await user.selectOptions(
+      within(dialog).getByLabelText("Categoría"),
+      "comida",
+    );
+    await user.type(within(dialog).getByLabelText("Concepto"), "Suscripción");
+    await user.type(within(dialog).getByLabelText("Importe"), "9");
+    await user.click(within(dialog).getByRole("button", { name: "Añadir" }));
+
+    expect(await screen.findByText("Suscripción")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Añadir movimiento" }),
+    ).not.toBeInTheDocument();
+    expect(await augustCount(root)).toBe(1);
+  });
+
+  test("shows the drive footer when the database is synchronized", async () => {
+    const root = new FakeCompositionRoot({ settings: augustSettings });
+    root.dbInfo.get = async () => ({
+      dbPath: "/db.sqlite",
+      backupPath: "/backup.sqlite",
+      driveFolder: "Carpeta",
+      usesDrive: true,
+      hasConflict: false,
+    });
+    render(
+      <AppProvider compositionRoot={root.asCompositionRoot()}>
+        <App />
+      </AppProvider>,
+    );
+
+    await settled();
+
+    expect(
+      await screen.findByText("✅ Sincronizado con Google Drive"),
+    ).toBeInTheDocument();
   });
 });

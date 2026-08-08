@@ -221,4 +221,198 @@ describe("ImportView", () => {
     expect(screen.queryByText("Guardar 1 movimientos")).not.toBeInTheDocument();
     expect(screen.queryByText("Mercadona")).not.toBeInTheDocument();
   });
+
+  test("flags a non-xls file when the ING source is selected", async () => {
+    const user = userEvent.setup();
+    renderImport();
+
+    await user.click(screen.getByRole("button", { name: /ING/ }));
+    selectFile(makeFile("movimientos.txt"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(screen.getByText(/no es un Excel de ING/)).toBeInTheDocument();
+    expect(
+      screen.getByText("¿Cómo descargar los movimientos de ING?"),
+    ).toBeInTheDocument();
+  });
+
+  test("reports the skipped duplicates alongside the new rows", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 2),
+    });
+
+    selectFile(makeFile("mixed.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(
+      screen.getByText(/2 movimientos omitidos porque ya existen/),
+    ).toBeInTheDocument();
+  });
+
+  test("validates every row cell while editing and blocks the save", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([
+        tx("comida", "Mercadona", 40.5, "2026-08-10"),
+        tx("nomina", "Cuota", 10, "2026-08-05"),
+      ]),
+    });
+    selectFile(makeFile("invalid.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    const firstRow = screen
+      .getByDisplayValue("Mercadona")
+      .closest("tr") as HTMLElement;
+    const inputs = firstRow.querySelectorAll("input");
+    const select = firstRow.querySelector("select") as HTMLSelectElement;
+
+    fireEvent.change(inputs[0], { target: { value: "" } });
+    fireEvent.change(select, { target: { value: "weird" } });
+    fireEvent.change(inputs[1], { target: { value: "" } });
+
+    const amount = inputs[2] as HTMLInputElement;
+    await user.clear(amount);
+    await user.type(amount, "abc");
+    fireEvent.blur(amount);
+
+    expect(screen.getAllByText(/fecha inválida/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/tipo inválido/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/categoría vacía/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/importe inválido/).length).toBeGreaterThan(0);
+    expect(screen.getByDisplayValue("abc")).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", { name: "Guardar 2 movimientos" }),
+    ).toBeDisabled();
+  });
+
+  test("surfaces confirmation failures as errors", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+      onConfirm: vi
+        .fn<(ts: Transaction[]) => Promise<number>>()
+        .mockRejectedValue(new Error("La base de datos está bloqueada")),
+    });
+    selectFile(makeFile("err.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    );
+
+    expect(
+      await screen.findByText(/La base de datos está bloqueada/),
+    ).toBeInTheDocument();
+  });
+
+  test("reports when none of the rows could be saved", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+      onConfirm: vi
+        .fn<(t: Transaction[]) => Promise<number>>()
+        .mockResolvedValue(0),
+    });
+    selectFile(makeFile("dupe.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    );
+
+    expect((await screen.findByText(/No se guardó nada/)).textContent).toMatch(
+      /los 1 movimiento(s)? ya existían/,
+    );
+  });
+
+  test("reports how many rows were already existed after a partial save", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([
+        tx("comida", "Mercadona", 40.5),
+        tx("nomina", "Cuota", 10),
+      ]),
+      onConfirm: vi
+        .fn<(t: Transaction[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("partial.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 2 movimientos" }),
+    );
+
+    expect(
+      (await screen.findByText(/Guardados 1 movimiento/)).textContent,
+    ).toMatch(/1 ya existían/);
+  });
+
+  test("clears the rows with the Limpiar button", async () => {
+    const user = userEvent.setup();
+    renderImport({ onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]) });
+    selectFile(makeFile("rows.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+    expect(screen.getByDisplayValue("Mercadona")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Limpiar" }));
+
+    expect(screen.queryByDisplayValue("Mercadona")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guardar/)).not.toBeInTheDocument();
+  });
+
+  test("assigns a person to the row", async () => {
+    const user = userEvent.setup();
+    renderImport({ onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]) });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    const selects = screen.getAllByRole("combobox") as HTMLSelectElement[];
+    const personSelect = selects.find((sel) =>
+      Array.from(sel.options).some((o) => o.value === "ana"),
+    ) as HTMLSelectElement;
+    await user.selectOptions(personSelect, "ana");
+
+    expect(personSelect).toHaveValue("ana");
+  });
+
+  test("clears the selected file with Cambiar", async () => {
+    const user = userEvent.setup();
+    const { onPreview } = renderImport();
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Cambiar" }));
+
+    expect(onPreview).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("movimientos.xlsx")).not.toBeInTheDocument();
+  });
+
+  test("does not confirm rows with validation errors", async () => {
+    const user = userEvent.setup();
+    const { onConfirm } = renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    const amount = screen.getByDisplayValue("40,50");
+    await user.clear(amount);
+    await user.type(amount, "abc");
+    await user.click(screen.getByRole("button", { name: /Guardar/ }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  test("reports duplicates when the preview has no new rows", async () => {
+    const user = userEvent.setup();
+    renderImport({ onPreview: mockPreview([], [], 2) });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(
+      screen.getByText(
+        /No se guardará nada: los 2 movimientos del archivo ya existen/,
+      ),
+    ).toBeInTheDocument();
+  });
 });

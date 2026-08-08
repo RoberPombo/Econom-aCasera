@@ -35,7 +35,7 @@ function renderForm(
   >;
   const onCancel = overrides.onCancel;
 
-  render(
+  const utils = render(
     <TransactionForm
       onSubmit={onSubmit}
       onCancel={onCancel}
@@ -48,7 +48,7 @@ function renderForm(
     />,
   );
 
-  return { onSubmit, onCancel };
+  return { onSubmit, onCancel, ...utils };
 }
 
 beforeEach(() => {
@@ -255,5 +255,230 @@ describe("TransactionForm", () => {
     await user.clear(screen.getByLabelText("Importe"));
 
     expect(screen.getByLabelText("Importe")).toHaveValue(null);
+  });
+
+  test("updates the date field", async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = renderForm();
+
+    const date = screen.getByLabelText("Fecha");
+    await user.clear(date);
+    await user.type(date, "2026-08-15");
+
+    await user.selectOptions(screen.getByLabelText("Categoría"), "comida");
+    await user.type(screen.getByLabelText("Concepto"), "Cena");
+    await user.type(screen.getByLabelText("Importe"), "20");
+    await user.click(screen.getByRole("button", { name: "Añadir" }));
+
+    const data = onSubmit.mock.calls[0][0];
+    expect(data.date).toBe("2026-08-15");
+  });
+
+  test("infers the receipt extension from the file name and type", async () => {
+    const cases: { file: File; extension: string }[] = [
+      {
+        file: new File(["x"], "ticket.jpeg", { type: "image/jpeg" }),
+        extension: "jpg",
+      },
+      {
+        file: new File(["x"], "ticket.jpg", { type: "image/jpeg" }),
+        extension: "jpg",
+      },
+      {
+        file: new File(["x"], "ticket.raw", { type: "image/png" }),
+        extension: "png",
+      },
+      {
+        file: new File(["x"], "ticket.raw", { type: "image/webp" }),
+        extension: "webp",
+      },
+      {
+        file: new File(["x"], "ticket", { type: "image/jpeg" }),
+        extension: "jpg",
+      },
+    ];
+
+    for (const { file, extension } of cases) {
+      const { onSubmit, unmount } = renderForm();
+      const user = userEvent.setup();
+      await user.upload(screen.getByLabelText("Ticket"), file);
+
+      await user.selectOptions(screen.getByLabelText("Categoría"), "comida");
+      await user.type(screen.getByLabelText("Concepto"), "A");
+      await user.type(screen.getByLabelText("Importe"), "1");
+      await user.click(screen.getByRole("button", { name: "Añadir" }));
+
+      const data = onSubmit.mock.calls[onSubmit.mock.calls.length - 1]?.[0];
+      expect(data?.receipt?.extension).toBe(extension);
+      unmount();
+    }
+  });
+
+  test("revokes the previous preview when a new file is attached", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.upload(
+      screen.getByLabelText("Ticket"),
+      new File(["a"], "a.png", { type: "image/png" }),
+    );
+    await user.upload(
+      screen.getByLabelText("Ticket"),
+      new File(["y"], "b.png", { type: "image/png" }),
+    );
+
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+  });
+
+  test("revokes the preview when the photo is removed after an upload", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.upload(
+      screen.getByLabelText("Ticket"),
+      new File(["a"], "a.png", { type: "image/png" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Quitar foto" }));
+
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+  });
+
+  test("attaches an image pasted from the clipboard", async () => {
+    renderForm();
+    const form = screen
+      .getByRole("button", { name: "Añadir" })
+      .closest("form") as HTMLElement;
+    const file = new File(["p"], "paste.png", { type: "image/png" });
+
+    fireEvent.paste(form, {
+      clipboardData: {
+        items: [
+          { type: "text/plain", getAsFile: () => null },
+          { type: "image/png", getAsFile: () => file },
+        ],
+      },
+    });
+
+    expect(
+      await screen.findByAltText("Vista previa del ticket"),
+    ).toHaveAttribute("src", "blob:mock-url");
+  });
+
+  test("ignores pasted content without an image", () => {
+    renderForm();
+    const form = screen
+      .getByRole("button", { name: "Añadir" })
+      .closest("form") as HTMLElement;
+
+    fireEvent.paste(form, {
+      clipboardData: { items: [{ type: "text/plain", getAsFile: () => null }] },
+    });
+
+    expect(
+      screen.queryByAltText("Vista previa del ticket"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("ignores pasted content when the form is an income", () => {
+    renderForm();
+    const form = screen
+      .getByRole("button", { name: "Añadir" })
+      .closest("form") as HTMLElement;
+
+    fireEvent.change(screen.getByLabelText("Tipo"), {
+      target: { value: "income" },
+    });
+    fireEvent.paste(form, {
+      clipboardData: {
+        items: [
+          {
+            type: "image/png",
+            getAsFile: () => new File(["x"], "p.png", { type: "image/png" }),
+          },
+        ],
+      },
+    });
+
+    expect(
+      screen.queryByAltText("Vista previa del ticket"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("highlights the dropzone while dragging over it", () => {
+    renderForm();
+    const dropzone = screen.getByText(
+      "Arrastra una imagen, pégala (Ctrl+V) o elige un archivo",
+    ).parentElement as HTMLElement;
+
+    fireEvent.dragOver(dropzone);
+    fireEvent.dragLeave(dropzone);
+
+    expect(dropzone).not.toHaveClass("border-primary");
+  });
+
+  test("opens the file picker from the choose button", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    const input = screen.getByLabelText("Ticket") as HTMLInputElement;
+    const clickSpy = vi.spyOn(input, "click").mockImplementation(() => {});
+
+    await user.click(screen.getByRole("button", { name: /Elegir archivo/ }));
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    clickSpy.mockRestore();
+  });
+
+  test("does nothing when the file input is cleared", () => {
+    renderForm();
+    const input = screen.getByLabelText("Ticket");
+
+    fireEvent.change(input, { target: { files: [] } });
+
+    expect(
+      screen.queryByAltText("Vista previa del ticket"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("ignores a paste without clipboard items", () => {
+    renderForm();
+    const form = screen
+      .getByRole("button", { name: "Añadir" })
+      .closest("form") as HTMLElement;
+
+    fireEvent.paste(form, { clipboardData: undefined });
+
+    expect(
+      screen.queryByAltText("Vista previa del ticket"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("ignores pasted image items without a file", () => {
+    renderForm();
+    const form = screen
+      .getByRole("button", { name: "Añadir" })
+      .closest("form") as HTMLElement;
+
+    fireEvent.paste(form, {
+      clipboardData: {
+        items: [{ type: "image/png", getAsFile: () => null }],
+      } as unknown as DataTransfer,
+    });
+
+    expect(
+      screen.queryByAltText("Vista previa del ticket"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("ignores a drop without files", () => {
+    renderForm();
+    const zone = screen.getByText(
+      "Arrastra una imagen, pégala (Ctrl+V) o elige un archivo",
+    ).parentElement as HTMLElement;
+
+    fireEvent.drop(zone, { dataTransfer: { files: [] } });
+
+    expect(
+      screen.queryByAltText("Vista previa del ticket"),
+    ).not.toBeInTheDocument();
   });
 });

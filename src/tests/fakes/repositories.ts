@@ -228,7 +228,10 @@ export class InMemoryReceiptRepository implements ReceiptRepository {
     return `receipts/${transactionId}.${extension}`;
   }
 
-  async readAsDataUrl(_relativePath: string): Promise<string> {
+  async readAsDataUrl(relativePath: string): Promise<string> {
+    if (relativePath.startsWith("fail:")) {
+      throw new Error(`No se pudo leer el ticket ${relativePath}`);
+    }
     return "data:image/png;base64,ZGVtbw==";
   }
 
@@ -293,6 +296,7 @@ export class FakeUpdateRepository implements UpdateRepository {
 export class FakeImportRepository implements ImportRepository {
   previewResult: ImportPreview;
   confirmResult: number;
+  confirmCalls = 0;
 
   constructor(
     previewResult: ImportPreview = {
@@ -311,6 +315,7 @@ export class FakeImportRepository implements ImportRepository {
   }
 
   async confirm(transactions: ImportPreview["transactions"]): Promise<number> {
+    this.confirmCalls += 1;
     return transactions.length > 0 ? this.confirmResult : 0;
   }
 }

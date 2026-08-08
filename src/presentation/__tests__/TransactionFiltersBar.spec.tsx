@@ -278,4 +278,186 @@ describe("TransactionFiltersBar", () => {
       expect.objectContaining({ categoryKeys: [] }),
     );
   });
+
+  test("removes a selected person chip and labels the counter", async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderBar(
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 8 },
+        personKeys: ["ana"],
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /Ana ×/ }));
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ personKeys: [] }),
+    );
+  });
+
+  test("clears the type filter from the select", async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderBar(
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 8 },
+        types: ["income"],
+      }),
+    );
+
+    await user.selectOptions(screen.getByLabelText("Tipo"), "");
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ types: [] }),
+    );
+  });
+
+  test("clears the selected categories from the select", async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderBar();
+
+    await user.selectOptions(screen.getByLabelText("Categoría"), "comida");
+    expect(
+      screen.getByRole("option", { name: "1 seleccionada(s)" }),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Categoría"), "");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ categoryKeys: [] }),
+    );
+  });
+
+  test("toggles persons from the multiselect and clears them", async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderBar();
+
+    await user.selectOptions(screen.getByLabelText("Persona"), "ana");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ personKeys: ["ana"] }),
+    );
+
+    await user.selectOptions(screen.getByLabelText("Persona"), "ana");
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ personKeys: [] }),
+    );
+  });
+
+  test("shows the person counter label with selected persons", () => {
+    renderBar(
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 8 },
+        personKeys: ["ana", "bob"],
+      }),
+    );
+
+    expect(
+      screen.getByRole("option", { name: "2 seleccionada(s)" }),
+    ).toBeInTheDocument();
+  });
+
+  test("clearing an amount filter resets it to null", async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderBar();
+
+    await user.type(screen.getByLabelText("Importe min"), "10");
+    await user.clear(screen.getByLabelText("Importe min"));
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ minAmount: null }),
+    );
+  });
+
+  test("restores the max amount draft to the committed value on blur", async () => {
+    const user = userEvent.setup();
+    renderBar();
+
+    const max = screen.getByLabelText("Importe max");
+    await user.type(max, "12x");
+
+    expect(max).toHaveValue("12x");
+
+    fireEvent.blur(max);
+
+    expect(screen.getByLabelText("Importe max")).toHaveValue("12");
+  });
+
+  test("clears the Desde date and commits the Hasta date", () => {
+    const { onRangeChange } = renderBar(
+      TransactionFilters.create({
+        period: { mode: "range", from: "2026-08-01" },
+      }),
+    );
+
+    const from = screen.getByLabelText("Desde");
+    fireEvent.change(from, { target: { value: "" } });
+    fireEvent.keyDown(from, { key: "Enter", code: "Enter", keyCode: 13 });
+
+    expect(onRangeChange).toHaveBeenCalledWith(undefined, undefined);
+
+    const to = screen.getByLabelText("Hasta");
+    fireEvent.change(to, { target: { value: "2026-08-31" } });
+    fireEvent.keyDown(to, { key: "Enter", code: "Enter", keyCode: 13 });
+
+    expect(onRangeChange).toHaveBeenCalledWith("2026-08-01", "2026-08-31");
+  });
+
+  test("shows the person counter label with selected persons", () => {
+    renderBar(
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 8 },
+        personKeys: ["ana"],
+      }),
+    );
+
+    expect(
+      screen.getByRole("option", { name: "1 seleccionada(s)" }),
+    ).toBeInTheDocument();
+  });
+
+  test("clears the persons through the select", async () => {
+    const user = userEvent.setup();
+    const { onChange } = renderBar(
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 8 },
+        personKeys: ["ana"],
+      }),
+    );
+
+    await user.selectOptions(screen.getByLabelText("Persona"), "");
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ personKeys: [] }),
+    );
+  });
+
+  test("warns when the minimum exceeds the maximum", async () => {
+    const user = userEvent.setup();
+    renderBar();
+
+    await user.type(screen.getByLabelText("Importe min"), "99");
+    await user.type(screen.getByLabelText("Importe max"), "9");
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /mínimo es mayor que el máximo/,
+    );
+  });
+
+  test("renders chips with the raw key when the filter item is unknown", () => {
+    const { onChange } = renderBar(
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 8 },
+        categoryKeys: ["ghost-cat"],
+        personKeys: ["ghost-person"],
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /ghost-cat/ }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ categoryKeys: [] }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /ghost-person/ }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ personKeys: [] }),
+    );
+  });
 });

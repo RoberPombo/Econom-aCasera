@@ -8,8 +8,11 @@ import {
   TransactionFilters,
 } from "../../domain/entities";
 import { FakeCompositionRoot } from "../../tests/fakes/compositionRoot";
+import { defaultSettings } from "../../tests/fakes/repositories";
 import { AppProvider } from "../context/AppProvider";
 import { useAppState } from "../hooks/useAppState";
+
+const originalMatchMedia = window.matchMedia;
 
 const augustSettings = new Settings({
   currentYear: 2026,
@@ -60,6 +63,196 @@ afterEach(() => {
 });
 
 describe("useAppState", () => {
+  test("keeps filters null and skips loading when the settings are invalid", async () => {
+    const { result } = renderState({
+      settings: new Settings({
+        currentYear: 2026,
+        currentMonth: 13,
+        viewMode: "monthly",
+        theme: "light",
+      }),
+    });
+
+    await settle();
+
+    expect(result.current.filters).toBeNull();
+    expect(result.current.transactions).toHaveLength(0);
+    expect(result.current.error).toBeNull();
+  });
+
+  test("no-ops the navigation and theme actions before settings are loaded", async () => {
+    const { result } = renderState();
+
+    await act(async () => {
+      void result.current.changeYear(1);
+      void result.current.changeMonth(12);
+      void result.current.toggleTheme();
+    });
+    await settle();
+
+    expect(result.current.settings?.currentYear).toBe(
+      defaultSettings().currentYear,
+    );
+    expect(result.current.settings?.currentMonth).toBe(
+      defaultSettings().currentMonth,
+    );
+    expect(result.current.settings?.theme).toBe(defaultSettings().theme);
+  });
+
+  test("updateFilters commits a range period and reloads with the range filters", async () => {
+    const { result, root } = renderState();
+
+    await settle();
+
+    const spy = vi.spyOn(root.transactions, "getFiltered");
+    act(() => {
+      result.current.updateFilters(
+        TransactionFilters.create({
+          period: { mode: "range", from: "2026-01-01", to: "2026-12-31" },
+        }),
+      );
+    });
+
+    expect(result.current.filters?.period).toEqual({
+      mode: "range",
+      from: "2026-01-01",
+      to: "2026-12-31",
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(250);
+    });
+    expect(
+      spy.mock.calls.some(
+        ([f]) => f.period.mode === "range" && f.period.from === "2026-01-01",
+      ),
+    ).toBe(true);
+    spy.mockRestore();
+  });
+
+  test("reveals the conflict through the background poll", async () => {
+    const { result, root } = renderState();
+
+    await settle();
+    expect(result.current.showConflict).toBe(false);
+
+    root.dbInfo.hasConflict = true;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(result.current.showConflict).toBe(true);
+  });
+
+  test("applies the system theme and reacts to media changes", async () => {
+    const listeners: ((e: { matches: boolean }) => void)[] = [];
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: false,
+        media: "(prefers-color-scheme: dark)",
+        addEventListener: (
+          _: string,
+          cb: (e: { matches: boolean }) => void,
+        ) => {
+          listeners.push(cb);
+        },
+        removeEventListener: vi.fn(),
+      })),
+    });
+
+    renderState({
+      settings: new Settings({
+        currentYear: 2026,
+        currentMonth: 8,
+        viewMode: "monthly",
+        theme: "system",
+      }),
+    });
+
+    try {
+      await settle();
+
+      expect(document.documentElement).toHaveAttribute("data-theme", "light");
+
+      act(() => {
+        listeners.forEach((cb) => {
+          cb({ matches: true });
+        });
+      });
+
+      expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+
+      act(() => {
+        listeners.forEach((cb) => {
+          cb({ matches: false });
+        });
+      });
+
+      expect(document.documentElement).toHaveAttribute("data-theme", "light");
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        configurable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  test("resolves the system theme to dark when the media matches", async () => {
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: true,
+        media: "(prefers-color-scheme: dark)",
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+
+    try {
+      renderState({
+        settings: new Settings({
+          currentYear: 2026,
+          currentMonth: 8,
+          viewMode: "monthly",
+          theme: "system",
+        }),
+      });
+
+      await settle();
+
+      expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    } finally {
+      Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        configurable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
+
+  test("updatePerson renames the person and reloads", async () => {
+    const { result } = renderState();
+
+    await settle();
+
+    await act(async () => {
+      await result.current.createPerson("Ana");
+    });
+
+    await act(async () => {
+      await result.current.updatePerson(
+        result.current.persons[0].withLabel("Anabel"),
+      );
+    });
+
+    expect(result.current.persons).toHaveLength(1);
+    expect(result.current.persons[0].label).toBe("Anabel");
+  });
+
   test("loads settings, db info and seeded data on mount", async () => {
     const { result } = renderState({
       settings: augustSettings,

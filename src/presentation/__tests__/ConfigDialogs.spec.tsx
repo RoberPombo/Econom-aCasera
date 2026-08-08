@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { Category, Transaction } from "../../domain/entities";
@@ -213,6 +213,22 @@ describe("CategoriesConfig", () => {
     expect(onAdd).not.toHaveBeenCalled();
   });
 
+  test("ignores the submit when the label is empty or duplicate", () => {
+    const { onAdd } = renderConfig();
+
+    const gastos = screen
+      .getByRole("heading", { name: "Gastos" })
+      .closest("form") as HTMLElement;
+    fireEvent.submit(gastos);
+    expect(onAdd).not.toHaveBeenCalled();
+
+    fireEvent.change(within(gastos).getByPlaceholderText("Nueva gasto"), {
+      target: { value: "Comida" },
+    });
+    fireEvent.submit(gastos);
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
   test("edits a label in place", async () => {
     const user = userEvent.setup();
     const { onUpdate } = renderConfig();
@@ -225,6 +241,20 @@ describe("CategoriesConfig", () => {
     expect(onUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ label: "Supermercado" }),
     );
+  });
+
+  test("exits the edit mode when the input loses focus", async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderConfig();
+
+    await user.click(screen.getByRole("button", { name: "Comida" }));
+    const input = screen.getByDisplayValue("Comida");
+    await user.clear(input);
+    await user.type(input, "Super");
+    fireEvent.blur(input);
+
+    expect(screen.queryByDisplayValue("Super")).not.toBeInTheDocument();
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 
   test("toggles a category active state", async () => {
@@ -250,5 +280,54 @@ describe("CategoriesConfig", () => {
     await user.click(dialogButtons[dialogButtons.length - 1]);
 
     expect(onDelete).toHaveBeenCalledWith(1);
+  });
+
+  test("cancels the delete confirmation", async () => {
+    const user = userEvent.setup();
+    const { onDelete } = renderConfig();
+
+    await user.click(screen.getAllByRole("button", { name: "Eliminar" })[0]);
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  test("does not save when the edited label is unchanged", async () => {
+    const user = userEvent.setup();
+    const { onUpdate } = renderConfig();
+
+    await user.click(screen.getByRole("button", { name: "Comida" }));
+    fireEvent.submit(
+      screen.getByDisplayValue("Comida").closest("form") as HTMLElement,
+    );
+
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.queryByDisplayValue("Comida")).not.toBeInTheDocument();
+  });
+
+  test("shows the activate button for an inactive category", () => {
+    const gimnasio = Category.create({
+      id: 9,
+      label: "Gimnasio",
+      type: "expense",
+      active: false,
+    });
+    const onUpdate = vi.fn();
+
+    render(
+      <CategoriesConfig
+        categories={[gimnasio]}
+        onAdd={vi.fn()}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Activar" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Activar" }));
+
+    expect(onUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 9, active: true }),
+    );
   });
 });

@@ -18,6 +18,8 @@ const transaction = Transaction.create({
 
 function renderList(overrides?: {
   transactions?: Transaction[];
+  categories?: Category[];
+  persons?: Person[];
   onEdit?: (t: Transaction) => void;
   onDelete?: (id: number) => void;
   onViewReceipt?: (t: Transaction) => void;
@@ -29,8 +31,8 @@ function renderList(overrides?: {
   render(
     <TransactionList
       transactions={overrides?.transactions ?? [transaction]}
-      categories={[category]}
-      persons={[person]}
+      categories={overrides?.categories ?? [category]}
+      persons={overrides?.persons ?? [person]}
       onEdit={onEdit}
       onDelete={onDelete}
       onViewReceipt={onViewReceipt}
@@ -67,6 +69,27 @@ describe("TransactionList", () => {
     });
 
     expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
+  test("renders income transactions with the income label", () => {
+    const nomina = Category.create({ label: "Nómina", type: "income" });
+    renderList({
+      transactions: [
+        Transaction.create({
+          id: 2,
+          date: "2026-08-01",
+          type: "income",
+          category: nomina.key,
+          concept: "Sueldo",
+          amount: 1500,
+        }),
+      ],
+      categories: [nomina],
+    });
+
+    expect(screen.getByText("Ingreso")).toBeInTheDocument();
+    expect(screen.getByText("Nómina")).toBeInTheDocument();
+    expect(screen.getByText("1500,00 €")).toBeInTheDocument();
   });
 
   test("edit and delete buttons trigger their callbacks", async () => {
