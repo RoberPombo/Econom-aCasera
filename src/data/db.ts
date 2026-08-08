@@ -88,6 +88,8 @@ async function migrateDatabase(db: DbClient): Promise<void> {
     // Column already exists.
   }
 
+  await migrateTransactionsType(db);
+
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_transactions_fingerprint ON transactions(fingerprint)
   `);
@@ -112,6 +114,37 @@ async function migrateDatabase(db: DbClient): Promise<void> {
       row.id,
     ]);
   }
+}
+
+async function migrateTransactionsType(db: DbClient): Promise<void> {
+  const tables = await db.select<{ sql: string | null }[]>(
+    `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'transactions'`,
+  );
+  const current = tables[0]?.sql ?? "";
+  if (current.includes("savings")) return;
+
+  await db.execute(`
+    CREATE TABLE transactions_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      type TEXT NOT NULL CHECK (type IN ('income', 'expense', 'savings')),
+      category TEXT NOT NULL,
+      concept TEXT NOT NULL,
+      amount REAL NOT NULL,
+      year INTEGER NOT NULL,
+      month INTEGER NOT NULL,
+      person TEXT DEFAULT '',
+      fingerprint TEXT,
+      receipt_path TEXT
+    )
+  `);
+  await db.execute(`
+    INSERT INTO transactions_new (id, date, type, category, concept, amount, year, month, person, fingerprint, receipt_path)
+    SELECT id, date, type, category, concept, amount, year, month, COALESCE(person, ''), fingerprint, receipt_path
+    FROM transactions
+  `);
+  await db.execute(`DROP TABLE transactions`);
+  await db.execute(`ALTER TABLE transactions_new RENAME TO transactions`);
 }
 
 async function migrateTransactionsColumns(db: DbClient): Promise<void> {
