@@ -11,6 +11,7 @@ import type {
   Summary,
   Theme,
   Transaction,
+  TransactionType,
 } from "../../domain/entities";
 import { TransactionFilters } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
@@ -25,7 +26,7 @@ export function useAppState() {
   const [rangeFrom, setRangeFrom] = useState<string | undefined>(undefined);
   const [rangeTo, setRangeTo] = useState<string | undefined>(undefined);
   const [filterDraft, setFilterDraft] = useState({
-    types: [] as ("income" | "expense")[],
+    types: [] as ("income" | "expense" | "savings")[],
     categoryKeys: [] as string[],
     personKeys: [] as string[],
     minAmount: null as number | null,
@@ -248,7 +249,7 @@ export function useAppState() {
 
   async function saveTransaction(data: {
     date: string;
-    type: "income" | "expense";
+    type: TransactionType;
     category: string;
     concept: string;
     amount: number;
@@ -265,7 +266,7 @@ export function useAppState() {
     id: number,
     data: {
       date?: string;
-      type?: "income" | "expense";
+      type?: TransactionType;
       category?: string;
       concept?: string;
       amount?: number;
@@ -287,7 +288,7 @@ export function useAppState() {
   async function findSimilarTransactions(
     date: string,
     category: string,
-    type: "income" | "expense",
+    type: TransactionType,
     amount: number,
   ) {
     const all = await compositionRoot

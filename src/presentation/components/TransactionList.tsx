@@ -77,7 +77,11 @@ export function TransactionList({
             <tr key={t.id}>
               <td className={td}>{formatDate(t.date)}</td>
               <td className={td}>
-                {t.type === "income" ? "Ingreso" : "Gasto"}
+                {t.type === "income"
+                  ? "Ingreso"
+                  : t.type === "savings"
+                    ? "Ahorro"
+                    : "Gasto"}
               </td>
               <td className={td}>
                 {categoryLabels.get(t.category) || t.category}
