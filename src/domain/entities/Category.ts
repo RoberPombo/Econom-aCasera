@@ -1,5 +1,5 @@
 import { Entity } from "./Entity";
-import { normalizeKey, isValidKey } from "./Key";
+import { isValidKey, normalizeKey } from "./Key";
 
 export type CategoryType = "income" | "expense";
 

@@ -1,4 +1,4 @@
-import type { Settings, ViewMode, Theme } from "../entities";
+import type { Settings, Theme, ViewMode } from "../entities";
 
 export interface SettingsRepository {
   get(): Promise<Settings>;

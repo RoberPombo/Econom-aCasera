@@ -5,9 +5,14 @@ import { getDatabase } from "./db";
 export class TauriSettingsRepository implements SettingsRepository {
   async get(): Promise<Settings> {
     const db = await getDatabase();
-    const rows = await db.select<{ current_year: number; current_month: number; view_mode: string; theme: string }[]>(
-      "SELECT * FROM settings WHERE id = 1"
-    );
+    const rows = await db.select<
+      {
+        current_year: number;
+        current_month: number;
+        view_mode: string;
+        theme: string;
+      }[]
+    >("SELECT * FROM settings WHERE id = 1");
     const row = rows[0];
     return new Settings({
       currentYear: row.current_year,
@@ -19,12 +24,16 @@ export class TauriSettingsRepository implements SettingsRepository {
 
   async setCurrentYear(year: number): Promise<void> {
     const db = await getDatabase();
-    await db.execute("UPDATE settings SET current_year = ? WHERE id = 1", [year]);
+    await db.execute("UPDATE settings SET current_year = ? WHERE id = 1", [
+      year,
+    ]);
   }
 
   async setCurrentMonth(month: number): Promise<void> {
     const db = await getDatabase();
-    await db.execute("UPDATE settings SET current_month = ? WHERE id = 1", [month]);
+    await db.execute("UPDATE settings SET current_month = ? WHERE id = 1", [
+      month,
+    ]);
   }
 
   async setViewMode(mode: "monthly" | "annual"): Promise<void> {

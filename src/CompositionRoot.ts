@@ -1,34 +1,35 @@
-import { TauriTransactionRepository } from "./data/TauriTransactionRepository";
 import { TauriCategoryRepository } from "./data/TauriCategoryRepository";
-import { TauriSettingsRepository } from "./data/TauriSettingsRepository";
 import { TauriDbInfoRepository } from "./data/TauriDbInfoRepository";
 import { TauriImportRepository } from "./data/TauriImportRepository";
 import { TauriPersonRepository } from "./data/TauriPersonRepository";
+import { TauriReceiptRepository } from "./data/TauriReceiptRepository";
+import { TauriSettingsRepository } from "./data/TauriSettingsRepository";
+import { TauriTransactionRepository } from "./data/TauriTransactionRepository";
 import { TauriUpdateRepository } from "./data/TauriUpdateRepository";
 import {
-  GetTransactionsUseCase,
-  GetTransactionsByDateUseCase,
-  CreateTransactionUseCase,
-  UpdateTransactionUseCase,
-  DeleteTransactionUseCase,
-  GetSummaryUseCase,
-  GetCategoriesUseCase,
-  CreateCategoryUseCase,
-  UpdateCategoryUseCase,
-  DeleteCategoryUseCase,
-  GetSettingsUseCase,
-  UpdateSettingsUseCase,
-  GetDbInfoUseCase,
-  ReloadDatabaseUseCase,
-  ForceOverwriteUseCase,
-  PreviewImportUseCase,
-  ConfirmImportUseCase,
-  GetPersonsUseCase,
-  CreatePersonUseCase,
-  UpdatePersonUseCase,
-  DeletePersonUseCase,
   CheckForUpdateUseCase,
+  ConfirmImportUseCase,
+  CreateCategoryUseCase,
+  CreatePersonUseCase,
+  CreateTransactionUseCase,
+  DeleteCategoryUseCase,
+  DeletePersonUseCase,
+  DeleteTransactionUseCase,
   DownloadUpdateUseCase,
+  ForceOverwriteUseCase,
+  GetCategoriesUseCase,
+  GetDbInfoUseCase,
+  GetPersonsUseCase,
+  GetSettingsUseCase,
+  GetSummaryUseCase,
+  GetTransactionsByDateUseCase,
+  GetTransactionsUseCase,
+  PreviewImportUseCase,
+  ReloadDatabaseUseCase,
+  UpdateCategoryUseCase,
+  UpdatePersonUseCase,
+  UpdateSettingsUseCase,
+  UpdateTransactionUseCase,
 } from "./domain/usecases";
 
 export class CompositionRoot {
@@ -41,6 +42,7 @@ export class CompositionRoot {
   private importRepository = new TauriImportRepository();
   private personRepository = new TauriPersonRepository();
   private updateRepository = new TauriUpdateRepository();
+  private receiptRepository = new TauriReceiptRepository();
 
   private constructor() {}
 
@@ -60,15 +62,31 @@ export class CompositionRoot {
   }
 
   provideCreateTransactionUseCase() {
-    return new CreateTransactionUseCase(this.transactionRepository);
+    return new CreateTransactionUseCase(
+      this.transactionRepository,
+      this.receiptRepository,
+      this.dbInfoRepository,
+    );
   }
 
   provideUpdateTransactionUseCase() {
-    return new UpdateTransactionUseCase(this.transactionRepository);
+    return new UpdateTransactionUseCase(
+      this.transactionRepository,
+      this.receiptRepository,
+      this.dbInfoRepository,
+    );
   }
 
   provideDeleteTransactionUseCase() {
-    return new DeleteTransactionUseCase(this.transactionRepository);
+    return new DeleteTransactionUseCase(
+      this.transactionRepository,
+      this.receiptRepository,
+      this.dbInfoRepository,
+    );
+  }
+
+  provideReceiptRepository() {
+    return this.receiptRepository;
   }
 
   provideGetSummaryUseCase() {

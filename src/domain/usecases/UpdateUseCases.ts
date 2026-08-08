@@ -1,4 +1,7 @@
-import type { UpdateInfo, UpdateRepository } from "../repositories/UpdateRepository";
+import type {
+  UpdateInfo,
+  UpdateRepository,
+} from "../repositories/UpdateRepository";
 
 export class CheckForUpdateUseCase {
   private readonly repository: UpdateRepository;

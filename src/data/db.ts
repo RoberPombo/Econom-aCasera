@@ -2,16 +2,18 @@ import Database from "@tauri-apps/plugin-sql";
 import { normalizeKey } from "../domain/entities/Key";
 import { computeFingerprint } from "./computeFingerprint";
 
-let dbInstance: Database | null = null;
+export type DbClient = Pick<Database, "execute" | "select" | "close">;
 
-export async function getDatabase(): Promise<Database> {
+let dbInstance: DbClient | null = null;
+
+export async function getDatabase(client?: DbClient): Promise<DbClient> {
   if (dbInstance) return dbInstance;
-  dbInstance = await Database.load("sqlite:economiacasera.db");
+  dbInstance = client ?? (await Database.load("sqlite:economiacasera.db"));
   await initDatabase(dbInstance);
   return dbInstance;
 }
 
-async function initDatabase(db: Database): Promise<void> {
+async function initDatabase(db: DbClient): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -60,15 +62,16 @@ async function initDatabase(db: Database): Promise<void> {
     )
   `);
 
+  await migrateDatabase(db);
+
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_transactions_year_month ON transactions(year, month)
   `);
 
-  await migrateDatabase(db);
   await seedDefaults(db);
 }
 
-async function migrateDatabase(db: Database): Promise<void> {
+async function migrateDatabase(db: DbClient): Promise<void> {
   await migrateTransactionsColumns(db);
   await migrateConfigTable(db, "categories", ["type"]);
   await migrateConfigTable(db, "persons", []);
@@ -79,30 +82,57 @@ async function migrateDatabase(db: Database): Promise<void> {
     // Column already exists.
   }
 
+  try {
+    await db.execute(`ALTER TABLE transactions ADD COLUMN receipt_path TEXT`);
+  } catch {
+    // Column already exists.
+  }
+
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_transactions_fingerprint ON transactions(fingerprint)
   `);
 
-  const rows = await db.select<{ id: number; date: string; type: string; amount: number; concept: string; category: string; person: string }[]>(
-    "SELECT id, date, type, amount, concept, category, COALESCE(person, '') as person FROM transactions"
+  const rows = await db.select<
+    {
+      id: number;
+      date: string;
+      type: string;
+      amount: number;
+      concept: string;
+      category: string;
+      person: string;
+    }[]
+  >(
+    "SELECT id, date, type, amount, concept, category, COALESCE(person, '') as person FROM transactions",
   );
   for (const row of rows) {
     const fingerprint = computeFingerprint(row);
-    await db.execute("UPDATE transactions SET fingerprint = ? WHERE id = ?", [fingerprint, row.id]);
+    await db.execute("UPDATE transactions SET fingerprint = ? WHERE id = ?", [
+      fingerprint,
+      row.id,
+    ]);
   }
 }
 
-async function migrateTransactionsColumns(db: Database): Promise<void> {
-  const columns = await db.select<{ name: string }[]>(`PRAGMA table_info(transactions)`);
+async function migrateTransactionsColumns(db: DbClient): Promise<void> {
+  const columns = await db.select<{ name: string }[]>(
+    `PRAGMA table_info(transactions)`,
+  );
   const hasYear = columns.some((c) => c.name === "year");
 
   if (!hasYear) {
-    await db.execute(`ALTER TABLE transactions ADD COLUMN year INTEGER NOT NULL DEFAULT 0`);
-    await db.execute(`ALTER TABLE transactions ADD COLUMN month INTEGER NOT NULL DEFAULT 0`);
+    await db.execute(
+      `ALTER TABLE transactions ADD COLUMN year INTEGER NOT NULL DEFAULT 0`,
+    );
+    await db.execute(
+      `ALTER TABLE transactions ADD COLUMN month INTEGER NOT NULL DEFAULT 0`,
+    );
   }
 
   if (!columns.some((c) => c.name === "person")) {
-    await db.execute(`ALTER TABLE transactions ADD COLUMN person TEXT DEFAULT ''`);
+    await db.execute(
+      `ALTER TABLE transactions ADD COLUMN person TEXT DEFAULT ''`,
+    );
   }
 
   if (!hasYear) {
@@ -116,12 +146,19 @@ async function migrateTransactionsColumns(db: Database): Promise<void> {
   }
 }
 
-async function migrateConfigTable(db: Database, table: string, extraColumns: string[]): Promise<void> {
-  const columns = await db.select<{ name: string }[]>(`PRAGMA table_info(${table})`);
+async function migrateConfigTable(
+  db: DbClient,
+  table: string,
+  extraColumns: string[],
+): Promise<void> {
+  const columns = await db.select<{ name: string }[]>(
+    `PRAGMA table_info(${table})`,
+  );
   if (columns.some((c) => c.name === "label")) return;
 
   const extraDefs = extraColumns.map((col) => `${col} TEXT`).join(", ");
-  const extraSelect = extraColumns.length > 0 ? `, ${extraColumns.join(", ")}` : "";
+  const extraSelect =
+    extraColumns.length > 0 ? `, ${extraColumns.join(", ")}` : "";
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS ${table}_new (
@@ -134,7 +171,7 @@ async function migrateConfigTable(db: Database, table: string, extraColumns: str
   `);
 
   const rows = await db.select<Record<string, string | number>[]>(
-    `SELECT id, name${extraSelect}, active FROM ${table}`
+    `SELECT id, name${extraSelect}, active FROM ${table}`,
   );
 
   for (const row of rows) {
@@ -148,10 +185,16 @@ async function migrateConfigTable(db: Database, table: string, extraColumns: str
     }
     const extras = extraColumns.map((col) => `, ${col}`).join("");
     const extraValues = extraColumns.map(() => ", ?").join("");
-    const params = [row.id, label, key, ...extraColumns.map((col) => row[col]), row.active];
+    const params = [
+      row.id,
+      label,
+      key,
+      ...extraColumns.map((col) => row[col]),
+      row.active,
+    ];
     await db.execute(
       `INSERT INTO ${table}_new (id, label, key${extras}, active) VALUES (?, ?, ?${extraValues}, ?)`,
-      params
+      params,
     );
   }
 
@@ -159,16 +202,22 @@ async function migrateConfigTable(db: Database, table: string, extraColumns: str
   await db.execute(`ALTER TABLE ${table}_new RENAME TO ${table}`);
 }
 
-async function keyExists(db: Database, table: string, key: string): Promise<boolean> {
+async function keyExists(
+  db: DbClient,
+  table: string,
+  key: string,
+): Promise<boolean> {
   const result = await db.select<{ count: number }[]>(
     `SELECT COUNT(*) as count FROM ${table} WHERE key = ?`,
-    [key]
+    [key],
   );
   return result[0].count > 0;
 }
 
-async function seedDefaults(db: Database): Promise<void> {
-  const categories = await db.select<{ count: number }[]>("SELECT COUNT(*) as count FROM categories");
+async function seedDefaults(db: DbClient): Promise<void> {
+  const categories = await db.select<{ count: number }[]>(
+    "SELECT COUNT(*) as count FROM categories",
+  );
   if (categories[0].count === 0) {
     await db.execute(`
       INSERT INTO categories (label, key, type, active) VALUES
@@ -181,7 +230,9 @@ async function seedDefaults(db: Database): Promise<void> {
     `);
   }
 
-  const persons = await db.select<{ count: number }[]>("SELECT COUNT(*) as count FROM persons");
+  const persons = await db.select<{ count: number }[]>(
+    "SELECT COUNT(*) as count FROM persons",
+  );
   if (persons[0].count === 0) {
     await db.execute(`
       INSERT INTO persons (label, key, active) VALUES

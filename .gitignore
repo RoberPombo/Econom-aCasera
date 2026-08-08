@@ -15,6 +15,8 @@ vite.config.d.ts
 # Tauri
 /src-tauri/target/
 /src-tauri/gen/
+/src-tauri/tauri.key
+/src-tauri/tauri.key.pub
 
 # Logs
 logs/

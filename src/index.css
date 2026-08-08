@@ -15,7 +15,8 @@
   --breakpoint-tablet: 900px;
   --breakpoint-desktop: 1200px;
   --breakpoint-ultrawide: 1600px;
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @layer utilities {
@@ -52,6 +53,69 @@
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   --balance-positive: #7dd3fc;
   --balance-negative: #fb923c;
+}
+
+.react-datepicker {
+  font-family: var(--font-sans);
+}
+
+.react-datepicker-popper {
+  z-index: 40;
+}
+
+.react-datepicker__triangle {
+  display: none;
+}
+
+[data-theme="dark"] .react-datepicker {
+  background-color: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .react-datepicker__header {
+  background-color: var(--page);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .react-datepicker__current-month,
+[data-theme="dark"] .react-datepicker__day,
+[data-theme="dark"] .react-datepicker__day-name,
+[data-theme="dark"] .react-datepicker__year-text,
+[data-theme="dark"] .react-datepicker__month-text,
+[data-theme="dark"] .react-datepicker__month-select,
+[data-theme="dark"] .react-datepicker__year-select {
+  color: var(--text);
+}
+
+[data-theme="dark"] .react-datepicker__day--outside-month {
+  color: var(--muted);
+}
+
+[data-theme="dark"] .react-datepicker__day:hover,
+[data-theme="dark"] .react-datepicker__month-text:hover,
+[data-theme="dark"] .react-datepicker__year-text:hover {
+  background-color: var(--border);
+}
+
+[data-theme="dark"] .react-datepicker__day--selected,
+[data-theme="dark"] .react-datepicker__day--keyboard-selected,
+[data-theme="dark"] .react-datepicker__day--selected:hover,
+[data-theme="dark"] .react-datepicker__month-text--selected,
+[data-theme="dark"] .react-datepicker__year-text--selected {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+[data-theme="dark"] .react-datepicker__month-select,
+[data-theme="dark"] .react-datepicker__year-select {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+}
+
+[data-theme="dark"] .react-datepicker__navigation-icon::before,
+[data-theme="dark"] .react-datepicker__navigation:hover *::before {
+  border-color: var(--text);
 }
 
 @layer base {

@@ -1,5 +1,5 @@
 import React from "react";
-import { CompositionRoot } from "../../CompositionRoot";
+import type { CompositionRoot } from "../../CompositionRoot";
 
 export interface AppContextState {
   compositionRoot: CompositionRoot;

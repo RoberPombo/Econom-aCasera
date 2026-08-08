@@ -4,37 +4,82 @@ Aplicación de escritorio para llevar el control de gastos e ingresos anuales. F
 
 ## Características
 
-- **Vista mensual y anual** con selector de año y mes.
+- **Vista por mes o por rango de fechas**, con filtros por tipo, categoría, persona e importe.
+- **Buscador global** de movimientos (concepto, categoría y persona).
+- **Gráficas** que respetan los filtros activos.
+- **Foto del ticket** en gastos (archivo, arrastrar o pegar), con copia en backup y Drive.
 - **Datepicker nativo** para seleccionar la fecha del movimiento.
-- **Categorías configurables** para ingresos y gastos.
+- **Categorías y personas configurables**.
 - **Importación desde Excel**: una hoja por mes (Ene., Feb., ...) con la tabla de transacciones.
-- **Resumen mensual y anual** con totales por categoría.
-- **Sincronización automática con Google Drive** si el usuario lo tiene instalado.
+- **Resumen mensual y anual** con totales filtrados.
+- **Sincronización con Google Drive** si el usuario lo tiene instalado.
 - **Detección de conflictos** si los datos cambian en otro dispositivo, con opción de recargar o sobrescribir.
-- **Copia de seguridad local** si no hay Google Drive.
-- **Ejecutable con doble click**: no requiere conocimientos técnicos para usarlo.
+- **Copia de seguridad local** de la base de datos y de las fotos de tickets.
+- **Instaladores nativos** para Linux, Windows y macOS (menú de aplicaciones).
+
+## Instalación (usuario final)
+
+Descarga el instalador de la [última release](https://github.com/RoberPombo/Econom-aCasera/releases/latest) según tu sistema:
+
+| Sistema | Archivo recomendado | Dónde queda instalada | Menú de aplicaciones |
+|---------|---------------------|------------------------|----------------------|
+| **Linux (Debian/Ubuntu)** | `.deb` | `/usr/bin` + datos de app del usuario | Sí (entrada `.desktop`) |
+| **Linux (Fedora/openSUSE)** | `.rpm` | rutas del paquete del sistema | Sí |
+| **Linux (portable)** | `.AppImage` | donde la dejes | No automático |
+| **Windows** | instalador NSIS (`.exe`) o `.msi` | carpeta de usuario / Program Files | Sí (menú Inicio) |
+| **macOS (Apple Silicon)** | `.dmg` | arrastra a `/Applications` | Sí (Launchpad) |
+
+### Linux
+
+```bash
+# Debian / Ubuntu
+sudo dpkg -i EconomiaCasera_*.deb
+
+# Fedora / openSUSE
+sudo rpm -i EconomiaCasera-*.rpm
+```
+
+Después busca **EconomiaCasera** en el menú de aplicaciones.
+
+### Windows
+
+Ejecuta el instalador `.exe` (NSIS) o `.msi` y sigue el asistente. La app aparecerá en el menú Inicio.
+
+### macOS
+
+Abre el `.dmg`, arrastra **EconomiaCasera** a **Aplicaciones** y ábrela desde Launchpad o `/Applications`.
+
+> **Nota:** las builds de CI de macOS se generan para Apple Silicon (`aarch64`). macOS Intel puede requerir build local.
 
 ## Cómo funciona el almacenamiento
 
-La app detecta automáticamente si el usuario tiene Google Drive instalado:
+La base de datos activa vive siempre en el directorio de datos de la aplicación. Si hay Google Drive, se copia allí (junto con las fotos de tickets) para sincronizar entre equipos.
+
+### Rutas locales (base de datos y tickets)
+
+- **Windows:** `%APPDATA%\com.economiacasera.app\` (o el `app_data_dir` de Tauri)
+- **macOS:** `~/Library/Application Support/com.economiacasera.app\`
+- **Linux:** `~/.local/share/com.economiacasera.app\`
+
+Ficheros relevantes:
+
+- `economiacasera.db` — base de datos SQLite
+- `receipts/` — fotos de tickets de gastos
+
+### Copia de seguridad local
+
+- `~/EconomiaCasera/backup/economiacasera_backup.db`
+- `~/EconomiaCasera/backup/receipts/`
 
 ### Si tiene Google Drive
 
-- La base de datos se guarda dentro de `Google Drive/EconomiaCasera/economiacasera.db`.
-- Cada cambio se persiste directamente en esa carpeta, así que Drive lo sincroniza.
-- También se mantiene una copia de seguridad local por si Drive no está disponible temporalmente.
+- Copia en `Google Drive/EconomiaCasera/economiacasera.db`
+- Fotos en `Google Drive/EconomiaCasera/receipts/`
+- Tras cada cambio se sincroniza la DB y la carpeta de tickets.
 - **Si abres la app en dos PCs con la misma cuenta de Google Drive, los datos se sincronizan.**
   - Si la app detecta que los datos han cambiado en otro dispositivo, muestra un diálogo para elegir entre:
-    - **Recargar datos remotos**: usar la versión de Google Drive (pierdes cambios locales no guardados).
+    - **Recargar datos remotos**: usar la versión de Google Drive.
     - **Usar mis datos locales**: sobrescribir la versión de Google Drive con tus datos.
-
-### Si no tiene Google Drive
-
-- La base de datos se guarda en el directorio de datos del usuario:
-  - Windows: `%APPDATA%\EconomiaCasera\economiacasera.db`
-  - macOS: `~/Library/Application Support/EconomiaCasera/economiacasera.db`
-  - Linux: `~/.local/share/EconomiaCasera/economiacasera.db`
-- Se mantiene una copia de seguridad en `~/EconomiaCasera/backup/economiacasera_backup.db`.
 
 ## Tecnología
 
@@ -80,7 +125,13 @@ src-tauri/target/release/bundle/
 └── ...
 ```
 
-Para distribuir, usa los archivos `.deb`, `.rpm`, `.AppImage`, `.msi` o `.dmg` generados para cada plataforma.
+Para distribuir, usa los instaladores generados:
+
+- **Linux:** preferir `.deb` / `.rpm` (menú de apps). `.AppImage` es portable.
+- **Windows:** NSIS (`.exe`) o `.msi` (acceso directo en menú Inicio).
+- **macOS:** `.dmg` → copiar a `/Applications`.
+
+Los artefactos de actualización (`createUpdaterArtifacts`) se firman en CI cuando está configurada `TAURI_SIGNING_PRIVATE_KEY`.
 
 ## Importar desde Excel
 

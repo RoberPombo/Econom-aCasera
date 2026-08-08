@@ -25,13 +25,59 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
+    "category": "Finance",
+    "shortDescription": "Control de gastos e ingresos del hogar",
+    "longDescription": "Economía Casera es una aplicación de escritorio para registrar gastos e ingresos, ver resúmenes mensuales y anuales, adjuntar tickets y sincronizar con Google Drive.",
+    "publisher": "Economia Casera",
+    "homepage": "https://github.com/RoberPombo/Econom-aCasera",
+    "copyright": "Copyright © Economia Casera",
+    "license": "MIT",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "linux": {
+      "deb": {
+        "section": "utils"
+      },
+      "rpm": {
+        "release": "1"
+      }
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "Spanish",
+          "English"
+        ],
+        "displayLanguageSelector": false
+      },
+      "wix": {
+        "language": "es-ES"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "dmg": {
+        "appPosition": {
+          "x": 180,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 170
+        },
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    }
   },
   "plugins": {
     "updater": {
@@ -40,10 +86,12 @@
       "endpoints": [
         "https://github.com/RoberPombo/Econom-aCasera/releases/latest/download/latest.json"
       ],
-      "pubkey": "RWQZjf8V+aqX4Wg2031Aw6cdox8AeKgOinf2lcFaynQ47KIA9VFzKJt6"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYzREM5RTlDQUREMkVFQTUKUldTbDd0S3RuSjdjODdKalNUWGtDNk5MemlLQVhqYmpUVDBqN2N5YlN5Q3pXVytvL1VtcGpFQVoK"
     },
     "sql": {
-      "preload": ["sqlite: economiacasera.db"]
+      "preload": [
+        "sqlite:economiacasera.db"
+      ]
     }
   }
 }

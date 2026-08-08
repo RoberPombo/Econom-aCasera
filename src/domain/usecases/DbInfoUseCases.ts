@@ -1,5 +1,5 @@
-import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 import type { DbInfo } from "../entities";
+import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 
 export class GetDbInfoUseCase {
   private readonly repository: DbInfoRepository;
@@ -20,7 +20,11 @@ export class ReloadDatabaseUseCase {
     this.repository = repository;
   }
 
-  async execute(): Promise<{ ok: boolean; dbPath: string; usesDrive: boolean }> {
+  async execute(): Promise<{
+    ok: boolean;
+    dbPath: string;
+    usesDrive: boolean;
+  }> {
     return this.repository.reload();
   }
 }
@@ -32,7 +36,11 @@ export class ForceOverwriteUseCase {
     this.repository = repository;
   }
 
-  async execute(): Promise<{ ok: boolean; dbPath: string; usesDrive: boolean }> {
+  async execute(): Promise<{
+    ok: boolean;
+    dbPath: string;
+    usesDrive: boolean;
+  }> {
     return this.repository.forceOverwrite();
   }
 }

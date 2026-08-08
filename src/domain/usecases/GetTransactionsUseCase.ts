@@ -1,4 +1,4 @@
-import type { Transaction } from "../entities";
+import type { Transaction, TransactionFilters } from "../entities";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
 
 export class GetTransactionsUseCase {
@@ -8,7 +8,14 @@ export class GetTransactionsUseCase {
     this.repository = repository;
   }
 
-  async execute(year: number, month?: number): Promise<Transaction[]> {
+  async execute(filters: TransactionFilters): Promise<Transaction[]> {
+    return this.repository.getFiltered(filters);
+  }
+
+  async executeByYearAndMonth(
+    year: number,
+    month?: number,
+  ): Promise<Transaction[]> {
     return this.repository.getByYearAndMonth(year, month);
   }
 }

@@ -1,6 +1,9 @@
-import { check } from "@tauri-apps/plugin-updater";
 import { getVersion } from "@tauri-apps/api/app";
-import type { UpdateInfo, UpdateRepository } from "../domain/repositories/UpdateRepository";
+import { check } from "@tauri-apps/plugin-updater";
+import type {
+  UpdateInfo,
+  UpdateRepository,
+} from "../domain/repositories/UpdateRepository";
 
 export class TauriUpdateRepository implements UpdateRepository {
   async check(): Promise<UpdateInfo | null> {
