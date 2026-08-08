@@ -93,6 +93,33 @@ describe("sqlite schema and migrations", () => {
     expect(persons).toEqual([{ label: "Personal" }]);
   });
 
+  test("rebuilds the transactions table so its type CHECK accepts savings", async () => {
+    const db = openClient();
+    await getDatabase(db);
+    const repo = new TauriTransactionRepository();
+
+    const created = await repo.create(
+      Transaction.create({
+        date: "2026-08-01",
+        type: "savings",
+        category: "Ahorro",
+        concept: "Transferencia a cuenta ahorro",
+        amount: 250,
+        person: "personal",
+      }),
+    );
+
+    const found = await repo.getById(created.id as number);
+    expect(found?.type).toBe("savings");
+    expect(found?.category).toBe("Ahorro");
+    expect(found?.hasReceipt).toBe(false);
+
+    const schema = await db.select<{ sql: string }[]>(
+      `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'transactions'`,
+    );
+    expect(schema[0].sql).toContain("'savings'");
+  });
+
   test("migrates a legacy database backfilling year, month and fingerprints", async () => {
     const raw = new DatabaseSync(":memory:");
     raw.exec(`
@@ -260,6 +287,49 @@ describe("TauriTransactionRepository", () => {
     const day = await repo.getByDate("2026-08-02");
     expect(day).toHaveLength(1);
     expect(day[0].amount).toBe(12);
+  });
+
+  test("excludes savings transactions from balance and category summaries", async () => {
+    await getDatabase(openClient());
+    const repo = new TauriTransactionRepository();
+
+    await repo.create(makeTransaction("2026-08-01", 300));
+    await repo.create(
+      makeTransaction("2026-08-02", 1000, {
+        type: "income",
+        category: "nomina",
+        concept: "Nómina",
+      }),
+    );
+    await repo.create(
+      Transaction.create({
+        date: "2026-08-03",
+        type: "savings",
+        category: "Ahorro",
+        concept: "Transferencia a cuenta ahorro",
+        amount: 250,
+        person: "personal",
+      }),
+    );
+
+    const result = await repo.getSummaryFiltered(
+      TransactionFilters.create({
+        period: { mode: "month", year: 2026, month: 8 },
+      }),
+    );
+
+    expect(result.summary).toEqual({
+      income: 1000,
+      expense: 300,
+      balance: 700,
+    });
+    expect(result.categories).toEqual([
+      { category: "comida", type: "expense", amount: 300 },
+      { category: "nomina", type: "income", amount: 1000 },
+    ]);
+    expect(result.monthly).toEqual([
+      { month: 8, income: 1000, expense: 300, balance: 700 },
+    ]);
   });
 
   test("computes income, expense and balance summaries with monthly breakdowns", async () => {

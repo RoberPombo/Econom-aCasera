@@ -15,7 +15,7 @@ export { computeFingerprint };
 type TransactionRow = {
   id: number | string;
   date: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "savings";
   category: string;
   concept: string;
   amount: number | string;
@@ -166,10 +166,14 @@ export class TauriTransactionRepository implements TransactionRepository {
       balance: Math.round((income - expense) * 100) / 100,
     };
 
+    const categoryWhere =
+      where === ""
+        ? "WHERE t.type IN ('income', 'expense')"
+        : `${where} AND t.type IN ('income', 'expense')`;
     const categories = await db.select<
       { category: string; type: "income" | "expense"; amount: number }[]
     >(
-      `SELECT t.category as category, t.type as type, SUM(t.amount) as amount ${FILTER_FROM} ${where} GROUP BY t.category, t.type ORDER BY t.type, amount DESC`,
+      `SELECT t.category as category, t.type as type, SUM(t.amount) as amount ${FILTER_FROM} ${categoryWhere} GROUP BY t.category, t.type ORDER BY t.type, amount DESC`,
       params,
     );
 

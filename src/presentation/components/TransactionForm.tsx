@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { Category, Person, Transaction } from "../../domain/entities";
+import type {
+  Category,
+  Person,
+  Transaction,
+  TransactionType,
+} from "../../domain/entities";
 import {
   btn,
   btnGhost,
@@ -20,7 +25,7 @@ export type ReceiptFormData = {
 
 export type TransactionFormData = {
   date: string;
-  type: "income" | "expense";
+  type: TransactionType;
   category: string;
   concept: string;
   amount: number;
@@ -190,7 +195,7 @@ export function TransactionForm({
           id="tx-type"
           value={form.type}
           onChange={(e) => {
-            const type = e.target.value as "income" | "expense";
+            const type = e.target.value as TransactionType;
             setForm({ ...form, type, category: "" });
             if (type === "income") clearReceipt();
           }}

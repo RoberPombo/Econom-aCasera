@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import type { Person } from "../../domain/entities";
+import type { Person, TransactionType } from "../../domain/entities";
 import { Transaction } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
 import {
@@ -43,7 +43,7 @@ const abancaDownloadGuide =
 
 export type ImportRow = {
   date: string;
-  type: "income" | "expense";
+  type: TransactionType;
   category: string;
   concept: string;
   amount: string;
@@ -97,7 +97,7 @@ function validateRow(row: ImportRow, index: number): string[] {
   if (!row.date || Number.isNaN(new Date(row.date).getTime())) {
     errors.push(`Fila ${index + 1}: fecha inválida`);
   }
-  if (!["income", "expense"].includes(row.type)) {
+  if (!["income", "expense", "savings"].includes(row.type)) {
     errors.push(`Fila ${index + 1}: tipo inválido`);
   }
   if (!row.category.trim()) {
@@ -392,12 +392,13 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                           value={row.type}
                           onChange={(e) =>
                             updateRow(index, {
-                              type: e.target.value as "income" | "expense",
+                              type: e.target.value as TransactionType,
                             })
                           }
                         >
                           <option value="income">Ingreso</option>
                           <option value="expense">Gasto</option>
+                          <option value="savings">Ahorro</option>
                         </select>
                       </td>
                       <td className={`${td} align-top`}>
