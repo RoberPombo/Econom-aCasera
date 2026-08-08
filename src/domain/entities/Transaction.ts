@@ -80,7 +80,7 @@ export class Transaction extends Entity {
           : data.receiptPath;
 
     return Transaction.create({
-      id: typeof this.id === "number" ? this.id : undefined,
+      id: data.id ?? (typeof this.id === "number" ? this.id : undefined),
       date: data.date ?? this.date,
       type,
       category: data.category ?? this.category,

@@ -2,16 +2,18 @@ import Database from "@tauri-apps/plugin-sql";
 import { normalizeKey } from "../domain/entities/Key";
 import { computeFingerprint } from "./computeFingerprint";
 
-let dbInstance: Database | null = null;
+export type DbClient = Pick<Database, "execute" | "select" | "close">;
 
-export async function getDatabase(): Promise<Database> {
+let dbInstance: DbClient | null = null;
+
+export async function getDatabase(client?: DbClient): Promise<DbClient> {
   if (dbInstance) return dbInstance;
-  dbInstance = await Database.load("sqlite:economiacasera.db");
+  dbInstance = client ?? (await Database.load("sqlite:economiacasera.db"));
   await initDatabase(dbInstance);
   return dbInstance;
 }
 
-async function initDatabase(db: Database): Promise<void> {
+async function initDatabase(db: DbClient): Promise<void> {
   await db.execute(`
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -60,15 +62,16 @@ async function initDatabase(db: Database): Promise<void> {
     )
   `);
 
+  await migrateDatabase(db);
+
   await db.execute(`
     CREATE INDEX IF NOT EXISTS idx_transactions_year_month ON transactions(year, month)
   `);
 
-  await migrateDatabase(db);
   await seedDefaults(db);
 }
 
-async function migrateDatabase(db: Database): Promise<void> {
+async function migrateDatabase(db: DbClient): Promise<void> {
   await migrateTransactionsColumns(db);
   await migrateConfigTable(db, "categories", ["type"]);
   await migrateConfigTable(db, "persons", []);
@@ -111,7 +114,7 @@ async function migrateDatabase(db: Database): Promise<void> {
   }
 }
 
-async function migrateTransactionsColumns(db: Database): Promise<void> {
+async function migrateTransactionsColumns(db: DbClient): Promise<void> {
   const columns = await db.select<{ name: string }[]>(
     `PRAGMA table_info(transactions)`,
   );
@@ -144,7 +147,7 @@ async function migrateTransactionsColumns(db: Database): Promise<void> {
 }
 
 async function migrateConfigTable(
-  db: Database,
+  db: DbClient,
   table: string,
   extraColumns: string[],
 ): Promise<void> {
@@ -200,7 +203,7 @@ async function migrateConfigTable(
 }
 
 async function keyExists(
-  db: Database,
+  db: DbClient,
   table: string,
   key: string,
 ): Promise<boolean> {
@@ -211,7 +214,7 @@ async function keyExists(
   return result[0].count > 0;
 }
 
-async function seedDefaults(db: Database): Promise<void> {
+async function seedDefaults(db: DbClient): Promise<void> {
   const categories = await db.select<{ count: number }[]>(
     "SELECT COUNT(*) as count FROM categories",
   );
