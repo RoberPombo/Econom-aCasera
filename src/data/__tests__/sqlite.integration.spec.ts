@@ -2,10 +2,10 @@
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { Transaction, TransactionFilters } from "../../domain/entities";
+import { computeFingerprint } from "../computeFingerprint";
+import { closeDatabase, type DbClient, getDatabase } from "../db";
 import { TauriImportRepository } from "../TauriImportRepository";
 import { TauriTransactionRepository } from "../TauriTransactionRepository";
-import { computeFingerprint } from "../computeFingerprint";
-import { closeDatabase, getDatabase, type DbClient } from "../db";
 
 class NodeSqliteClient implements DbClient {
   constructor(private readonly db: DatabaseSync) {}
