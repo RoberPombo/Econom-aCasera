@@ -383,7 +383,7 @@ describe("useAppState", () => {
     });
 
     expect(result.current.showConflict).toBe(false);
-    expect(root.dbInfo.hasConflict).toBe(true);
+    expect(root.dbInfo.hasConflict).toBe(false);
   });
 
   test("updateTransaction reloads and loadReceiptDataUrl delegates", async () => {

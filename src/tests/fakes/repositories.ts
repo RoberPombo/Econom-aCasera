@@ -264,6 +264,7 @@ export class InMemoryDbInfoRepository implements DbInfoRepository {
     dbPath: string;
     usesDrive: boolean;
   }> {
+    this.hasConflict = false;
     return { ok: true, dbPath: "/db.sqlite", usesDrive: false };
   }
 
