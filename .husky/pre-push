@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+# full gate before pushing to the remote
+npm run lint
+npm test -- --reporter=dot
+npm run build

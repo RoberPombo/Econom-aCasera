@@ -114,6 +114,15 @@ npm run lint
 
 Run them before committing.
 
+- `src/data/__tests__/sqlite.integration.spec.ts` runs the real SQL against an in-memory `node:sqlite` database (production uses the Tauri plugin); keep the schema and the most sensitive queries covered there.
+
+### Git Hooks (Husky)
+
+- `.husky/pre-commit` runs `npm run lint` and the full test suite.
+- `.husky/pre-push` runs `npm run lint`, the full test suite and `npm run build` (the quick frontend build).
+- Never bypass the hooks (`git commit --no-verify` / `git push --no-verify`) unless explicitly asked.
+- Always run `npm run lint:fix` before committing so `biome check --write` applies import ordering and formatting.
+
 ## Release Rules
 
 - Releases are handled automatically by `release-please`.

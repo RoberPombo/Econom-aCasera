@@ -14,7 +14,8 @@
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome check --write",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "prepare": "husky"
   },
   "dependencies": {
     "@tauri-apps/api": "2.11.1",
@@ -38,6 +39,7 @@
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.0.5",
     "@vitest/coverage-v8": "4.1.10",
+    "husky": "^9.1.7",
     "jsdom": "30.0.1",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
