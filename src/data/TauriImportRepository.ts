@@ -8,6 +8,7 @@ import type {
 import { computeFingerprint } from "./computeFingerprint";
 import { getDatabase } from "./db";
 import { parseExcel } from "./excelParser";
+import { parseAbancaCsv } from "./parsers/abancaParser";
 import { type ExcelCell, parseIngExcel } from "./parsers/ingParser";
 
 export class TauriImportRepository implements ImportRepository {
@@ -26,6 +27,10 @@ export class TauriImportRepository implements ImportRepository {
         fileBytes: Array.from(new Uint8Array(buffer)),
       });
       const result = parseIngExcel(rows);
+      candidates = result.transactions;
+      errors = result.errors;
+    } else if (source === "abanca") {
+      const result = parseAbancaCsv(await file.text());
       candidates = result.transactions;
       errors = result.errors;
     } else {

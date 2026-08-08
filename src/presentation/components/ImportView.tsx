@@ -22,17 +22,24 @@ import {
 const acceptBySource: Record<ImportSource, string> = {
   excel: ".xlsx,.xls",
   ing: ".xls,.xlsx",
+  abanca: ".csv",
 };
 
 const sourceHints: Record<ImportSource, string> = {
   excel: "Formato Excel (.xlsx o .xls)",
   ing: "Formato Excel (.xls o .xlsx) descargado desde ING",
+  abanca: "CSV descargado desde Abanca",
 };
 
 const ingDownloadGuide =
   "Para descargar los movimientos en Excel: inicia sesión en la web/app de ING, entra en la " +
   "cuenta, abre Movimientos, pulsa en el icono de descarga y elige la opción “Excel”. " +
   "El archivo descargado suele llamarse movements-XXXXX.xls. Súbelo aquí tal cual.";
+
+const abancaDownloadGuide =
+  "Para descargar los movimientos en CSV: inicia sesión en la web/app de Abanca, entra en " +
+  "Movimientos, pulsa en Exportar y elige el formato CSV. El archivo descargado suele " +
+  "llamarse Export-AAAA-MM-DD-HH-mm-ss.csv. Súbelo aquí tal cual.";
 
 export type ImportRow = {
   date: string;
@@ -197,12 +204,17 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
   ];
   const showIngGuide =
     source === "ing" && (extensionErr != null || parserErrors.length > 0);
+  const showAbancaGuide =
+    source === "abanca" && (extensionErr != null || parserErrors.length > 0);
 
   function extensionError(): string | null {
     if (!file) return null;
     const lower = file.name.toLowerCase();
     if (source === "ing" && !/(\.xls|\.xlsx)$/.test(lower)) {
       return `El archivo "${file.name}" no es un Excel de ING. ${ingDownloadGuide}`;
+    }
+    if (source === "abanca" && !/\.csv$/.test(lower)) {
+      return `El archivo "${file.name}" no es un CSV de Abanca. ${abancaDownloadGuide}`;
     }
     return null;
   }
@@ -215,6 +227,8 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
         movimientos antes de guardarlos.
         {source === "ing" &&
           ` La fuente ING espera el Excel de movimientos (${acceptBySource.ing}).`}
+        {source === "abanca" &&
+          ` La fuente Abanca espera el CSV de movimientos (${acceptBySource.abanca}).`}
       </p>
 
       <input
@@ -303,6 +317,14 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                 ¿Cómo descargar los movimientos de ING?
               </p>
               <p className="mt-1 text-[0.9rem]">{ingDownloadGuide}</p>
+            </div>
+          )}
+          {showAbancaGuide && (
+            <div className="mt-2 rounded-lg border border-line bg-surface p-3 text-body">
+              <p className="font-semibold">
+                ¿Cómo descargar los movimientos de Abanca?
+              </p>
+              <p className="mt-1 text-[0.9rem]">{abancaDownloadGuide}</p>
             </div>
           )}
         </div>

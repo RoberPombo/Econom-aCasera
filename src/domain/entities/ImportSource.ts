@@ -1,10 +1,11 @@
-export const importSources = ["excel", "ing"] as const;
+export const importSources = ["excel", "ing", "abanca"] as const;
 
 export type ImportSource = (typeof importSources)[number];
 
 export const importSourceLabels: Record<ImportSource, string> = {
   excel: "Excel",
   ing: "ING",
+  abanca: "Abanca",
 };
 
 export const upcomingImportSources = [
