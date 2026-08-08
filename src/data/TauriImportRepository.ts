@@ -1,7 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Transaction } from "../domain/entities";
 import type { ImportSource } from "../domain/entities/ImportSource";
+import { normalizeKey } from "../domain/entities/Key";
 import type {
+  ImportCategoryOption,
   ImportPreview,
   ImportRepository,
 } from "../domain/repositories/ImportRepository";
@@ -16,12 +18,14 @@ export class TauriImportRepository implements ImportRepository {
   async preview(source: ImportSource, file: File): Promise<ImportPreview> {
     let candidates: Transaction[] = [];
     let errors: string[] = [];
+    let categoryOptions: ImportCategoryOption[] | undefined;
 
     if (source === "excel") {
       const buffer = await file.arrayBuffer();
       const result = await parseExcel(buffer);
       candidates = result.transactions;
       errors = result.errors;
+      categoryOptions = result.categories;
     } else if (source === "ing") {
       const buffer = await file.arrayBuffer();
       const rows = await invoke<ExcelCell[][]>("read_excel_cells", {
@@ -59,11 +63,23 @@ export class TauriImportRepository implements ImportRepository {
       transactions: classifySavings(transactions, source),
       errors,
       skipped,
+      categoryOptions,
     };
   }
 
-  async confirm(transactions: ImportPreview["transactions"]): Promise<number> {
+  async confirm(
+    transactions: ImportPreview["transactions"],
+    categoryOptions?: ImportCategoryOption[],
+  ): Promise<number> {
     const db = await getDatabase();
+
+    for (const option of categoryOptions ?? []) {
+      const key = normalizeKey(option.label);
+      await db.execute(
+        "INSERT OR IGNORE INTO categories (label, key, type, active) VALUES (?, ?, ?, 1)",
+        [option.label, key, option.type],
+      );
+    }
 
     const existingRows = await db.select<{ fingerprint: string }[]>(
       "SELECT fingerprint FROM transactions WHERE fingerprint IS NOT NULL",

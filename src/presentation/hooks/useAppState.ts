@@ -15,6 +15,7 @@ import type {
 } from "../../domain/entities";
 import { TransactionFilters } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
+import type { ImportCategoryOption } from "../../domain/repositories/ImportRepository";
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 import { useAppContext } from "../context/useAppContext";
 
@@ -341,10 +342,13 @@ export function useAppState() {
     return compositionRoot.providePreviewImportUseCase().execute(source, file);
   }
 
-  async function confirmImport(transactions: Transaction[]) {
+  async function confirmImport(
+    transactions: Transaction[],
+    categoryOptions?: ImportCategoryOption[],
+  ) {
     const count = await compositionRoot
       .provideConfirmImportUseCase()
-      .execute(transactions);
+      .execute(transactions, categoryOptions);
     await loadData();
     return count;
   }

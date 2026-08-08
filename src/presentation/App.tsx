@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Transaction } from "../domain/entities";
+import type { ImportCategoryOption } from "../domain/repositories/ImportRepository";
 import { BalanceChart } from "./components/BalanceChart";
 import { CategoriesConfig } from "./components/CategoriesConfig";
 import { ConfirmDialog } from "./components/ConfirmDialog";
@@ -278,8 +279,11 @@ function App() {
       ? `Año ${filters.period.year}`
       : "Totales filtrados";
 
-  async function confirmImport(transactions: Transaction[]) {
-    const count = await state.confirmImport(transactions);
+  async function confirmImport(
+    transactions: Transaction[],
+    categoryOptions?: ImportCategoryOption[],
+  ) {
+    const count = await state.confirmImport(transactions, categoryOptions);
     setShowImportModal(false);
     return count;
   }

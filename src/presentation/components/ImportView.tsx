@@ -8,6 +8,10 @@ import {
   upcomingImportSources,
 } from "../../domain/entities/ImportSource";
 import { normalizeKey } from "../../domain/entities/Key";
+import type {
+  ImportCategoryOption,
+  ImportPreview,
+} from "../../domain/repositories/ImportRepository";
 import {
   btn,
   btnSecondary,
@@ -52,15 +56,11 @@ export type ImportRow = {
 
 interface Props {
   persons: Person[];
-  onPreview: (
-    source: ImportSource,
-    file: File,
-  ) => Promise<{
-    transactions: Transaction[];
-    errors: string[];
-    skipped: number;
-  }>;
-  onConfirm: (transactions: Transaction[]) => Promise<number>;
+  onPreview: (source: ImportSource, file: File) => Promise<ImportPreview>;
+  onConfirm: (
+    transactions: Transaction[],
+    categoryOptions?: ImportCategoryOption[],
+  ) => Promise<number>;
 }
 
 function formatAmount(value: number | string): string {
@@ -122,9 +122,34 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [categoryOptions, setCategoryOptions] = useState<
+    ImportCategoryOption[]
+  >([]);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
+    new Set(),
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePersons = persons.filter((p) => p.active);
+  const incomeOptions = categoryOptions.filter((c) => c.type === "income");
+  const expenseOptions = categoryOptions.filter((c) => c.type === "expense");
+
+  function resetCategorySelection() {
+    setCategoryOptions([]);
+    setSelectedCategories(new Set());
+  }
+
+  function toggleCategory(label: string) {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  }
 
   async function handlePreview() {
     if (!file) return;
@@ -135,10 +160,13 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setSaveMessage(null);
     try {
       const result = await onPreview(source, file);
-      console.log("[ImportView] preview result", result);
       setRows(result.transactions.map(transactionToRow));
       setParserErrors(result.errors);
       setSkipped(result.skipped);
+      setCategoryOptions(result.categoryOptions ?? []);
+      setSelectedCategories(
+        new Set((result.categoryOptions ?? []).map((c) => c.label)),
+      );
     } catch (err) {
       setParserErrors([String(err)]);
     } finally {
@@ -161,7 +189,13 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setSaving(true);
     try {
       const transactions = rows.map(rowToTransaction);
-      const inserted = await onConfirm(transactions);
+      const selectedOptions = categoryOptions.filter((c) =>
+        selectedCategories.has(c.label),
+      );
+      const inserted =
+        selectedOptions.length > 0
+          ? await onConfirm(transactions, selectedOptions)
+          : await onConfirm(transactions);
       const skippedNow = transactions.length - inserted;
       setSaveMessage(
         inserted > 0
@@ -191,6 +225,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setParserErrors([]);
     setSkipped(0);
     setSaveMessage(null);
+    resetCategorySelection();
   }
 
   const validationErrors = rows.flatMap((row, index) =>
@@ -256,7 +291,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
           >
             {importSourceLabels[s]}
             <span className="ml-2 rounded bg-black/10 px-1.5 py-0.5 text-[0.7rem]">
-              {s === "ing" ? ".xls" : ".xlsx"}
+              {s === "abanca" ? ".csv" : s === "ing" ? ".xls" : ".xlsx"}
             </span>
           </button>
         ))}
@@ -292,6 +327,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
               setRows([]);
               setParserErrors([]);
               setSkipped(0);
+              resetCategorySelection();
               if (inputRef.current) inputRef.current.value = "";
             }}
             disabled={loading}
@@ -352,6 +388,85 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
             columnas de fecha, categoría e importe.
           </p>
         )}
+
+      {categoryOptions.length > 0 && (
+        <div className="mb-4 rounded-lg border border-line bg-surface p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold">Añadir a la configuración</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={`${btnSecondary} px-2 py-1 text-[0.85rem]`}
+                onClick={() =>
+                  setSelectedCategories(
+                    new Set(categoryOptions.map((c) => c.label)),
+                  )
+                }
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                className={`${btnSecondary} px-2 py-1 text-[0.85rem]`}
+                onClick={() => setSelectedCategories(new Set())}
+              >
+                Ninguna
+              </button>
+            </div>
+          </div>
+          <p className="mb-3 text-[0.85rem] text-muted">
+            Opciones de la hoja Global de la antigua Economía Casera. Marca las
+            categorías de ingresos y gastos que quieras añadir a la
+            configuración actual.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {incomeOptions.length > 0 && (
+              <fieldset>
+                <legend className="mb-1 text-[0.85rem] font-medium text-muted">
+                  Ingresos
+                </legend>
+                <div className="flex flex-col gap-1.5">
+                  {incomeOptions.map((option) => (
+                    <label
+                      key={option.label}
+                      className="flex items-center gap-2 text-[0.9rem] text-body"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.has(option.label)}
+                        onChange={() => toggleCategory(option.label)}
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            {expenseOptions.length > 0 && (
+              <fieldset>
+                <legend className="mb-1 text-[0.85rem] font-medium text-muted">
+                  Gastos
+                </legend>
+                <div className="flex flex-col gap-1.5">
+                  {expenseOptions.map((option) => (
+                    <label
+                      key={option.label}
+                      className="flex items-center gap-2 text-[0.9rem] text-body"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.has(option.label)}
+                        onChange={() => toggleCategory(option.label)}
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+          </div>
+        </div>
+      )}
 
       {rows.length > 0 && (
         <>
@@ -487,6 +602,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                 setRows([]);
                 setParserErrors([]);
                 setSkipped(0);
+                resetCategorySelection();
               }}
             >
               Limpiar

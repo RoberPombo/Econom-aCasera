@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, type Mock, test, vi } from "vitest";
 import { Person, Transaction } from "../../domain/entities";
 import { normalizeKey } from "../../domain/entities/Key";
+import type { ImportCategoryOption } from "../../domain/repositories/ImportRepository";
 import { ImportView } from "../components/ImportView";
 
 const persons = [
@@ -14,6 +15,7 @@ type PreviewResult = {
   transactions: Transaction[];
   errors: string[];
   skipped: number;
+  categoryOptions?: ImportCategoryOption[];
 };
 
 function tx(
@@ -69,10 +71,11 @@ function mockPreview(
   transactions: Transaction[],
   errors: string[] = [],
   skipped = 0,
+  categoryOptions: ImportCategoryOption[] = [],
 ) {
   return vi
     .fn<(source: string, file: File) => Promise<PreviewResult>>()
-    .mockResolvedValue({ transactions, errors, skipped });
+    .mockResolvedValue({ transactions, errors, skipped, categoryOptions });
 }
 
 describe("ImportView", () => {
@@ -401,6 +404,89 @@ describe("ImportView", () => {
     await user.click(screen.getByRole("button", { name: /Guardar/ }));
 
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  test("shows the Global category options preselected", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Ingresos por intereses", type: "income" },
+        { label: "Alimentación", type: "expense" },
+        { label: "Hipoteca / Alquiler / Seguros", type: "expense" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(screen.getByText("Añadir a la configuración")).toBeInTheDocument();
+    expect(screen.getByText("Ingresos")).toBeInTheDocument();
+    expect(screen.getByText("Gastos")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nóminas")).toBeChecked();
+    expect(screen.getByLabelText("Alimentación")).toBeChecked();
+  });
+
+  test("confirms only the selected Global categories", async () => {
+    const user = userEvent.setup();
+    const { onConfirm } = renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+      onConfirm: vi
+        .fn<(ts: Transaction[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByLabelText("Alimentación"));
+
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    );
+
+    expect(onConfirm).toHaveBeenCalledWith(
+      [expect.objectContaining({ concept: "Mercadona" })],
+      [{ label: "Nóminas", type: "income" }],
+    );
+  });
+
+  test("selects or clears all Global categories with the quick buttons", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Ninguna" }));
+    expect(screen.getByLabelText("Nóminas")).not.toBeChecked();
+    expect(screen.getByLabelText("Alimentación")).not.toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "Todas" }));
+    expect(screen.getByLabelText("Nóminas")).toBeChecked();
+    expect(screen.getByLabelText("Alimentación")).toBeChecked();
+  });
+
+  test("clears the selection with the Limpiar button", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Limpiar" }));
+
+    expect(
+      screen.queryByText("Añadir a la configuración"),
+    ).not.toBeInTheDocument();
   });
 
   test("reports duplicates when the preview has no new rows", async () => {

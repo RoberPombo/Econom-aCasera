@@ -1,5 +1,6 @@
 import type { ImportSource } from "../entities/ImportSource";
 import type {
+  ImportCategoryOption,
   ImportPreview,
   ImportRepository,
 } from "../repositories/ImportRepository";
@@ -23,7 +24,10 @@ export class ConfirmImportUseCase {
     this.repository = repository;
   }
 
-  async execute(transactions: ImportPreview["transactions"]): Promise<number> {
-    return this.repository.confirm(transactions);
+  async execute(
+    transactions: ImportPreview["transactions"],
+    categoryOptions?: ImportCategoryOption[],
+  ): Promise<number> {
+    return this.repository.confirm(transactions, categoryOptions);
   }
 }
