@@ -1,4 +1,4 @@
-import type { Transaction } from "../entities";
+import type { Transaction, TransactionType } from "../entities";
 import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 import type { ReceiptRepository } from "../repositories/ReceiptRepository";
 import type { TransactionRepository } from "../repositories/TransactionRepository";
@@ -23,7 +23,7 @@ export class UpdateTransactionUseCase {
     id: number,
     data: {
       date?: string;
-      type?: "income" | "expense";
+      type?: TransactionType;
       category?: string;
       concept?: string;
       amount?: number;

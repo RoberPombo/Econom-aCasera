@@ -1,3 +1,4 @@
+import type { TransactionType } from "../entities";
 import { Transaction } from "../entities";
 import type { DbInfoRepository } from "../repositories/DbInfoRepository";
 import type { ReceiptRepository } from "../repositories/ReceiptRepository";
@@ -25,7 +26,7 @@ export class CreateTransactionUseCase {
 
   async execute(data: {
     date: string;
-    type: "income" | "expense";
+    type: TransactionType;
     category: string;
     concept: string;
     amount: number;

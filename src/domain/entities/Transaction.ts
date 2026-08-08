@@ -1,7 +1,7 @@
 import { Amount } from "./Amount";
 import { Entity } from "./Entity";
 
-export type TransactionType = "income" | "expense";
+export type TransactionType = "income" | "expense" | "savings";
 
 export interface TransactionData {
   id?: number;
@@ -58,7 +58,7 @@ export class Transaction extends Entity {
     const month = data.month ?? date.getMonth() + 1;
     const receiptPath = data.receiptPath?.trim() || null;
 
-    if (data.type === "income" && receiptPath) {
+    if (data.type !== "expense" && receiptPath) {
       throw new Error("Solo los gastos pueden tener foto de ticket");
     }
 
@@ -73,11 +73,11 @@ export class Transaction extends Entity {
   withUpdates(data: Partial<TransactionData>): Transaction {
     const type = data.type ?? this.type;
     const receiptPath =
-      type === "income"
-        ? null
-        : data.receiptPath === undefined
+      type === "expense"
+        ? data.receiptPath === undefined
           ? this.receiptPath
-          : data.receiptPath;
+          : data.receiptPath
+        : null;
 
     return Transaction.create({
       id: data.id ?? (typeof this.id === "number" ? this.id : undefined),
