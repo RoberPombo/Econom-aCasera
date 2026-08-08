@@ -128,7 +128,8 @@ function parseRow(
     tipo.toLowerCase().includes("ingreso") ||
     incomeCategories.includes(category);
   const type: "income" | "expense" = isIncome ? "income" : "expense";
-  const amount = parseNumber(row[10]);
+  const amount =
+    parseNumber(row[10]) || parseNumber(row[11]) || parseNumber(row[12]);
   if (!amount) return null;
 
   const day = Number(row[6]);

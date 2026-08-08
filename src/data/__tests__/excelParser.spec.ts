@@ -165,6 +165,68 @@ describe("parseExcelSheets", () => {
     expect(result.transactions[0].type).toBe("expense");
   });
 
+  test("reads the amount from column L when K is empty", () => {
+    const sheet = monthlyPage("Ene.", [
+      header,
+      row({
+        0: "Gasto Alimentación 1-ENERO-2017",
+        1: "Gasto",
+        2: "Alimentación",
+        6: 1,
+        7: "ENERO",
+        9: 2017,
+        11: 45.6,
+      }),
+    ]);
+
+    const result = parseExcelSheets([sheet], 2016);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].amount).toBe(45.6);
+    expect(result.transactions[0].type).toBe("expense");
+  });
+
+  test("reads the amount from column M when K and L are empty", () => {
+    const sheet = monthlyPage("Ene.", [
+      header,
+      row({
+        0: "Gasto Alimentación 1-ENERO-2017",
+        1: "Gasto",
+        2: "Alimentación",
+        6: 1,
+        7: "ENERO",
+        9: 2017,
+        12: 89.9,
+      }),
+    ]);
+
+    const result = parseExcelSheets([sheet], 2016);
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].amount).toBe(89.9);
+    expect(result.transactions[0].type).toBe("expense");
+  });
+
+  test("keeps expenses as positive amounts and lets the type carry the sign", () => {
+    const sheet = monthlyPage("Ene.", [
+      header,
+      row({
+        0: "Gasto Alimentación 1-ENERO-2017",
+        1: "Gasto",
+        2: "Alimentación",
+        6: 1,
+        7: "ENERO",
+        9: 2017,
+        10: 45.6,
+      }),
+    ]);
+
+    const result = parseExcelSheets([sheet], 2016);
+
+    expect(result.transactions[0].amount).toBe(45.6);
+    expect(result.transactions[0].type).toBe("expense");
+  });
+
   test("extracts the income and expense options from the Global page", () => {
     const result = parseExcelSheets([globalPage()], 2016);
 
