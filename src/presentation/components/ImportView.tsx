@@ -135,6 +135,7 @@ export function ImportView({
   const [categoriesMessage, setCategoriesMessage] = useState<string | null>(
     null,
   );
+  const [categoriesStepDone, setCategoriesStepDone] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePersons = persons.filter((p) => p.active);
@@ -145,6 +146,7 @@ export function ImportView({
     setCategoryOptions([]);
     setSelectedCategories(new Set());
     setCategoriesMessage(null);
+    setCategoriesStepDone(true);
   }
 
   async function handleAddCategories() {
@@ -158,6 +160,7 @@ export function ImportView({
       const added = await onAddCategories(selectedOptions);
       setCategoriesMessage(`Añadidas ${added} categorías a la configuración`);
       setSelectedCategories(new Set());
+      setCategoriesStepDone(true);
     } catch (err) {
       setCategoriesMessage(String(err));
     } finally {
@@ -192,6 +195,9 @@ export function ImportView({
       setCategoryOptions(result.categoryOptions ?? []);
       setSelectedCategories(
         new Set((result.categoryOptions ?? []).map((c) => c.label)),
+      );
+      setCategoriesStepDone(
+        !result.categoryOptions || result.categoryOptions.length === 0,
       );
     } catch (err) {
       setParserErrors([String(err)]);
@@ -489,10 +495,17 @@ export function ImportView({
             <button
               type="button"
               className={btn}
-              onClick={handleAddCategories}
+              onClick={() => void handleAddCategories()}
               disabled={selectedCategories.size === 0 || addingCategories}
             >
               {addingCategories ? "Añadiendo..." : "Añadir a la configuración"}
+            </button>
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={() => setCategoriesStepDone(true)}
+            >
+              Continuar
             </button>
             {categoriesMessage && (
               <p className="text-[0.9rem] text-body">{categoriesMessage}</p>
@@ -501,7 +514,7 @@ export function ImportView({
         </div>
       )}
 
-      {rows.length > 0 && (
+      {categoriesStepDone && rows.length > 0 && (
         <>
           <div className={tableWrap}>
             <table className={`${table} table-fixed`}>

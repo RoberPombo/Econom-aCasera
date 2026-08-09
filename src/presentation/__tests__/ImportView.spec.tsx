@@ -453,6 +453,7 @@ describe("ImportView", () => {
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
 
     await user.click(screen.getByLabelText("Alimentación"));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
 
     await user.click(
       screen.getByRole("button", { name: "Guardar 1 movimientos" }),
@@ -493,6 +494,68 @@ describe("ImportView", () => {
     ).toBeInTheDocument();
   });
 
+  test("keeps the movements hidden until the configuration step is resolved", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Guardar 1 movimientos" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows the movements table after the categories are added", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    ).toBeInTheDocument();
+  });
+
+  test("continues without adding categories when none are chosen", async () => {
+    const user = userEvent.setup();
+    const { onAddCategories } = renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(onAddCategories).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    ).toBeInTheDocument();
+  });
+
   test("selects or clears all Global categories with the quick buttons", async () => {
     const user = userEvent.setup();
     renderImport({
@@ -523,6 +586,7 @@ describe("ImportView", () => {
     selectFile(makeFile("economia.xlsx"));
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
 
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
     await user.click(screen.getByRole("button", { name: "Limpiar" }));
 
     expect(
