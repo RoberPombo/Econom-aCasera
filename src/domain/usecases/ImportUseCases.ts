@@ -24,10 +24,19 @@ export class ConfirmImportUseCase {
     this.repository = repository;
   }
 
-  async execute(
-    transactions: ImportPreview["transactions"],
-    categoryOptions?: ImportCategoryOption[],
-  ): Promise<number> {
-    return this.repository.confirm(transactions, categoryOptions);
+  async execute(transactions: ImportPreview["transactions"]): Promise<number> {
+    return this.repository.confirm(transactions);
+  }
+}
+
+export class AddCategoriesUseCase {
+  private readonly repository: ImportRepository;
+
+  constructor(repository: ImportRepository) {
+    this.repository = repository;
+  }
+
+  async execute(options: ImportCategoryOption[]): Promise<number> {
+    return this.repository.addCategories(options);
   }
 }

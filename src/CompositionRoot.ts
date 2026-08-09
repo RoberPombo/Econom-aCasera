@@ -7,6 +7,7 @@ import { TauriSettingsRepository } from "./data/TauriSettingsRepository";
 import { TauriTransactionRepository } from "./data/TauriTransactionRepository";
 import { TauriUpdateRepository } from "./data/TauriUpdateRepository";
 import {
+  AddCategoriesUseCase,
   CheckForUpdateUseCase,
   ConfirmImportUseCase,
   CreateCategoryUseCase,
@@ -139,6 +140,10 @@ export class CompositionRoot {
 
   provideConfirmImportUseCase() {
     return new ConfirmImportUseCase(this.importRepository);
+  }
+
+  provideAddCategoriesUseCase() {
+    return new AddCategoriesUseCase(this.importRepository);
   }
 
   provideGetPersonsUseCase() {

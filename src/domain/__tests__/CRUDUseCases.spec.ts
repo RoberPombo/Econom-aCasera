@@ -23,6 +23,7 @@ import {
 } from "../usecases/DbInfoUseCases";
 import { GetTransactionsByDateUseCase } from "../usecases/GetTransactionsByDateUseCase";
 import {
+  AddCategoriesUseCase,
   ConfirmImportUseCase,
   PreviewImportUseCase,
 } from "../usecases/ImportUseCases";
@@ -302,6 +303,29 @@ describe("Import use cases", () => {
     const result = await confirmImport.execute([tx]);
 
     expect(result).toBe(3);
+  });
+
+  test("AddCategoriesUseCase returns the number of added categories", async () => {
+    const repository = new FakeImportRepository({
+      transactions: [],
+      errors: [],
+      skipped: 0,
+    });
+    repository.addCategoriesResult = 4;
+    const addCategories = new AddCategoriesUseCase(repository);
+
+    const result = await addCategories.execute([
+      { label: "Nóminas", type: "income" },
+      { label: "Alimentación", type: "expense" },
+    ]);
+
+    expect(result).toBe(4);
+    expect(repository.addCategoriesCalls).toEqual([
+      [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ],
+    ]);
   });
 });
 

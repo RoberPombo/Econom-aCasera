@@ -15,8 +15,6 @@ export interface ImportPreview {
 
 export interface ImportRepository {
   preview(source: ImportSource, file: File): Promise<ImportPreview>;
-  confirm(
-    transactions: Transaction[],
-    categoryOptions?: ImportCategoryOption[],
-  ): Promise<number>;
+  confirm(transactions: Transaction[]): Promise<number>;
+  addCategories(options: ImportCategoryOption[]): Promise<number>;
 }

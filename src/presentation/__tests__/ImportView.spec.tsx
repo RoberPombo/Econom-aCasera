@@ -41,6 +41,9 @@ function renderImport(
   overrides: {
     onPreview?: Mock<(source: string, file: File) => Promise<PreviewResult>>;
     onConfirm?: Mock<(transactions: Transaction[]) => Promise<number>>;
+    onAddCategories?: Mock<
+      (options: ImportCategoryOption[]) => Promise<number>
+    >;
   } = {},
 ) {
   const onPreview =
@@ -48,16 +51,20 @@ function renderImport(
     vi.fn<(source: string, file: File) => Promise<PreviewResult>>();
   const onConfirm =
     overrides.onConfirm ?? vi.fn<(ts: Transaction[]) => Promise<number>>();
+  const onAddCategories =
+    overrides.onAddCategories ??
+    vi.fn<(options: ImportCategoryOption[]) => Promise<number>>();
 
   render(
     <ImportView
       persons={persons}
       onPreview={onPreview}
       onConfirm={onConfirm}
+      onAddCategories={onAddCategories}
     />,
   );
 
-  return { onPreview, onConfirm };
+  return { onPreview, onConfirm, onAddCategories };
 }
 
 function selectFile(file: File) {
@@ -419,16 +426,18 @@ describe("ImportView", () => {
     selectFile(makeFile("economia.xlsx"));
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
 
-    expect(screen.getByText("Añadir a la configuración")).toBeInTheDocument();
+    expect(
+      screen.getByText("Categorías de la hoja Global"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Ingresos")).toBeInTheDocument();
     expect(screen.getByText("Gastos")).toBeInTheDocument();
     expect(screen.getByLabelText("Nóminas")).toBeChecked();
     expect(screen.getByLabelText("Alimentación")).toBeChecked();
   });
 
-  test("confirms only the selected Global categories", async () => {
+  test("saving the movements does not touch the configuration", async () => {
     const user = userEvent.setup();
-    const { onConfirm } = renderImport({
+    const { onConfirm, onAddCategories } = renderImport({
       onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
         { label: "Nóminas", type: "income" },
         { label: "Alimentación", type: "expense" },
@@ -436,6 +445,9 @@ describe("ImportView", () => {
       onConfirm: vi
         .fn<(ts: Transaction[]) => Promise<number>>()
         .mockResolvedValue(1),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(2),
     });
     selectFile(makeFile("economia.xlsx"));
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
@@ -446,10 +458,39 @@ describe("ImportView", () => {
       screen.getByRole("button", { name: "Guardar 1 movimientos" }),
     );
 
-    expect(onConfirm).toHaveBeenCalledWith(
-      [expect.objectContaining({ concept: "Mercadona" })],
-      [{ label: "Nóminas", type: "income" }],
+    expect(onConfirm).toHaveBeenCalledWith([
+      expect.objectContaining({ concept: "Mercadona" }),
+    ]);
+    expect(onAddCategories).not.toHaveBeenCalled();
+  });
+
+  test("adds the selected categories with its own button, separate from the movements", async () => {
+    const user = userEvent.setup();
+    const { onAddCategories, onConfirm } = renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(2),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
     );
+
+    expect(onAddCategories).toHaveBeenCalledTimes(1);
+    expect(onAddCategories).toHaveBeenCalledWith([
+      { label: "Nóminas", type: "income" },
+      { label: "Alimentación", type: "expense" },
+    ]);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Añadidas 2 categorías a la configuración"),
+    ).toBeInTheDocument();
   });
 
   test("selects or clears all Global categories with the quick buttons", async () => {
@@ -485,7 +526,7 @@ describe("ImportView", () => {
     await user.click(screen.getByRole("button", { name: "Limpiar" }));
 
     expect(
-      screen.queryByText("Añadir a la configuración"),
+      screen.queryByRole("button", { name: "Añadir a la configuración" }),
     ).not.toBeInTheDocument();
   });
 

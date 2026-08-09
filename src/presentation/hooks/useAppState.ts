@@ -342,15 +342,20 @@ export function useAppState() {
     return compositionRoot.providePreviewImportUseCase().execute(source, file);
   }
 
-  async function confirmImport(
-    transactions: Transaction[],
-    categoryOptions?: ImportCategoryOption[],
-  ) {
+  async function confirmImport(transactions: Transaction[]) {
     const count = await compositionRoot
       .provideConfirmImportUseCase()
-      .execute(transactions, categoryOptions);
+      .execute(transactions);
     await loadData();
     return count;
+  }
+
+  async function addImportCategories(options: ImportCategoryOption[]) {
+    const added = await compositionRoot
+      .provideAddCategoriesUseCase()
+      .execute(options);
+    await loadData();
+    return added;
   }
 
   async function reloadDatabase() {
@@ -406,6 +411,7 @@ export function useAppState() {
     removePerson,
     previewImport,
     confirmImport,
+    addImportCategories,
     reloadDatabase,
     forceOverwrite,
     closeConflict: () => setShowConflict(false),

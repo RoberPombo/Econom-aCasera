@@ -57,10 +57,8 @@ export type ImportRow = {
 interface Props {
   persons: Person[];
   onPreview: (source: ImportSource, file: File) => Promise<ImportPreview>;
-  onConfirm: (
-    transactions: Transaction[],
-    categoryOptions?: ImportCategoryOption[],
-  ) => Promise<number>;
+  onConfirm: (transactions: Transaction[]) => Promise<number>;
+  onAddCategories: (options: ImportCategoryOption[]) => Promise<number>;
 }
 
 function formatAmount(value: number | string): string {
@@ -113,7 +111,12 @@ function validateRow(row: ImportRow, index: number): string[] {
   return errors;
 }
 
-export function ImportView({ persons, onPreview, onConfirm }: Props) {
+export function ImportView({
+  persons,
+  onPreview,
+  onConfirm,
+  onAddCategories,
+}: Props) {
   const [source, setSource] = useState<ImportSource>("excel");
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -128,6 +131,10 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
     new Set(),
   );
+  const [addingCategories, setAddingCategories] = useState(false);
+  const [categoriesMessage, setCategoriesMessage] = useState<string | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePersons = persons.filter((p) => p.active);
@@ -137,6 +144,25 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
   function resetCategorySelection() {
     setCategoryOptions([]);
     setSelectedCategories(new Set());
+    setCategoriesMessage(null);
+  }
+
+  async function handleAddCategories() {
+    const selectedOptions = categoryOptions.filter((c) =>
+      selectedCategories.has(c.label),
+    );
+    if (selectedOptions.length === 0 || addingCategories) return;
+    setAddingCategories(true);
+    setCategoriesMessage(null);
+    try {
+      const added = await onAddCategories(selectedOptions);
+      setCategoriesMessage(`Añadidas ${added} categorías a la configuración`);
+      setSelectedCategories(new Set());
+    } catch (err) {
+      setCategoriesMessage(String(err));
+    } finally {
+      setAddingCategories(false);
+    }
   }
 
   function toggleCategory(label: string) {
@@ -189,13 +215,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setSaving(true);
     try {
       const transactions = rows.map(rowToTransaction);
-      const selectedOptions = categoryOptions.filter((c) =>
-        selectedCategories.has(c.label),
-      );
-      const inserted =
-        selectedOptions.length > 0
-          ? await onConfirm(transactions, selectedOptions)
-          : await onConfirm(transactions);
+      const inserted = await onConfirm(transactions);
       const skippedNow = transactions.length - inserted;
       setSaveMessage(
         inserted > 0
@@ -392,7 +412,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
       {categoryOptions.length > 0 && (
         <div className="mb-4 rounded-lg border border-line bg-surface p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="font-semibold">Añadir a la configuración</p>
+            <p className="font-semibold">Categorías de la hoja Global</p>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -463,6 +483,19 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                   ))}
                 </div>
               </fieldset>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className={btn}
+              onClick={handleAddCategories}
+              disabled={selectedCategories.size === 0 || addingCategories}
+            >
+              {addingCategories ? "Añadiendo..." : "Añadir a la configuración"}
+            </button>
+            {categoriesMessage && (
+              <p className="text-[0.9rem] text-body">{categoriesMessage}</p>
             )}
           </div>
         </div>

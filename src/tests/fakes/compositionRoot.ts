@@ -7,6 +7,7 @@ import type {
 } from "../../domain/entities";
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 import {
+  AddCategoriesUseCase,
   CheckForUpdateUseCase,
   ConfirmImportUseCase,
   CreateCategoryUseCase,
@@ -173,6 +174,10 @@ export class FakeCompositionRoot {
 
   provideConfirmImportUseCase() {
     return new ConfirmImportUseCase(this.imports);
+  }
+
+  provideAddCategoriesUseCase() {
+    return new AddCategoriesUseCase(this.imports);
   }
 
   provideGetPersonsUseCase() {

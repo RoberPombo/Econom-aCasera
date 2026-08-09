@@ -279,13 +279,16 @@ function App() {
       ? `Año ${filters.period.year}`
       : "Totales filtrados";
 
-  async function confirmImport(
-    transactions: Transaction[],
-    categoryOptions?: ImportCategoryOption[],
-  ) {
-    const count = await state.confirmImport(transactions, categoryOptions);
+  async function confirmImport(transactions: Transaction[]) {
+    const count = await state.confirmImport(transactions);
     setShowImportModal(false);
     return count;
+  }
+
+  async function addImportCategories(
+    options: ImportCategoryOption[],
+  ): Promise<number> {
+    return state.addImportCategories(options);
   }
 
   return (
@@ -451,6 +454,7 @@ function App() {
             persons={state.persons}
             onPreview={state.previewImport}
             onConfirm={confirmImport}
+            onAddCategories={addImportCategories}
           />
         </Modal>
       )}

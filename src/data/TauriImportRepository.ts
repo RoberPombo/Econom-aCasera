@@ -67,19 +67,8 @@ export class TauriImportRepository implements ImportRepository {
     };
   }
 
-  async confirm(
-    transactions: ImportPreview["transactions"],
-    categoryOptions?: ImportCategoryOption[],
-  ): Promise<number> {
+  async confirm(transactions: ImportPreview["transactions"]): Promise<number> {
     const db = await getDatabase();
-
-    for (const option of categoryOptions ?? []) {
-      const key = normalizeKey(option.label);
-      await db.execute(
-        "INSERT OR IGNORE INTO categories (label, key, type, active) VALUES (?, ?, ?, 1)",
-        [option.label, key, option.type],
-      );
-    }
 
     const existingRows = await db.select<{ fingerprint: string }[]>(
       "SELECT fingerprint FROM transactions WHERE fingerprint IS NOT NULL",
@@ -111,5 +100,27 @@ export class TauriImportRepository implements ImportRepository {
     }
 
     return inserted;
+  }
+
+  async addCategories(options: ImportCategoryOption[]): Promise<number> {
+    const db = await getDatabase();
+    const existsRows = await db.select<{ key: string }[]>(
+      "SELECT key FROM categories",
+    );
+    const existing = new Set(existsRows.map((r) => r.key));
+
+    let added = 0;
+    for (const option of options) {
+      const key = normalizeKey(option.label);
+      if (existing.has(key)) continue;
+      await db.execute(
+        "INSERT INTO categories (label, key, type, active) VALUES (?, ?, ?, 1)",
+        [option.label, key, option.type],
+      );
+      existing.add(key);
+      added++;
+    }
+
+    return added;
   }
 }
