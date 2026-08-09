@@ -1,0 +1,11 @@
+name: Smoke Test
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  echo-it:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ok
