@@ -28,7 +28,7 @@ jobs:
           version: 11.20.0
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@v1
 
       - name: Cache Rust dependencies
         uses: swatinem/rust-cache@v2
