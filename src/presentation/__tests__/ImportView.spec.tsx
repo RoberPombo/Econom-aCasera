@@ -431,10 +431,13 @@ describe("ImportView", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Ingresos")).toBeInTheDocument();
     expect(screen.getByText("Gastos")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /Nóminas/ })).toBeChecked();
+    expect(screen.getByRole("button", { name: /Nóminas/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(
-      screen.getByRole("checkbox", { name: /Alimentación/ }),
-    ).toBeChecked();
+      screen.getByRole("button", { name: /Alimentación/ }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   test("saving the movements does not touch the configuration", async () => {
@@ -454,7 +457,7 @@ describe("ImportView", () => {
     selectFile(makeFile("economia.xlsx"));
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
 
-    await user.click(screen.getByRole("checkbox", { name: /Alimentación/ }));
+    await user.click(screen.getByRole("button", { name: /Alimentación/ }));
     await user.click(screen.getByRole("button", { name: "Continuar" }));
 
     await user.click(
@@ -621,16 +624,22 @@ describe("ImportView", () => {
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
 
     await user.click(screen.getByRole("button", { name: "Ninguna" }));
-    expect(screen.getByRole("checkbox", { name: /Nóminas/ })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: /Nóminas/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(
-      screen.getByRole("checkbox", { name: /Alimentación/ }),
-    ).not.toBeChecked();
+      screen.getByRole("button", { name: /Alimentación/ }),
+    ).not.toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByRole("button", { name: "Todas" }));
-    expect(screen.getByRole("checkbox", { name: /Nóminas/ })).toBeChecked();
+    expect(screen.getByRole("button", { name: /Nóminas/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(
-      screen.getByRole("checkbox", { name: /Alimentación/ }),
-    ).toBeChecked();
+      screen.getByRole("button", { name: /Alimentación/ }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   test("clears the selection with the Limpiar button", async () => {

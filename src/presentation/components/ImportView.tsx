@@ -459,8 +459,7 @@ export function ImportView({
                     <button
                       key={option.label}
                       type="button"
-                      role="checkbox"
-                      aria-checked={selectedCategories.has(option.label)}
+                      aria-pressed={selectedCategories.has(option.label)}
                       className={`cursor-pointer rounded border px-2 py-1 text-left text-[0.9rem] ${
                         selectedCategories.has(option.label)
                           ? "border-primary bg-primary/10 text-body"
@@ -485,8 +484,7 @@ export function ImportView({
                     <button
                       key={option.label}
                       type="button"
-                      role="checkbox"
-                      aria-checked={selectedCategories.has(option.label)}
+                      aria-pressed={selectedCategories.has(option.label)}
                       className={`cursor-pointer rounded border px-2 py-1 text-left text-[0.9rem] ${
                         selectedCategories.has(option.label)
                           ? "border-primary bg-primary/10 text-body"
