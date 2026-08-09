@@ -54,3 +54,5 @@ jobs:
 
       - name: Build Tauri app
         run: pnpm run tauri build --no-bundle
+
+# refreshed to bust stale workflow cache
