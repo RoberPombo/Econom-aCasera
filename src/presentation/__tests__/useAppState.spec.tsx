@@ -603,7 +603,7 @@ describe("useAppState", () => {
     expect(dataUrl).toMatch(/^data:image\/png;base64,/);
   });
 
-  test("downloadUpdate, previewImport and confirmImport delegate", async () => {
+  test("downloadUpdate, previewImport, confirmImport and addImportCategories delegate", async () => {
     const { result, root } = renderState({ settings: augustSettings });
     root.imports.previewResult = {
       transactions: [expense(1, "2026-08-05", "comida", 40)],
@@ -611,6 +611,7 @@ describe("useAppState", () => {
       skipped: 0,
     };
     root.imports.confirmResult = 3;
+    root.imports.addCategoriesResult = 5;
 
     await settle();
 
@@ -640,6 +641,19 @@ describe("useAppState", () => {
     await settle();
 
     expect(inserted).toBe(3);
+
+    let added = 0;
+    await act(async () => {
+      added = await result.current.addImportCategories([
+        { label: "Nóminas", type: "income" },
+      ]);
+    });
+    await settle();
+
+    expect(added).toBe(5);
+    expect(root.imports.addCategoriesCalls).toEqual([
+      [{ label: "Nóminas", type: "income" }],
+    ]);
   });
 
   test("closeConflict hides the conflict dialog", async () => {

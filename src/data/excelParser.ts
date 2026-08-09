@@ -1,7 +1,7 @@
 import readXlsxFile from "read-excel-file/browser";
 import { Transaction } from "../domain/entities";
 
-const monthNames = [
+const monthSheetNames = [
   "Ene.",
   "Feb.",
   "Mar.",
@@ -16,6 +16,21 @@ const monthNames = [
   "Dic.",
 ];
 
+const monthFullNames = [
+  "ENERO",
+  "FEBRERO",
+  "MARZO",
+  "ABRIL",
+  "MAYO",
+  "JUNIO",
+  "JULIO",
+  "AGOSTO",
+  "SEPTIEMBRE",
+  "OCTUBRE",
+  "NOVIEMBRE",
+  "DICIEMBRE",
+];
+
 const incomeCategories = [
   "Nóminas",
   "Ingresos por intereses",
@@ -27,13 +42,27 @@ const incomeCategories = [
   "Bonificaciones",
 ];
 
+export type CategoryOption = {
+  label: string;
+  type: "income" | "expense";
+};
+
 export interface ExcelParseResult {
   imported: number;
   errors: string[];
   transactions: Transaction[];
+  categories: CategoryOption[];
 }
 
+export type ExcelSheet = {
+  sheet: string;
+  data: ExcelRow[];
+};
+
 type ExcelRow = (string | number | Date | boolean | null | undefined)[];
+
+const GLOBAL_INCOME_COLUMN = 17;
+const GLOBAL_EXPENSE_COLUMN = 18;
 
 function findHeaderRow(data: ExcelRow[]): number {
   for (let i = 0; i < data.length; i++) {
@@ -48,56 +77,110 @@ function findHeaderRow(data: ExcelRow[]): number {
   return -1;
 }
 
+function normalize(text: string): string {
+  return text
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function parseMonth(value: string | number): number | null {
+  const normalized = normalize(String(value)).replace(/\./g, "").trim();
+  if (!normalized) return null;
+  if (/^\d+$/.test(normalized)) {
+    const numeric = Number(normalized);
+    return numeric >= 1 && numeric <= 12 ? numeric : null;
+  }
+  for (let i = 0; i < monthFullNames.length; i++) {
+    if (
+      normalized === monthFullNames[i] ||
+      normalized === monthFullNames[i].slice(0, 3)
+    ) {
+      return i + 1;
+    }
+  }
+  return null;
+}
+
+function parseNumber(value: unknown): number {
+  if (typeof value === "number") return value;
+  const cleaned = String(value ?? "")
+    .trim()
+    .replace(/[^\d.,-]/g, "");
+  if (!cleaned) return 0;
+  const normalized = cleaned.includes(",")
+    ? cleaned.replace(/\./g, "").replace(",", ".")
+    : cleaned;
+  return Number(normalized) || 0;
+}
+
 function parseRow(
   row: ExcelRow,
   defaultMonth: number,
   defaultYear: number,
 ): Transaction | null {
-  const category = String(row[1] || "").trim();
-  const tipo = String(row[2] || "").trim();
-  const dia = Number(row[6]);
-  const mes = Number(row[8] || defaultMonth);
-  const anio = Number(row[10] || defaultYear);
-  const euros = Number(row[11]);
-  const descripcion = String(row[13] || "").trim();
+  const hint = String(row[0] ?? "").trim();
+  const category = String(row[2] ?? "").trim();
+  if (!category || hint === "--") return null;
 
-  if (!category || Number.isNaN(euros) || euros === 0) return null;
-
-  const type =
+  const tipo = String(row[1] ?? "").trim();
+  const isIncome =
     tipo.toLowerCase().includes("ingreso") ||
-    incomeCategories.includes(category)
-      ? "income"
-      : "expense";
+    incomeCategories.includes(category);
+  const type: "income" | "expense" = isIncome ? "income" : "expense";
+  const amount =
+    parseNumber(row[10]) || parseNumber(row[11]) || parseNumber(row[12]);
+  if (!amount) return null;
 
-  const day = Number.isNaN(dia) || dia < 1 || dia > 31 ? 1 : dia;
-  const month = Number.isNaN(mes) || mes < 1 || mes > 12 ? defaultMonth : mes;
-  const year = Number.isNaN(anio) || anio < 2000 ? defaultYear : anio;
-  const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const day = Number(row[6]);
+  const month = parseMonth(row[7] as string | number) ?? defaultMonth;
+  const year = Number(row[9]);
+  const finalYear = Number.isInteger(year) && year >= 2000 ? year : defaultYear;
+
+  const dayNumber = Number.isNaN(day) || day < 1 || day > 31 ? 1 : day;
+  const dateKey = `${finalYear}-${String(month).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
+  const description = String(row[13] ?? "").trim();
 
   return Transaction.create({
-    date,
+    date: dateKey,
     type,
     category,
-    concept: descripcion || category,
-    amount: Math.abs(euros),
+    concept: description || hint,
+    amount: Math.abs(amount),
   });
 }
 
-export async function parseExcel(
-  buffer: ArrayBuffer,
-): Promise<ExcelParseResult> {
+function parseGlobalCategories(data: ExcelRow[]): CategoryOption[] {
+  const categories: CategoryOption[] = [];
+  for (let i = 1; i < data.length; i++) {
+    const income = String(data[i][GLOBAL_INCOME_COLUMN] ?? "").trim();
+    const expense = String(data[i][GLOBAL_EXPENSE_COLUMN] ?? "").trim();
+    if (!income && !expense) break;
+    if (income) categories.push({ label: income, type: "income" });
+    if (expense) categories.push({ label: expense, type: "expense" });
+  }
+  return categories;
+}
+
+export function parseExcelSheets(
+  sheets: ExcelSheet[],
+  defaultYear: number,
+): ExcelParseResult {
   const errors: string[] = [];
   const transactions: Transaction[] = [];
-  const sheets = await readXlsxFile(buffer);
+  const categories: CategoryOption[] = [];
 
   for (const sheet of sheets) {
-    const monthIndex = monthNames.findIndex(
+    if (sheet.sheet === "Global") {
+      categories.push(...parseGlobalCategories(sheet.data));
+      continue;
+    }
+    const monthIndex = monthSheetNames.findIndex(
       (m) => m.toLowerCase() === sheet.sheet.toLowerCase(),
     );
     if (monthIndex === -1) continue;
-    const month = monthIndex + 1;
 
-    const data = sheet.data as ExcelRow[];
+    const data = sheet.data;
     const headerRow = findHeaderRow(data);
     if (headerRow === -1) {
       errors.push(
@@ -106,13 +189,19 @@ export async function parseExcel(
       continue;
     }
 
-    const year = 2016;
-
     for (let i = headerRow + 1; i < data.length; i++) {
-      const tx = parseRow(data[i], month, year);
+      const tx = parseRow(data[i], monthIndex + 1, defaultYear);
       if (tx) transactions.push(tx);
     }
   }
 
-  return { imported: transactions.length, errors, transactions };
+  return { imported: transactions.length, errors, transactions, categories };
+}
+
+export async function parseExcel(
+  buffer: ArrayBuffer,
+): Promise<ExcelParseResult> {
+  const sheets = (await readXlsxFile(buffer)) as unknown as ExcelSheet[];
+  const defaultYear = 2016;
+  return parseExcelSheets(sheets, defaultYear);
 }

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, type Mock, test, vi } from "vitest";
 import { Person, Transaction } from "../../domain/entities";
 import { normalizeKey } from "../../domain/entities/Key";
+import type { ImportCategoryOption } from "../../domain/repositories/ImportRepository";
 import { ImportView } from "../components/ImportView";
 
 const persons = [
@@ -14,6 +15,7 @@ type PreviewResult = {
   transactions: Transaction[];
   errors: string[];
   skipped: number;
+  categoryOptions?: ImportCategoryOption[];
 };
 
 function tx(
@@ -39,6 +41,9 @@ function renderImport(
   overrides: {
     onPreview?: Mock<(source: string, file: File) => Promise<PreviewResult>>;
     onConfirm?: Mock<(transactions: Transaction[]) => Promise<number>>;
+    onAddCategories?: Mock<
+      (options: ImportCategoryOption[]) => Promise<number>
+    >;
   } = {},
 ) {
   const onPreview =
@@ -46,16 +51,20 @@ function renderImport(
     vi.fn<(source: string, file: File) => Promise<PreviewResult>>();
   const onConfirm =
     overrides.onConfirm ?? vi.fn<(ts: Transaction[]) => Promise<number>>();
+  const onAddCategories =
+    overrides.onAddCategories ??
+    vi.fn<(options: ImportCategoryOption[]) => Promise<number>>();
 
   render(
     <ImportView
       persons={persons}
       onPreview={onPreview}
       onConfirm={onConfirm}
+      onAddCategories={onAddCategories}
     />,
   );
 
-  return { onPreview, onConfirm };
+  return { onPreview, onConfirm, onAddCategories };
 }
 
 function selectFile(file: File) {
@@ -69,10 +78,11 @@ function mockPreview(
   transactions: Transaction[],
   errors: string[] = [],
   skipped = 0,
+  categoryOptions: ImportCategoryOption[] = [],
 ) {
   return vi
     .fn<(source: string, file: File) => Promise<PreviewResult>>()
-    .mockResolvedValue({ transactions, errors, skipped });
+    .mockResolvedValue({ transactions, errors, skipped, categoryOptions });
 }
 
 describe("ImportView", () => {
@@ -401,6 +411,253 @@ describe("ImportView", () => {
     await user.click(screen.getByRole("button", { name: /Guardar/ }));
 
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  test("shows the Global category options preselected", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Ingresos por intereses", type: "income" },
+        { label: "Alimentación", type: "expense" },
+        { label: "Hipoteca / Alquiler / Seguros", type: "expense" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(
+      screen.getByText("Categorías de la hoja Global"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Ingresos")).toBeInTheDocument();
+    expect(screen.getByText("Gastos")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Nóminas/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: /Alimentación/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("saving the movements does not touch the configuration", async () => {
+    const user = userEvent.setup();
+    const { onConfirm, onAddCategories } = renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+      onConfirm: vi
+        .fn<(ts: Transaction[]) => Promise<number>>()
+        .mockResolvedValue(1),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(2),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: /Alimentación/ }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    );
+
+    expect(onConfirm).toHaveBeenCalledWith([
+      expect.objectContaining({ concept: "Mercadona" }),
+    ]);
+    expect(onAddCategories).not.toHaveBeenCalled();
+  });
+
+  test("adds the selected categories with its own button, separate from the movements", async () => {
+    const user = userEvent.setup();
+    const { onAddCategories, onConfirm } = renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(2),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
+    );
+
+    expect(onAddCategories).toHaveBeenCalledTimes(1);
+    expect(onAddCategories).toHaveBeenCalledWith([
+      { label: "Nóminas", type: "income" },
+      { label: "Alimentación", type: "expense" },
+    ]);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Añadidas 2 categorías a la configuración"),
+    ).toBeInTheDocument();
+  });
+
+  test("keeps the movements hidden until the configuration step is resolved", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Guardar 1 movimientos" }),
+    ).not.toBeInTheDocument();
+  });
+
+  test("shows the movements table after the categories are added", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    ).toBeInTheDocument();
+  });
+
+  test("continues without adding categories when none are chosen", async () => {
+    const user = userEvent.setup();
+    const { onAddCategories } = renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(onAddCategories).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    ).toBeInTheDocument();
+  });
+
+  test("hides the category box after the step is resolved and shows a summary", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Añadir a la configuración" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Categorías de configuración sin modificar."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Revisar categorías" }),
+    ).toBeInTheDocument();
+  });
+
+  test("summarizes the added categories after the step is resolved", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Añadir a la configuración" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Añadidas 1 categorías a la configuración"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Revisar categorías" }),
+    ).toBeInTheDocument();
+  });
+
+  test("selects or clears all Global categories with the quick buttons", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+        { label: "Alimentación", type: "expense" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Ninguna" }));
+    expect(screen.getByRole("button", { name: /Nóminas/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(
+      screen.getByRole("button", { name: /Alimentación/ }),
+    ).not.toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "Todas" }));
+    expect(screen.getByRole("button", { name: /Nóminas/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: /Alimentación/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("clears the selection with the Limpiar button", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Limpiar" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Añadir a la configuración" }),
+    ).not.toBeInTheDocument();
   });
 
   test("reports duplicates when the preview has no new rows", async () => {

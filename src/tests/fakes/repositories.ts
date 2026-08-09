@@ -10,6 +10,7 @@ import type { ImportSource } from "../../domain/entities/ImportSource";
 import type { CategoryRepository } from "../../domain/repositories/CategoryRepository";
 import type { DbInfoRepository } from "../../domain/repositories/DbInfoRepository";
 import type {
+  ImportCategoryOption,
   ImportPreview,
   ImportRepository,
 } from "../../domain/repositories/ImportRepository";
@@ -297,6 +298,8 @@ export class FakeImportRepository implements ImportRepository {
   previewResult: ImportPreview;
   confirmResult: number;
   confirmCalls = 0;
+  addCategoriesResult = 0;
+  addCategoriesCalls: ImportCategoryOption[][] = [];
 
   constructor(
     previewResult: ImportPreview = {
@@ -317,5 +320,10 @@ export class FakeImportRepository implements ImportRepository {
   async confirm(transactions: ImportPreview["transactions"]): Promise<number> {
     this.confirmCalls += 1;
     return transactions.length > 0 ? this.confirmResult : 0;
+  }
+
+  async addCategories(options: ImportCategoryOption[]): Promise<number> {
+    this.addCategoriesCalls.push(options);
+    return this.addCategoriesResult;
   }
 }

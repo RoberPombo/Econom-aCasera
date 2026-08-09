@@ -15,6 +15,7 @@ import type {
 } from "../../domain/entities";
 import { TransactionFilters } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
+import type { ImportCategoryOption } from "../../domain/repositories/ImportRepository";
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 import { useAppContext } from "../context/useAppContext";
 
@@ -349,6 +350,14 @@ export function useAppState() {
     return count;
   }
 
+  async function addImportCategories(options: ImportCategoryOption[]) {
+    const added = await compositionRoot
+      .provideAddCategoriesUseCase()
+      .execute(options);
+    await loadData();
+    return added;
+  }
+
   async function reloadDatabase() {
     await compositionRoot.provideReloadDatabaseUseCase().execute();
     setShowConflict(false);
@@ -402,6 +411,7 @@ export function useAppState() {
     removePerson,
     previewImport,
     confirmImport,
+    addImportCategories,
     reloadDatabase,
     forceOverwrite,
     closeConflict: () => setShowConflict(false),

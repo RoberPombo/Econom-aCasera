@@ -1,13 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Transaction } from "../domain/entities";
 import type { ImportSource } from "../domain/entities/ImportSource";
+import { normalizeKey } from "../domain/entities/Key";
 import type {
+  ImportCategoryOption,
   ImportPreview,
   ImportRepository,
 } from "../domain/repositories/ImportRepository";
 import { computeFingerprint } from "./computeFingerprint";
 import { getDatabase } from "./db";
 import { parseExcel } from "./excelParser";
+import { parseAbancaCsv } from "./parsers/abancaParser";
 import { type ExcelCell, parseIngExcel } from "./parsers/ingParser";
 import { classifySavings } from "./savingsClassifier";
 
@@ -15,18 +18,24 @@ export class TauriImportRepository implements ImportRepository {
   async preview(source: ImportSource, file: File): Promise<ImportPreview> {
     let candidates: Transaction[] = [];
     let errors: string[] = [];
+    let categoryOptions: ImportCategoryOption[] | undefined;
 
     if (source === "excel") {
       const buffer = await file.arrayBuffer();
       const result = await parseExcel(buffer);
       candidates = result.transactions;
       errors = result.errors;
+      categoryOptions = result.categories;
     } else if (source === "ing") {
       const buffer = await file.arrayBuffer();
       const rows = await invoke<ExcelCell[][]>("read_excel_cells", {
         fileBytes: Array.from(new Uint8Array(buffer)),
       });
       const result = parseIngExcel(rows);
+      candidates = result.transactions;
+      errors = result.errors;
+    } else if (source === "abanca") {
+      const result = parseAbancaCsv(await file.text());
       candidates = result.transactions;
       errors = result.errors;
     } else {
@@ -54,6 +63,7 @@ export class TauriImportRepository implements ImportRepository {
       transactions: classifySavings(transactions, source),
       errors,
       skipped,
+      categoryOptions,
     };
   }
 
@@ -90,5 +100,27 @@ export class TauriImportRepository implements ImportRepository {
     }
 
     return inserted;
+  }
+
+  async addCategories(options: ImportCategoryOption[]): Promise<number> {
+    const db = await getDatabase();
+    const existsRows = await db.select<{ key: string }[]>(
+      "SELECT key FROM categories",
+    );
+    const existing = new Set(existsRows.map((r) => r.key));
+
+    let added = 0;
+    for (const option of options) {
+      const key = normalizeKey(option.label);
+      if (existing.has(key)) continue;
+      await db.execute(
+        "INSERT INTO categories (label, key, type, active) VALUES (?, ?, ?, 1)",
+        [option.label, key, option.type],
+      );
+      existing.add(key);
+      added++;
+    }
+
+    return added;
   }
 }

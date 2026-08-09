@@ -8,6 +8,10 @@ import {
   upcomingImportSources,
 } from "../../domain/entities/ImportSource";
 import { normalizeKey } from "../../domain/entities/Key";
+import type {
+  ImportCategoryOption,
+  ImportPreview,
+} from "../../domain/repositories/ImportRepository";
 import {
   btn,
   btnSecondary,
@@ -22,17 +26,24 @@ import {
 const acceptBySource: Record<ImportSource, string> = {
   excel: ".xlsx,.xls",
   ing: ".xls,.xlsx",
+  abanca: ".csv",
 };
 
 const sourceHints: Record<ImportSource, string> = {
   excel: "Formato Excel (.xlsx o .xls)",
   ing: "Formato Excel (.xls o .xlsx) descargado desde ING",
+  abanca: "CSV descargado desde Abanca",
 };
 
 const ingDownloadGuide =
   "Para descargar los movimientos en Excel: inicia sesión en la web/app de ING, entra en la " +
   "cuenta, abre Movimientos, pulsa en el icono de descarga y elige la opción “Excel”. " +
   "El archivo descargado suele llamarse movements-XXXXX.xls. Súbelo aquí tal cual.";
+
+const abancaDownloadGuide =
+  "Para descargar los movimientos en CSV: inicia sesión en la web/app de Abanca, entra en " +
+  "Movimientos, pulsa en Exportar y elige el formato CSV. El archivo descargado suele " +
+  "llamarse Export-AAAA-MM-DD-HH-mm-ss.csv. Súbelo aquí tal cual.";
 
 export type ImportRow = {
   date: string;
@@ -45,15 +56,9 @@ export type ImportRow = {
 
 interface Props {
   persons: Person[];
-  onPreview: (
-    source: ImportSource,
-    file: File,
-  ) => Promise<{
-    transactions: Transaction[];
-    errors: string[];
-    skipped: number;
-  }>;
+  onPreview: (source: ImportSource, file: File) => Promise<ImportPreview>;
   onConfirm: (transactions: Transaction[]) => Promise<number>;
+  onAddCategories: (options: ImportCategoryOption[]) => Promise<number>;
 }
 
 function formatAmount(value: number | string): string {
@@ -106,7 +111,12 @@ function validateRow(row: ImportRow, index: number): string[] {
   return errors;
 }
 
-export function ImportView({ persons, onPreview, onConfirm }: Props) {
+export function ImportView({
+  persons,
+  onPreview,
+  onConfirm,
+  onAddCategories,
+}: Props) {
   const [source, setSource] = useState<ImportSource>("excel");
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<ImportRow[]>([]);
@@ -115,9 +125,60 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [categoryOptions, setCategoryOptions] = useState<
+    ImportCategoryOption[]
+  >([]);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
+    new Set(),
+  );
+  const [addingCategories, setAddingCategories] = useState(false);
+  const [categoriesMessage, setCategoriesMessage] = useState<string | null>(
+    null,
+  );
+  const [categoriesStepDone, setCategoriesStepDone] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePersons = persons.filter((p) => p.active);
+  const incomeOptions = categoryOptions.filter((c) => c.type === "income");
+  const expenseOptions = categoryOptions.filter((c) => c.type === "expense");
+
+  function resetCategorySelection() {
+    setCategoryOptions([]);
+    setSelectedCategories(new Set());
+    setCategoriesMessage(null);
+    setCategoriesStepDone(true);
+  }
+
+  async function handleAddCategories() {
+    const selectedOptions = categoryOptions.filter((c) =>
+      selectedCategories.has(c.label),
+    );
+    if (selectedOptions.length === 0 || addingCategories) return;
+    setAddingCategories(true);
+    setCategoriesMessage(null);
+    try {
+      const added = await onAddCategories(selectedOptions);
+      setCategoriesMessage(`Añadidas ${added} categorías a la configuración`);
+      setSelectedCategories(new Set());
+      setCategoriesStepDone(true);
+    } catch (err) {
+      setCategoriesMessage(String(err));
+    } finally {
+      setAddingCategories(false);
+    }
+  }
+
+  function toggleCategory(label: string) {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  }
 
   async function handlePreview() {
     if (!file) return;
@@ -128,10 +189,16 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setSaveMessage(null);
     try {
       const result = await onPreview(source, file);
-      console.log("[ImportView] preview result", result);
       setRows(result.transactions.map(transactionToRow));
       setParserErrors(result.errors);
       setSkipped(result.skipped);
+      setCategoryOptions(result.categoryOptions ?? []);
+      setSelectedCategories(
+        new Set((result.categoryOptions ?? []).map((c) => c.label)),
+      );
+      setCategoriesStepDone(
+        !result.categoryOptions || result.categoryOptions.length === 0,
+      );
     } catch (err) {
       setParserErrors([String(err)]);
     } finally {
@@ -184,6 +251,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
     setParserErrors([]);
     setSkipped(0);
     setSaveMessage(null);
+    resetCategorySelection();
   }
 
   const validationErrors = rows.flatMap((row, index) =>
@@ -197,12 +265,17 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
   ];
   const showIngGuide =
     source === "ing" && (extensionErr != null || parserErrors.length > 0);
+  const showAbancaGuide =
+    source === "abanca" && (extensionErr != null || parserErrors.length > 0);
 
   function extensionError(): string | null {
     if (!file) return null;
     const lower = file.name.toLowerCase();
     if (source === "ing" && !/(\.xls|\.xlsx)$/.test(lower)) {
       return `El archivo "${file.name}" no es un Excel de ING. ${ingDownloadGuide}`;
+    }
+    if (source === "abanca" && !/\.csv$/.test(lower)) {
+      return `El archivo "${file.name}" no es un CSV de Abanca. ${abancaDownloadGuide}`;
     }
     return null;
   }
@@ -215,6 +288,8 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
         movimientos antes de guardarlos.
         {source === "ing" &&
           ` La fuente ING espera el Excel de movimientos (${acceptBySource.ing}).`}
+        {source === "abanca" &&
+          ` La fuente Abanca espera el CSV de movimientos (${acceptBySource.abanca}).`}
       </p>
 
       <input
@@ -242,7 +317,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
           >
             {importSourceLabels[s]}
             <span className="ml-2 rounded bg-black/10 px-1.5 py-0.5 text-[0.7rem]">
-              {s === "ing" ? ".xls" : ".xlsx"}
+              {s === "abanca" ? ".csv" : s === "ing" ? ".xls" : ".xlsx"}
             </span>
           </button>
         ))}
@@ -278,6 +353,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
               setRows([]);
               setParserErrors([]);
               setSkipped(0);
+              resetCategorySelection();
               if (inputRef.current) inputRef.current.value = "";
             }}
             disabled={loading}
@@ -305,10 +381,18 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
               <p className="mt-1 text-[0.9rem]">{ingDownloadGuide}</p>
             </div>
           )}
+          {showAbancaGuide && (
+            <div className="mt-2 rounded-lg border border-line bg-surface p-3 text-body">
+              <p className="font-semibold">
+                ¿Cómo descargar los movimientos de Abanca?
+              </p>
+              <p className="mt-1 text-[0.9rem]">{abancaDownloadGuide}</p>
+            </div>
+          )}
         </div>
       )}
 
-      {skipped > 0 && (
+      {categoriesStepDone && skipped > 0 && (
         <p className="mb-4 text-muted">
           {rows.length === 0
             ? `No se guardará nada: los ${skipped} movimiento${skipped > 1 ? "s" : ""} del archivo ya existen en la base de datos.`
@@ -316,9 +400,12 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
         </p>
       )}
 
-      {saveMessage && <p className="mb-4 text-body">{saveMessage}</p>}
+      {categoriesStepDone && saveMessage && (
+        <p className="mb-4 text-body">{saveMessage}</p>
+      )}
 
-      {!loading &&
+      {categoriesStepDone &&
+        !loading &&
         file &&
         rows.length === 0 &&
         parserErrors.length === 0 &&
@@ -331,7 +418,132 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
           </p>
         )}
 
-      {rows.length > 0 && (
+      {categoryOptions.length > 0 && !categoriesStepDone && (
+        <div className="mb-4 rounded-lg border border-line bg-surface p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold">Categorías de la hoja Global</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={`${btnSecondary} px-2 py-1 text-[0.85rem]`}
+                onClick={() =>
+                  setSelectedCategories(
+                    new Set(categoryOptions.map((c) => c.label)),
+                  )
+                }
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                className={`${btnSecondary} px-2 py-1 text-[0.85rem]`}
+                onClick={() => setSelectedCategories(new Set())}
+              >
+                Ninguna
+              </button>
+            </div>
+          </div>
+          <p className="mb-3 text-[0.85rem] text-muted">
+            Opciones de la hoja Global de la antigua Economía Casera. Marca las
+            categorías de ingresos y gastos que quieras añadir a la
+            configuración actual.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {incomeOptions.length > 0 && (
+              <fieldset>
+                <legend className="mb-1 text-[0.85rem] font-medium text-muted">
+                  Ingresos
+                </legend>
+                <div className="flex flex-col gap-1.5">
+                  {incomeOptions.map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      aria-pressed={selectedCategories.has(option.label)}
+                      className={`cursor-pointer rounded border px-2 py-1 text-left text-[0.9rem] ${
+                        selectedCategories.has(option.label)
+                          ? "border-primary bg-primary/10 text-body"
+                          : "border-line bg-card text-body"
+                      }`}
+                      onClick={() => toggleCategory(option.label)}
+                    >
+                      {selectedCategories.has(option.label) ? "☑" : "☐"}{" "}
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            {expenseOptions.length > 0 && (
+              <fieldset>
+                <legend className="mb-1 text-[0.85rem] font-medium text-muted">
+                  Gastos
+                </legend>
+                <div className="flex flex-col gap-1.5">
+                  {expenseOptions.map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      aria-pressed={selectedCategories.has(option.label)}
+                      className={`cursor-pointer rounded border px-2 py-1 text-left text-[0.9rem] ${
+                        selectedCategories.has(option.label)
+                          ? "border-primary bg-primary/10 text-body"
+                          : "border-line bg-card text-body"
+                      }`}
+                      onClick={() => toggleCategory(option.label)}
+                    >
+                      {selectedCategories.has(option.label) ? "☑" : "☐"}{" "}
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className={btn}
+              onClick={() => void handleAddCategories()}
+              disabled={selectedCategories.size === 0 || addingCategories}
+            >
+              {addingCategories ? "Añadiendo..." : "Añadir a la configuración"}
+            </button>
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={() => {
+                setCategoriesMessage(
+                  "Categorías de configuración sin modificar.",
+                );
+                setCategoriesStepDone(true);
+              }}
+            >
+              Continuar
+            </button>
+            {categoriesMessage && (
+              <p className="text-[0.9rem] text-body">{categoriesMessage}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {categoryOptions.length > 0 && categoriesStepDone && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface p-3">
+          <p className="text-[0.9rem] text-body">
+            {categoriesMessage ?? "Categorías de configuración sin modificar."}
+          </p>
+          <button
+            type="button"
+            className={`${btnSecondary} px-2 py-1 text-[0.85rem]`}
+            onClick={() => setCategoriesStepDone(false)}
+          >
+            Revisar categorías
+          </button>
+        </div>
+      )}
+
+      {categoriesStepDone && rows.length > 0 && (
         <>
           <div className={tableWrap}>
             <table className={`${table} table-fixed`}>
@@ -465,6 +677,7 @@ export function ImportView({ persons, onPreview, onConfirm }: Props) {
                 setRows([]);
                 setParserErrors([]);
                 setSkipped(0);
+                resetCategorySelection();
               }}
             >
               Limpiar

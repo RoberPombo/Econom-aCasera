@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Transaction } from "../domain/entities";
+import type { ImportCategoryOption } from "../domain/repositories/ImportRepository";
 import { BalanceChart } from "./components/BalanceChart";
 import { CategoriesConfig } from "./components/CategoriesConfig";
 import { ConfirmDialog } from "./components/ConfirmDialog";
@@ -284,6 +285,12 @@ function App() {
     return count;
   }
 
+  async function addImportCategories(
+    options: ImportCategoryOption[],
+  ): Promise<number> {
+    return state.addImportCategories(options);
+  }
+
   return (
     <div className={app}>
       <header className={header}>
@@ -447,6 +454,7 @@ function App() {
             persons={state.persons}
             onPreview={state.previewImport}
             onConfirm={confirmImport}
+            onAddCategories={addImportCategories}
           />
         </Modal>
       )}
