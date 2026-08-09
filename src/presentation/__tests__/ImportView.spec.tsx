@@ -431,8 +431,10 @@ describe("ImportView", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Ingresos")).toBeInTheDocument();
     expect(screen.getByText("Gastos")).toBeInTheDocument();
-    expect(screen.getByLabelText("Nóminas")).toBeChecked();
-    expect(screen.getByLabelText("Alimentación")).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Nóminas/ })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: /Alimentación/ }),
+    ).toBeChecked();
   });
 
   test("saving the movements does not touch the configuration", async () => {
@@ -452,7 +454,7 @@ describe("ImportView", () => {
     selectFile(makeFile("economia.xlsx"));
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
 
-    await user.click(screen.getByLabelText("Alimentación"));
+    await user.click(screen.getByRole("checkbox", { name: /Alimentación/ }));
     await user.click(screen.getByRole("button", { name: "Continuar" }));
 
     await user.click(
@@ -568,12 +570,16 @@ describe("ImportView", () => {
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
 
     await user.click(screen.getByRole("button", { name: "Ninguna" }));
-    expect(screen.getByLabelText("Nóminas")).not.toBeChecked();
-    expect(screen.getByLabelText("Alimentación")).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Nóminas/ })).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: /Alimentación/ }),
+    ).not.toBeChecked();
 
     await user.click(screen.getByRole("button", { name: "Todas" }));
-    expect(screen.getByLabelText("Nóminas")).toBeChecked();
-    expect(screen.getByLabelText("Alimentación")).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Nóminas/ })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: /Alimentación/ }),
+    ).toBeChecked();
   });
 
   test("clears the selection with the Limpiar button", async () => {

@@ -453,17 +453,21 @@ export function ImportView({
                 </legend>
                 <div className="flex flex-col gap-1.5">
                   {incomeOptions.map((option) => (
-                    <label
+                    <button
                       key={option.label}
-                      className="flex items-center gap-2 text-[0.9rem] text-body"
+                      type="button"
+                      role="checkbox"
+                      aria-checked={selectedCategories.has(option.label)}
+                      className={`cursor-pointer rounded border px-2 py-1 text-left text-[0.9rem] ${
+                        selectedCategories.has(option.label)
+                          ? "border-primary bg-primary/10 text-body"
+                          : "border-line bg-card text-body"
+                      }`}
+                      onClick={() => toggleCategory(option.label)}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.has(option.label)}
-                        onChange={() => toggleCategory(option.label)}
-                      />
+                      {selectedCategories.has(option.label) ? "☑" : "☐"}{" "}
                       {option.label}
-                    </label>
+                    </button>
                   ))}
                 </div>
               </fieldset>
@@ -475,17 +479,21 @@ export function ImportView({
                 </legend>
                 <div className="flex flex-col gap-1.5">
                   {expenseOptions.map((option) => (
-                    <label
+                    <button
                       key={option.label}
-                      className="flex items-center gap-2 text-[0.9rem] text-body"
+                      type="button"
+                      role="checkbox"
+                      aria-checked={selectedCategories.has(option.label)}
+                      className={`cursor-pointer rounded border px-2 py-1 text-left text-[0.9rem] ${
+                        selectedCategories.has(option.label)
+                          ? "border-primary bg-primary/10 text-body"
+                          : "border-line bg-card text-body"
+                      }`}
+                      onClick={() => toggleCategory(option.label)}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.has(option.label)}
-                        onChange={() => toggleCategory(option.label)}
-                      />
+                      {selectedCategories.has(option.label) ? "☑" : "☐"}{" "}
                       {option.label}
-                    </label>
+                    </button>
                   ))}
                 </div>
               </fieldset>
