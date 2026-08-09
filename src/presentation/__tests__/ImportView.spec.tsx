@@ -558,6 +558,57 @@ describe("ImportView", () => {
     ).toBeInTheDocument();
   });
 
+  test("hides the category box after the step is resolved and shows a summary", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Añadir a la configuración" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Categorías de configuración sin modificar."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Revisar categorías" }),
+    ).toBeInTheDocument();
+  });
+
+  test("summarizes the added categories after the step is resolved", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
+        { label: "Nóminas", type: "income" },
+      ]),
+      onAddCategories: vi
+        .fn<(options: ImportCategoryOption[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("economia.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Añadir a la configuración" }),
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Añadir a la configuración" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Añadidas 1 categorías a la configuración"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Revisar categorías" }),
+    ).toBeInTheDocument();
+  });
+
   test("selects or clears all Global categories with the quick buttons", async () => {
     const user = userEvent.setup();
     renderImport({

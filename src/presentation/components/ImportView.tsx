@@ -392,7 +392,7 @@ export function ImportView({
         </div>
       )}
 
-      {skipped > 0 && (
+      {categoriesStepDone && skipped > 0 && (
         <p className="mb-4 text-muted">
           {rows.length === 0
             ? `No se guardará nada: los ${skipped} movimiento${skipped > 1 ? "s" : ""} del archivo ya existen en la base de datos.`
@@ -400,9 +400,12 @@ export function ImportView({
         </p>
       )}
 
-      {saveMessage && <p className="mb-4 text-body">{saveMessage}</p>}
+      {categoriesStepDone && saveMessage && (
+        <p className="mb-4 text-body">{saveMessage}</p>
+      )}
 
-      {!loading &&
+      {categoriesStepDone &&
+        !loading &&
         file &&
         rows.length === 0 &&
         parserErrors.length === 0 &&
@@ -415,7 +418,7 @@ export function ImportView({
           </p>
         )}
 
-      {categoryOptions.length > 0 && (
+      {categoryOptions.length > 0 && !categoriesStepDone && (
         <div className="mb-4 rounded-lg border border-line bg-surface p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold">Categorías de la hoja Global</p>
@@ -511,7 +514,12 @@ export function ImportView({
             <button
               type="button"
               className={btnSecondary}
-              onClick={() => setCategoriesStepDone(true)}
+              onClick={() => {
+                setCategoriesMessage(
+                  "Categorías de configuración sin modificar.",
+                );
+                setCategoriesStepDone(true);
+              }}
             >
               Continuar
             </button>
@@ -519,6 +527,21 @@ export function ImportView({
               <p className="text-[0.9rem] text-body">{categoriesMessage}</p>
             )}
           </div>
+        </div>
+      )}
+
+      {categoryOptions.length > 0 && categoriesStepDone && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface p-3">
+          <p className="text-[0.9rem] text-body">
+            {categoriesMessage ?? "Categorías de configuración sin modificar."}
+          </p>
+          <button
+            type="button"
+            className={`${btnSecondary} px-2 py-1 text-[0.85rem]`}
+            onClick={() => setCategoriesStepDone(false)}
+          >
+            Revisar categorías
+          </button>
         </div>
       )}
 
