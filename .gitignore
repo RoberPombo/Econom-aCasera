@@ -1,20 +1,22 @@
 # Dependencies
 node_modules/
-frontend/node_modules/
 .pnp
 .pnp.js
 
 # Build outputs
 dist/
+dist-ssr/
 build/
 out/
 *.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
-# Compiled executables
-economiacasera
-economiacasera.exe
-economiacasera-mac
-dist/release/
+# Tauri
+/src-tauri/target/
+/src-tauri/gen/
+/src-tauri/tauri.key
+/src-tauri/tauri.key.pub
 
 # Logs
 logs/
@@ -60,3 +62,4 @@ coverage/
 tmp/
 temp/
 *.tmp
+.npmrc

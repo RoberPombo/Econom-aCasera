@@ -4,107 +4,134 @@ Aplicación de escritorio para llevar el control de gastos e ingresos anuales. F
 
 ## Características
 
-- **Vista mensual y anual** con selector de año y mes.
+- **Vista por mes o por rango de fechas**, con filtros por tipo, categoría, persona e importe.
+- **Buscador global** de movimientos (concepto, categoría y persona).
+- **Gráficas** que respetan los filtros activos.
+- **Foto del ticket** en gastos (archivo, arrastrar o pegar), con copia en backup y Drive.
 - **Datepicker nativo** para seleccionar la fecha del movimiento.
-- **Categorías configurables** para ingresos y gastos.
+- **Categorías y personas configurables**.
 - **Importación desde Excel**: una hoja por mes (Ene., Feb., ...) con la tabla de transacciones.
-- **Resumen mensual y anual** con totales por categoría.
-- **Sincronización automática con Google Drive** si el usuario lo tiene instalado.
+- **Resumen mensual y anual** con totales filtrados.
+- **Sincronización con Google Drive** si el usuario lo tiene instalado.
 - **Detección de conflictos** si los datos cambian en otro dispositivo, con opción de recargar o sobrescribir.
-- **Copia de seguridad local** si no hay Google Drive.
-- **Ejecutable con doble click**: no requiere conocimientos técnicos para usarlo.
+- **Copia de seguridad local** de la base de datos y de las fotos de tickets.
+- **Instaladores nativos** para Linux, Windows y macOS (menú de aplicaciones).
+
+## Instalación (usuario final)
+
+Descarga el instalador de la [última release](https://github.com/RoberPombo/Econom-aCasera/releases/latest) según tu sistema:
+
+| Sistema | Archivo recomendado | Dónde queda instalada | Menú de aplicaciones |
+|---------|---------------------|------------------------|----------------------|
+| **Linux (Debian/Ubuntu)** | `.deb` | `/usr/bin` + datos de app del usuario | Sí (entrada `.desktop`) |
+| **Linux (Fedora/openSUSE)** | `.rpm` | rutas del paquete del sistema | Sí |
+| **Linux (portable)** | `.AppImage` | donde la dejes | No automático |
+| **Windows** | instalador NSIS (`.exe`) o `.msi` | carpeta de usuario / Program Files | Sí (menú Inicio) |
+| **macOS (Apple Silicon)** | `.dmg` | arrastra a `/Applications` | Sí (Launchpad) |
+
+### Linux
+
+```bash
+# Debian / Ubuntu
+sudo dpkg -i EconomiaCasera_*.deb
+
+# Fedora / openSUSE
+sudo rpm -i EconomiaCasera-*.rpm
+```
+
+Después busca **EconomiaCasera** en el menú de aplicaciones.
+
+### Windows
+
+Ejecuta el instalador `.exe` (NSIS) o `.msi` y sigue el asistente. La app aparecerá en el menú Inicio.
+
+### macOS
+
+Abre el `.dmg`, arrastra **EconomiaCasera** a **Aplicaciones** y ábrela desde Launchpad o `/Applications`.
+
+> **Nota:** las builds de CI de macOS se generan para Apple Silicon (`aarch64`). macOS Intel puede requerir build local.
 
 ## Cómo funciona el almacenamiento
 
-La app detecta automáticamente si el usuario tiene Google Drive instalado:
+La base de datos activa vive siempre en el directorio de datos de la aplicación. Si hay Google Drive, se copia allí (junto con las fotos de tickets) para sincronizar entre equipos.
+
+### Rutas locales (base de datos y tickets)
+
+- **Windows:** `%APPDATA%\com.economiacasera.app\` (o el `app_data_dir` de Tauri)
+- **macOS:** `~/Library/Application Support/com.economiacasera.app\`
+- **Linux:** `~/.local/share/com.economiacasera.app\`
+
+Ficheros relevantes:
+
+- `economiacasera.db` — base de datos SQLite
+- `receipts/` — fotos de tickets de gastos
+
+### Copia de seguridad local
+
+- `~/EconomiaCasera/backup/economiacasera_backup.db`
+- `~/EconomiaCasera/backup/receipts/`
 
 ### Si tiene Google Drive
 
-- La base de datos se guarda dentro de `Google Drive/EconomiaCasera/economiacasera.db`.
-- Cada cambio se persiste directamente en esa carpeta, así que Drive lo sincroniza.
-- También se mantiene una copia de seguridad local por si Drive no está disponible temporalmente.
+- Copia en `Google Drive/EconomiaCasera/economiacasera.db`
+- Fotos en `Google Drive/EconomiaCasera/receipts/`
+- Tras cada cambio se sincroniza la DB y la carpeta de tickets.
 - **Si abres la app en dos PCs con la misma cuenta de Google Drive, los datos se sincronizan.**
   - Si la app detecta que los datos han cambiado en otro dispositivo, muestra un diálogo para elegir entre:
-    - **Recargar datos remotos**: usar la versión de Google Drive (pierdes cambios locales no guardados).
+    - **Recargar datos remotos**: usar la versión de Google Drive.
     - **Usar mis datos locales**: sobrescribir la versión de Google Drive con tus datos.
-
-### Si no tiene Google Drive
-
-- La base de datos se guarda en el directorio de datos del usuario:
-  - Windows: `%APPDATA%\EconomiaCasera\economiacasera.db`
-  - macOS: `~/Library/Application Support/EconomiaCasera/economiacasera.db`
-  - Linux: `~/.local/share/EconomiaCasera/economiacasera.db`
-- Se mantiene una copia de seguridad en `~/EconomiaCasera/backup/economiacasera_backup.db`.
 
 ## Tecnología
 
 - **Frontend:** React + TypeScript + Vite
-- **Backend:** Bun (TypeScript) + API REST + `bun:sqlite`
-- **Empaquetado:** `bun build --compile` para generar un ejecutable con doble click
+- **Backend nativo:** Rust (Tauri v2)
+- **Base de datos:** SQLite a través de `tauri-plugin-sql`
+- **Empaquetado:** Tauri genera ejecutables nativos para Linux, Windows y macOS
 
 ## Requisitos para desarrollar
 
-- [Bun](https://bun.sh/) instalado
+- [Node.js](https://nodejs.org/) (LTS)
+- [pnpm](https://pnpm.io/)
+- [Rust](https://www.rust-lang.org/tools/install)
+- Dependencias del sistema para Tauri: https://tauri.app/start/prerequisites/
 
 ## Instalación de dependencias
 
 ```bash
-bun install
-cd frontend
-bun install
+pnpm install
 ```
 
 ## Ejecutar en desarrollo
 
 ```bash
-bun run dev
+cargo tauri dev
 ```
-
-O hacer doble click en:
-
-- Linux/Mac: `iniciar.sh`
-- Windows: `iniciar.bat`
 
 ## Compilar ejecutable para distribución
 
-### Linux/Mac
-
 ```bash
-./scripts/build.sh
+cargo tauri build
 ```
 
-### Windows
-
-```batch
-scripts\build.bat
-```
-
-El resultado estará en `dist/release/`:
+El resultado estará en `src-tauri/target/release/bundle/`:
 
 ```
-dist/release/
-├── economiacasera          (Linux/Mac) o economiacasera.exe (Windows)
-└── dist/                   (archivos del frontend)
+src-tauri/target/release/bundle/
+├── deb/                  # Linux Debian/Ubuntu
+├── rpm/                  # Linux Fedora/openSUSE
+├── appimage/             # Linux AppImage
+├── msi/                  # Windows instalador
+├── dmg/                  # macOS imagen de disco
+└── ...
 ```
 
-Para distribuir, copia toda la carpeta `dist/release/` y el usuario solo tiene que hacer doble click en `economiacasera` o `economiacasera.exe`.
+Para distribuir, usa los instaladores generados:
 
-## Compilar para otras plataformas desde tu sistema
+- **Linux:** preferir `.deb` / `.rpm` (menú de apps). `.AppImage` es portable.
+- **Windows:** NSIS (`.exe`) o `.msi` (acceso directo en menú Inicio).
+- **macOS:** `.dmg` → copiar a `/Applications`.
 
-Con Bun puedes hacer cross-compilation:
-
-```bash
-# Windows desde Linux/Mac
-bun build --compile --target=bun-windows-x64 src/server.ts --outfile dist/economiacasera.exe
-
-# Linux
-bun build --compile --target=bun-linux-x64 src/server.ts --outfile dist/economiacasera
-
-# macOS Apple Silicon
-bun build --compile --target=bun-darwin-arm64 src/server.ts --outfile dist/economiacasera-mac
-```
-
-No olvides copiar la carpeta `dist/` (frontend) junto al ejecutable.
+Los artefactos de actualización (`createUpdaterArtifacts`) se firman en CI cuando está configurada `TAURI_SIGNING_PRIVATE_KEY`.
 
 ## Importar desde Excel
 
@@ -141,8 +168,8 @@ El repositorio usa [`release-please`](https://github.com/googleapis/release-plea
 3. Revisas el PR, y si todo está correcto, lo merges.
 4. Al mergear el PR de release:
    - Se crea el tag y la release en GitHub.
-   - Se dispara el workflow `.github/workflows/release-binaries.yml`.
-   - Ese workflow compila y adjunta los binarios para Linux, Windows y macOS.
+   - Se dispara el workflow `.github/workflows/tauri-release.yml`.
+   - Ese workflow compila y adjunta los binarios de Tauri para Linux, Windows y macOS.
 
 ### Commits para que release-please calcule bien la versión
 
@@ -159,16 +186,13 @@ BREAKING CHANGE: rename API endpoint for transactions
 
 ### Compilar localmente con una versión concreta
 
+Edita `src-tauri/tauri.conf.json` y cambia el campo `version` antes de compilar:
+
 ```bash
-APP_VERSION=1.2.3 ./scripts/build.sh
+cargo tauri build
 ```
 
-En Windows:
-
-```batch
-set APP_VERSION=1.2.3
-scripts\build.bat
-```
+Para releases oficiales, la versión se actualiza automáticamente mediante `release-please`.
 
 ## Actualizaciones automáticas en la app
 
@@ -212,26 +236,18 @@ Si no usas Probot Settings, configura esto en la web de GitHub:
 
 ```
 .
-├── frontend/          # React + TypeScript
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   ├── CompositionRoot.ts
-│   │   ├── data/
-│   │   ├── domain/
-│   │   └── presentation/
-│   └── index.html
-├── src/               # Backend Bun
-│   ├── server.ts      # Servidor HTTP + API + importación Excel
-│   ├── application/   # Casos de uso y servicios
-│   ├── domain/        # Entidades y reglas de negocio
-│   ├── infrastructure/# Repositorios SQLite, sincronización Drive/local
-│   └── presentation/  # Controladores y rutas HTTP
-├── dist/              # Frontend compilado y ejecutables
-├── scripts/           # Scripts de compilación
+├── src/               # Frontend React + TypeScript
+│   ├── main.tsx
+│   ├── CompositionRoot.ts
+│   ├── data/          # Repositorios Tauri (SQLite, filesystem, updater)
+│   ├── domain/        # Entidades y casos de uso
+│   └── presentation/  # Componentes React, hooks y contexto
+├── src-tauri/         # Rust + configuración Tauri
+├── index.html
+├── package.json
+├── vite.config.ts
 ├── .github/           # Workflows y configuración del repo
-├── iniciar.sh         # Inicio rápido Linux/Mac
-├── iniciar.bat        # Inicio rápido Windows
 ├── LICENSE            # MIT
 └── README.md
 ```
+

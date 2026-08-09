@@ -1,22 +1,50 @@
 import type { Person } from "../entities";
-import type { IPersonRepository } from "../repositories/IPersonRepository";
+import type { PersonRepository } from "../repositories/PersonRepository";
 
-export class PersonUseCases {
-  constructor(private readonly repository: IPersonRepository) {}
+export class GetPersonsUseCase {
+  private readonly repository: PersonRepository;
 
-  getAll(): Person[] {
+  constructor(repository: PersonRepository) {
+    this.repository = repository;
+  }
+
+  async execute(): Promise<Person[]> {
     return this.repository.getAll();
   }
+}
 
-  create(name: string): Person {
-    return this.repository.create(name);
+export class CreatePersonUseCase {
+  private readonly repository: PersonRepository;
+
+  constructor(repository: PersonRepository) {
+    this.repository = repository;
   }
 
-  update(id: number, name: string, active: number): Person {
-    return this.repository.update(id, name, active);
+  async execute(label: string): Promise<Person> {
+    return this.repository.create(label);
+  }
+}
+
+export class UpdatePersonUseCase {
+  private readonly repository: PersonRepository;
+
+  constructor(repository: PersonRepository) {
+    this.repository = repository;
   }
 
-  delete(id: number): void {
+  async execute(person: Person): Promise<void> {
+    return this.repository.update(person);
+  }
+}
+
+export class DeletePersonUseCase {
+  private readonly repository: PersonRepository;
+
+  constructor(repository: PersonRepository) {
+    this.repository = repository;
+  }
+
+  async execute(id: number): Promise<void> {
     return this.repository.delete(id);
   }
 }
