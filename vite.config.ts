@@ -48,6 +48,12 @@ export default defineConfig(
           "src/tests/**",
           "src/**/__tests__/**",
         ],
+        thresholds: {
+          statements: 85,
+          branches: 85,
+          functions: 85,
+          lines: 85,
+        },
       },
     },
   }),

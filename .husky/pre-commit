@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 
 # quick checks on every commit
-npm run lint
-npm test -- --reporter=dot
+pnpm run lint
+pnpm test -- --reporter=dot

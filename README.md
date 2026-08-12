@@ -8,9 +8,9 @@ Aplicación de escritorio para llevar el control de gastos e ingresos anuales. F
 - **Buscador global** de movimientos (concepto, categoría y persona).
 - **Gráficas** que respetan los filtros activos.
 - **Foto del ticket** en gastos (archivo, arrastrar o pegar), con copia en backup y Drive.
-- **Datepicker nativo** para seleccionar la fecha del movimiento.
+- **Selector de fechas**: input nativo para la fecha del movimiento y datepicker de rango en los filtros.
 - **Categorías y personas configurables**.
-- **Importación desde Excel**: una hoja por mes (Ene., Feb., ...) con la tabla de transacciones.
+- **Importación de movimientos**: Excel histórico, ING (`.xls`) y Abanca (CSV).
 - **Resumen mensual y anual** con totales filtrados.
 - **Sincronización con Google Drive** si el usuario lo tiene instalado.
 - **Detección de conflictos** si los datos cambian en otro dispositivo, con opción de recargar o sobrescribir.
@@ -76,6 +76,7 @@ Ficheros relevantes:
 - Copia en `Google Drive/EconomiaCasera/economiacasera.db`
 - Fotos en `Google Drive/EconomiaCasera/receipts/`
 - Tras cada cambio se sincroniza la DB y la carpeta de tickets.
+- Al sobrescribir los datos remotos con los locales se escribe `Google Drive/EconomiaCasera/sync.json` como marcador de sincronización.
 - **Si abres la app en dos PCs con la misma cuenta de Google Drive, los datos se sincronizan.**
   - Si la app detecta que los datos han cambiado en otro dispositivo, muestra un diálogo para elegir entre:
     - **Recargar datos remotos**: usar la versión de Google Drive.
@@ -133,29 +134,40 @@ Para distribuir, usa los instaladores generados:
 
 Los artefactos de actualización (`createUpdaterArtifacts`) se firman en CI cuando está configurada `TAURI_SIGNING_PRIVATE_KEY`.
 
-## Importar desde Excel
+## Importar movimientos
 
-La app espera un archivo `.xlsx` con:
+La app ofrece tres fuentes de importación. En todas ellas se muestra una vista previa editable para revisar y corregir los movimientos antes de guardarlos, y se detectan duplicados automáticamente.
 
-- Una hoja por mes, llamada `Ene.`, `Feb.`, `Mar.`, `Abr.`, `May.`, `Jun.`, `Jul.`, `Ago.`, `Sep.`, `Oct.`, `Nov.`, `Dic.`.
+### Excel histórico
+
+Espera un archivo `.xlsx` con:
+
+- Una hoja por mes, llamada `Ene.`, `Feb.`, ..., `Dic.` (opcionalmente también una hoja `Global` con las categorías de ingresos y gastos).
 - En cada hoja, una tabla de transacciones con las columnas:
-  - **INGRESO / GASTO**: categoría del movimiento.
-  - **TIPO**: indica si es ingreso o gasto (opcional, se infiere de la categoría).
+  - **INGRESO / GASTO**: indica si el movimiento es ingreso o gasto.
+  - **CATEGORÍA**: categoría del movimiento.
   - **DIA**: día del mes.
   - **MES**: mes (opcional, se toma de la hoja).
   - **AÑO**: año (por defecto 2016 si no se indica).
-  - **EUROS**: importe.
+  - **EUROS** (columnas K-M): importe.
   - **DESCRIPCIÓN**: concepto del movimiento.
+
+### ING (Excel)
+
+Importa la hoja de movimientos exportada desde la banca online de ING (`.xls` con columnas `F VALOR` / `FECHA VALOR` e `IMPORTE`).
+
+### Abanca (CSV)
+
+Importa el CSV de movimientos de Abanca: separador `;`, fechas con formato `DD-MM-YYYY` y cabecera con las columnas `FECHA`, `CONCEPTO`, `SALDO` e `IMPORTE`. Las categorías se asignan automáticamente según el concepto y se pueden corregir en la vista previa.
 
 ## Versionado y releases
 
 El proyecto sigue [Semantic Versioning](https://semver.org/lang/es/):
 
-- Versiones menores a `1.0.0` durante el desarrollo activo.
-- La versión `1.0.0` será la primera estable.
-- `feat` → sube la versión menor (ej. `0.1.0` → `0.2.0`).
-- `fix` → sube la versión parche (ej. `0.1.0` → `0.1.1`).
-- `BREAKING CHANGE` → sube la versión mayor (ej. `0.5.0` → `1.0.0`).
+- La versión `1.0.0` (agosto 2026) es la primera versión estable.
+- `feat` → sube la versión menor (ej. `1.0.0` → `1.1.0`).
+- `fix` → sube la versión parche (ej. `1.0.0` → `1.0.1`).
+- `BREAKING CHANGE` → sube la versión mayor (ej. `1.0.0` → `2.0.0`).
 
 ### Cómo se crean las releases
 
@@ -202,24 +214,18 @@ La aplicación, al arrancar, consulta la última release pública de GitHub. Si 
 
 El repositorio incluye configuración para reducir riesgos:
 
-- `.github/settings.yml`: reglas de protección de `main` (requiere PR, review, status checks). Requiere instalar la app [Probot Settings](https://github.com/apps/settings) en el repo.
-- Los workflows usan `permissions` mínimas y `persist-credentials: false`.
+- **Rulesets de GitHub** (`Settings > Rules`): protección de `main` y `develop` (requiere PR, 1 review, status check `PR Checks`, sin force-push).
+- **Dependabot** (`.github/dependabot.yml`) para dependencias de npm, cargo y GitHub Actions.
+- **Code scanning**: GitHub *default setup* (Settings > Code security > Code scanning) escanea JS/TS, Rust y Actions semanalmente y en cada push a la rama por defecto. No usar el modo avanzado mientras el default setup esté activo (son incompatibles).
+- Los workflows usan `permissions` mínimas y `persist-credentials: false`; las actions están fijadas por SHA.
 - Los workflows no se ejecutan en forks (`if: github.event.repository.fork == false`).
+- `.github/settings.yml` es opcional y solo aplica si se instala la app [Probot Settings](https://github.com/apps/settings); los rulesets nativos no la requieren.
 
 ### Configuración manual recomendada en GitHub
 
-Si no usas Probot Settings, configura esto en la web de GitHub:
-
-1. **Settings > Branches > Add rule**
-   - Branch name pattern: `main`
-   - ✅ Require a pull request before merging
-   - ✅ Require approvals: 1
-   - ✅ Dismiss stale PR approvals when new commits are pushed
-   - ✅ Require status checks to pass: `PR Checks`
-   - ✅ Require branches to be up to date before merging
-   - ✅ Restrict pushes that create files larger than... (opcional)
-   - ✅ Do not allow bypassing the above settings
-   - ✅ Restrict who can push to matching branches: solo owners/maintainers
+1. **Settings > Rules > Rulesets**
+   - `main` y `develop`: *Require a pull request before merging* con 1 approval, *Dismiss stale pull request approvals when new commits are pushed*, *Require status checks to pass* con `PR Checks` (para `main`) y bloquear force-push y eliminación de ramas.
+   - Estado deseado de los checkboxes: ✅ Require a pull request · ✅ Require approvals: 1 · ✅ Dismiss stale approvals · ✅ Require status checks (`PR Checks`) · ✅ No force-pushes ni deletions.
 
 2. **Settings > Actions > General**
    - ✅ Require approval for first-time contributors
@@ -227,7 +233,7 @@ Si no usas Probot Settings, configura esto en la web de GitHub:
    - **Fork pull request workflows**: selecciona *Require approval for first-time contributors* o *Require approval for all outside collaborators*
 
 3. **Settings > Secrets and variables > Actions**
-   - No añadir secrets innecesarios. `GITHUB_TOKEN` se genera automáticamente y solo tiene permisos declarados en cada workflow.
+   - No añadir secrets innecesarios. `GITHUB_TOKEN` se genera automáticamente y solo tiene permisos declarados en cada workflow. Para firmar actualizaciones se usan `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
 4. **Settings > Code security**
    - Habilitar *Dependabot alerts* y *Dependabot security updates*.
