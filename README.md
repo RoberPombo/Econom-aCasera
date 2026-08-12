@@ -215,7 +215,8 @@ La aplicación, al arrancar, consulta la última release pública de GitHub. Si 
 El repositorio incluye configuración para reducir riesgos:
 
 - **Rulesets de GitHub** (`Settings > Rules`): protección de `main` y `develop` (requiere PR, 1 review, status check `PR Checks`, sin force-push).
-- **Dependabot** (`.github/dependabot.yml`) para dependencias de npm, cargo y GitHub Actions, y **CodeQL** (`.github/workflows/codeql.yml`) para escaneo estático.
+- **Dependabot** (`.github/dependabot.yml`) para dependencias de npm, cargo y GitHub Actions.
+- **Code scanning**: GitHub *default setup* (Settings > Code security > Code scanning) escanea JS/TS, Rust y Actions semanalmente y en cada push a la rama por defecto. No usar el modo avanzado mientras el default setup esté activo (son incompatibles).
 - Los workflows usan `permissions` mínimas y `persist-credentials: false`; las actions están fijadas por SHA.
 - Los workflows no se ejecutan en forks (`if: github.event.repository.fork == false`).
 - `.github/settings.yml` es opcional y solo aplica si se instala la app [Probot Settings](https://github.com/apps/settings); los rulesets nativos no la requieren.
