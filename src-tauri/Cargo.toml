@@ -1,6 +1,6 @@
 [package]
-name = "tauri"
-version = "1.0.0"
+name = "economia_casera"
+version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
@@ -26,4 +26,3 @@ tauri-plugin-sql = { version = "2.4.0", features = ["sqlite"] }
 tauri-plugin-updater = "2.10.1"
 dirs = "6.0.0"
 calamine = "0.36"
-
