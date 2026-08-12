@@ -10,6 +10,7 @@ import { Modal } from "./components/Modal";
 import { PersonsConfig } from "./components/PersonsConfig";
 import { ReceiptViewer } from "./components/ReceiptViewer";
 import { SimilarTransactionDialog } from "./components/SimilarTransactionDialog";
+import { SummaryBreakdown } from "./components/SummaryBreakdown";
 import { TransactionFiltersBar } from "./components/TransactionFiltersBar";
 import {
   TransactionForm,
@@ -367,6 +368,12 @@ function App() {
             />
           </div>
         </section>
+
+        <SummaryBreakdown
+          categories={state.categorySummary}
+          monthly={state.monthlySummary}
+          annual={state.annualSummary}
+        />
 
         <section className={section}>
           <h2 className={sectionTitle}>Movimientos · {periodTitle}</h2>
