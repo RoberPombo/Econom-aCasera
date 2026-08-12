@@ -214,24 +214,17 @@ La aplicación, al arrancar, consulta la última release pública de GitHub. Si 
 
 El repositorio incluye configuración para reducir riesgos:
 
-- `.github/settings.yml`: reglas de protección de `main` (requiere PR, review, status checks). Requiere instalar la app [Probot Settings](https://github.com/apps/settings) en el repo.
-- Los workflows usan `permissions` mínimas y `persist-credentials: false`.
+- **Rulesets de GitHub** (`Settings > Rules`): protección de `main` y `develop` (requiere PR, 1 review, status check `PR Checks`, sin force-push).
+- **Dependabot** (`.github/dependabot.yml`) para dependencias de npm, cargo y GitHub Actions, y **CodeQL** (`.github/workflows/codeql.yml`) para escaneo estático.
+- Los workflows usan `permissions` mínimas y `persist-credentials: false`; las actions están fijadas por SHA.
 - Los workflows no se ejecutan en forks (`if: github.event.repository.fork == false`).
+- `.github/settings.yml` es opcional y solo aplica si se instala la app [Probot Settings](https://github.com/apps/settings); los rulesets nativos no la requieren.
 
 ### Configuración manual recomendada en GitHub
 
-Si no usas Probot Settings, configura esto en la web de GitHub:
-
-1. **Settings > Branches > Add rule**
-   - Branch name pattern: `main`
-   - ✅ Require a pull request before merging
-   - ✅ Require approvals: 1
-   - ✅ Dismiss stale PR approvals when new commits are pushed
-   - ✅ Require status checks to pass: `PR Checks`
-   - ✅ Require branches to be up to date before merging
-   - ✅ Restrict pushes that create files larger than... (opcional)
-   - ✅ Do not allow bypassing the above settings
-   - ✅ Restrict who can push to matching branches: solo owners/maintainers
+1. **Settings > Rules > Rulesets**
+   - `main` y `develop`: *Require a pull request before merging* con 1 approval, *Dismiss stale pull request approvals when new commits are pushed*, *Require status checks to pass* con `PR Checks` (para `main`) y bloquear force-push y eliminación de ramas.
+   - Estado deseado de los checkboxes: ✅ Require a pull request · ✅ Require approvals: 1 · ✅ Dismiss stale approvals · ✅ Require status checks (`PR Checks`) · ✅ No force-pushes ni deletions.
 
 2. **Settings > Actions > General**
    - ✅ Require approval for first-time contributors
@@ -239,7 +232,7 @@ Si no usas Probot Settings, configura esto en la web de GitHub:
    - **Fork pull request workflows**: selecciona *Require approval for first-time contributors* o *Require approval for all outside collaborators*
 
 3. **Settings > Secrets and variables > Actions**
-   - No añadir secrets innecesarios. `GITHUB_TOKEN` se genera automáticamente y solo tiene permisos declarados en cada workflow.
+   - No añadir secrets innecesarios. `GITHUB_TOKEN` se genera automáticamente y solo tiene permisos declarados en cada workflow. Para firmar actualizaciones se usan `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 
 4. **Settings > Code security**
    - Habilitar *Dependabot alerts* y *Dependabot security updates*.
