@@ -1,0 +1,12 @@
+import type { DbInfo } from "../entities/DbInfo";
+
+export interface DbInfoRepository {
+  get(): Promise<DbInfo>;
+  reload(): Promise<{ ok: boolean; dbPath: string; usesDrive: boolean }>;
+  forceOverwrite(): Promise<{
+    ok: boolean;
+    dbPath: string;
+    usesDrive: boolean;
+  }>;
+  sync(): Promise<void>;
+}

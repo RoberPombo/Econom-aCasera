@@ -53,6 +53,22 @@ feat: new auth flow
 BREAKING CHANGE: old token format is no longer accepted
 ```
 
+## STPR Workflow
+
+This repository follows the STPR method (Skeleton + Template + Plan + Review) to control AI-assisted development. Entry point: [`.stpr/README.md`](.stpr/README.md).
+
+- **Skeleton**: the project itself. Preserve existing skeleton conventions (schema, seeds, scripts, test environment) unless the plan explicitly overrides them.
+- **Template**: canonical references and technical contract in [`.stpr/template/README.md`](.stpr/template/README.md) and [`.stpr/template/STPR_INVARIANTS.md`](.stpr/template/STPR_INVARIANTS.md). Copies of canonical patterns live in `.stpr/template/src/`; when a canonical pattern changes in `src/`, update its copy in the same change.
+- **Plan**: non-trivial work must start from a written plan under `.stpr/plan/` (use `proposal-change-template.md`). If something that affects scope, contract, data, validation or tests is ambiguous, clarify before implementing.
+- **Review**: before closing non-trivial generated work, pass [`.stpr/review/CHECKLIST_REVISION.md`](.stpr/review/CHECKLIST_REVISION.md). Recurrent deviations must be fixed by improving template, invariants, plan or review artifacts, not only the generated code.
+
+Execution rules:
+
+- Implement approved plans in small vertical slices; run the required verification of each slice before starting the next one.
+- Continue automatically when verification passes; interrupt the user only on real ambiguity or blocking failures.
+- Do not invent structure, naming or patterns when an applicable canonical reference exists in the template.
+- Human decides architecture, scope and technical criteria; AI executes and verifies.
+
 ## Architecture Rules
 
 The application follows Clean Architecture.
@@ -176,3 +192,8 @@ cargo tauri build
 - `.github/workflows/pr-check.yml`
 - `.release-please-config.json`
 - `.release-please-manifest.json`
+- `.stpr/README.md`
+- `.stpr/template/README.md`
+- `.stpr/template/STPR_INVARIANTS.md`
+- `.stpr/plan/`
+- `.stpr/review/`
