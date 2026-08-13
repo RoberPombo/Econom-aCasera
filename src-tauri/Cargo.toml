@@ -1,6 +1,6 @@
 [package]
 name = "economia_casera"
-version = "0.1.0"
+version = "1.0.0"
 description = "Aplicación de escritorio para el control de gastos e ingresos del hogar (Tauri)"
 authors = ["Rober Pombo <robertopombootero@gmail.com>"]
 license = "MIT"
