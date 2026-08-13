@@ -19,7 +19,7 @@ This file contains rules and conventions for AI coding assistants working on thi
   - `docs/<short-description>`
 - Open pull requests targeting `develop`.
 - Releases are promoted from `develop` to `main` via a pull request.
-- After a release is published, merge `main` back into `develop` so `develop` keeps the updated `package.json`, `CHANGELOG.md` and version tag.
+- After a release is published, `.github/workflows/sync-develop.yml` automatically opens a PR from `main` into `develop`; merge it with a regular merge commit (never squash) so `develop` keeps the updated `package.json`, `CHANGELOG.md` and version tag.
 
 ## Commit Messages
 
@@ -150,7 +150,7 @@ Run them before committing.
   3. `release-please` creates/updates the release PR on `main`.
   4. Review and merge the release PR.
   5. Binaries are built and attached automatically by `.github/workflows/tauri-release.yml`.
-  6. Merge `main` back into `develop`.
+  6. `.github/workflows/sync-develop.yml` opens the sync PR from `main` into `develop`; merge it with a regular merge commit (never squash).
 
 ## Security Rules
 

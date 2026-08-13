@@ -1,0 +1,56 @@
+name: Sync Develop After Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: sync-develop
+  cancel-in-progress: false
+
+jobs:
+  sync-develop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        with:
+          fetch-depth: 0
+
+      - name: Fetch develop
+        run: git fetch origin develop
+
+      - name: Create sync PR (main -> develop)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet origin/main origin/develop; then
+            echo "main and develop are already in sync; skipping."
+            exit 0
+          fi
+          BODY='Automated PR opened by the release workflow after a push to `main` (typically a new release published by release-please).
+
+          It merges `main` into `develop` so the development branch keeps the released versions of:
+
+          - `package.json`, `CHANGELOG.md`, `.release-please-manifest.json`
+          - `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/tauri.conf.json`
+
+          **Merge with a regular merge commit (do not squash).** Squashing would discard `main` release history and make the next sync conflict again.
+
+          If this PR shows conflicts (typically the first sync), resolve them keeping `develop` content for app and CI files, and `main` content for the version files listed above.'
+          if gh pr list --base develop --head main --state open --json number --jq 'length' | grep -q '^0$'; then
+            gh pr create \
+              --base develop \
+              --head main \
+              --title "chore: sync main into develop after release" \
+              --body "$BODY"
+            echo "Sync PR created."
+          else
+            echo "A sync PR from main into develop already exists; skipping."
+          fi
