@@ -57,7 +57,7 @@ jobs:
         run: pnpm install
 
       - name: Build and upload Tauri bundles
-        uses: tauri-apps/tauri-action@f650639e43adf15f35dd1023d248b3ecc3568b64 # v0.6.1
+        uses: tauri-apps/tauri-action@73fb865345c54760d875b94642314f8c0c894afa # v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
