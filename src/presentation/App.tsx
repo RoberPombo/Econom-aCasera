@@ -10,7 +10,7 @@ import { Modal } from "./components/Modal";
 import { PersonsConfig } from "./components/PersonsConfig";
 import { ReceiptViewer } from "./components/ReceiptViewer";
 import { SimilarTransactionDialog } from "./components/SimilarTransactionDialog";
-import { SummaryBreakdown } from "./components/SummaryBreakdown";
+import { SummaryModal } from "./components/SummaryModal";
 import { TransactionFiltersBar } from "./components/TransactionFiltersBar";
 import {
   TransactionForm,
@@ -70,6 +70,26 @@ function ImportIcon() {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+
+function SummaryIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
     </svg>
   );
 }
@@ -164,6 +184,8 @@ function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [reportYear, setReportYear] = useState<number | null>(null);
   const [receiptViewUrl, setReceiptViewUrl] = useState<string | null>(null);
   const [editingReceiptUrl, setEditingReceiptUrl] = useState<string | null>(
     null,
@@ -292,6 +314,17 @@ function App() {
     return state.addImportCategories(options);
   }
 
+  function openSummary() {
+    setReportYear(currentYear);
+    setShowSummaryModal(true);
+    void state.loadYearReport(currentYear);
+  }
+
+  function changeReportYear(year: number) {
+    setReportYear(year);
+    void state.loadYearReport(year);
+  }
+
   return (
     <div className={app}>
       <header className={header}>
@@ -314,6 +347,15 @@ function App() {
             aria-label="Importar"
           >
             <ImportIcon />
+          </button>
+          <button
+            type="button"
+            className={iconBtn}
+            onClick={openSummary}
+            title="Resumen"
+            aria-label="Resumen"
+          >
+            <SummaryIcon />
           </button>
           <button
             type="button"
@@ -368,12 +410,6 @@ function App() {
             />
           </div>
         </section>
-
-        <SummaryBreakdown
-          categories={state.categorySummary}
-          monthly={state.monthlySummary}
-          annual={state.annualSummary}
-        />
 
         <section className={section}>
           <h2 className={sectionTitle}>Movimientos · {periodTitle}</h2>
@@ -459,10 +495,30 @@ function App() {
         >
           <ImportView
             persons={state.persons}
+            categories={state.categories}
             onPreview={state.previewImport}
             onConfirm={confirmImport}
             onAddCategories={addImportCategories}
           />
+        </Modal>
+      )}
+
+      {showSummaryModal && reportYear !== null && (
+        <Modal
+          title={`Resumen · ${reportYear}`}
+          onClose={() => setShowSummaryModal(false)}
+          wide
+        >
+          {state.report ? (
+            <SummaryModal
+              year={reportYear}
+              report={state.report}
+              onYearChange={changeReportYear}
+              onClose={() => setShowSummaryModal(false)}
+            />
+          ) : (
+            <p>Cargando resumen…</p>
+          )}
         </Modal>
       )}
 

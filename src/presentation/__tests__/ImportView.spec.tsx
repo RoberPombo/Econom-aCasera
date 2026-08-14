@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, type Mock, test, vi } from "vitest";
-import { Person, Transaction } from "../../domain/entities";
+import { Category, Person, Transaction } from "../../domain/entities";
 import { normalizeKey } from "../../domain/entities/Key";
 import type { ImportCategoryOption } from "../../domain/repositories/ImportRepository";
 import { ImportView } from "../components/ImportView";
@@ -9,6 +9,11 @@ import { ImportView } from "../components/ImportView";
 const persons = [
   Person.create({ id: 1, label: "Ana" }),
   Person.create({ id: 2, label: "Bob", active: false }),
+];
+
+const casaCategories = [
+  Category.create({ id: 1, label: "Comida", type: "expense" }),
+  Category.create({ id: 2, label: "Nómina", type: "income" }),
 ];
 
 type PreviewResult = {
@@ -39,6 +44,7 @@ function makeFile(name: string): File {
 
 function renderImport(
   overrides: {
+    categories?: Category[];
     onPreview?: Mock<(source: string, file: File) => Promise<PreviewResult>>;
     onConfirm?: Mock<(transactions: Transaction[]) => Promise<number>>;
     onAddCategories?: Mock<
@@ -58,6 +64,7 @@ function renderImport(
   render(
     <ImportView
       persons={persons}
+      categories={overrides.categories ?? []}
       onPreview={onPreview}
       onConfirm={onConfirm}
       onAddCategories={onAddCategories}
@@ -72,6 +79,16 @@ function selectFile(file: File) {
     document.querySelector("input[type=file]") as HTMLInputElement,
     { target: { files: [file] } },
   );
+}
+
+function categorySelect(): HTMLSelectElement {
+  return screen
+    .getAllByRole("combobox")
+    .find((sel) =>
+      Array.from(sel.querySelectorAll("option")).some(
+        (o) => o.value === "__new_category__" || o.value === "comida",
+      ),
+    ) as HTMLSelectElement;
 }
 
 function mockPreview(
@@ -440,7 +457,7 @@ describe("ImportView", () => {
     ).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("saving the movements does not touch the configuration", async () => {
+  test("saving the movements auto-adds the new category to the configuration", async () => {
     const user = userEvent.setup();
     const { onConfirm, onAddCategories } = renderImport({
       onPreview: mockPreview([tx("comida", "Mercadona", 40.5)], [], 0, [
@@ -452,7 +469,7 @@ describe("ImportView", () => {
         .mockResolvedValue(1),
       onAddCategories: vi
         .fn<(options: ImportCategoryOption[]) => Promise<number>>()
-        .mockResolvedValue(2),
+        .mockResolvedValue(1),
     });
     selectFile(makeFile("economia.xlsx"));
     await user.click(screen.getByRole("button", { name: "Previsualizar" }));
@@ -464,10 +481,15 @@ describe("ImportView", () => {
       screen.getByRole("button", { name: "Guardar 1 movimientos" }),
     );
 
+    expect(onAddCategories).toHaveBeenCalledWith([
+      { label: "comida", type: "expense" },
+    ]);
     expect(onConfirm).toHaveBeenCalledWith([
       expect.objectContaining({ concept: "Mercadona" }),
     ]);
-    expect(onAddCategories).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/Categoría nueva añadida a la configuración/),
+    ).toBeInTheDocument();
   });
 
   test("adds the selected categories with its own button, separate from the movements", async () => {
@@ -671,5 +693,201 @@ describe("ImportView", () => {
         /No se guardará nada: los 2 movimientos del archivo ya existen/,
       ),
     ).toBeInTheDocument();
+  });
+
+  test("offers the configured categories in the category selector", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      categories: casaCategories,
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(categorySelect()).toHaveValue("comida");
+    expect(
+      screen.queryByPlaceholderText("Escribe el nombre de la nueva categoría"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("preselects Nueva categoría when the parsed category is not configured", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: mockPreview([tx("Mercadona", "Compra", 10)]),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(categorySelect()).toHaveValue("__new_category__");
+    expect(
+      screen.getByPlaceholderText("Escribe el nombre de la nueva categoría"),
+    ).toHaveValue("mercadona");
+  });
+
+  test("choosing an existing category from the selector updates the row", async () => {
+    const user = userEvent.setup();
+    const { onConfirm } = renderImport({
+      categories: casaCategories,
+      onPreview: mockPreview([tx("Mercadona", "Compra", 10)]),
+      onConfirm: vi
+        .fn<(ts: Transaction[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    const typeSelect = screen
+      .getAllByRole("combobox")
+      .find(
+        (sel) => sel instanceof HTMLSelectElement && sel.value === "expense",
+      ) as HTMLSelectElement;
+    await user.selectOptions(typeSelect, "income");
+    await user.selectOptions(categorySelect(), "nomina");
+
+    const select = categorySelect();
+    expect(select.options[select.selectedIndex].textContent).toBe("Nómina");
+    expect(
+      screen.queryByPlaceholderText("Escribe el nombre de la nueva categoría"),
+    ).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    );
+
+    expect(onConfirm).toHaveBeenCalledWith([
+      expect.objectContaining({ category: "nomina", concept: "Compra" }),
+    ]);
+  });
+
+  test("only offers the categories matching the row type", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      categories: casaCategories,
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    const options = Array.from(categorySelect().querySelectorAll("option")).map(
+      (o) => o.textContent ?? "",
+    );
+    expect(options).toContain("Comida");
+    expect(options).not.toContain("Nómina");
+  });
+
+  test("switching the type clears an incompatible category", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      categories: casaCategories,
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    const typeSelect = screen
+      .getAllByRole("combobox")
+      .find(
+        (sel) => sel instanceof HTMLSelectElement && sel.value === "expense",
+      ) as HTMLSelectElement;
+    await user.selectOptions(typeSelect, "income");
+
+    expect(categorySelect()).toHaveValue("__new_category__");
+    expect(
+      screen.getByPlaceholderText("Escribe el nombre de la nueva categoría"),
+    ).toHaveValue("");
+  });
+
+  test("switching the type to savings auto-fills the Ahorro category", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      categories: casaCategories,
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    const typeSelect = screen
+      .getAllByRole("combobox")
+      .find(
+        (sel) => sel instanceof HTMLSelectElement && sel.value === "expense",
+      ) as HTMLSelectElement;
+    await user.selectOptions(typeSelect, "savings");
+
+    expect(categorySelect()).toHaveValue("ahorro");
+    expect(
+      categorySelect().querySelector('option[value="ahorro"]'),
+    ).toHaveTextContent("Ahorro");
+    expect(
+      screen.queryByPlaceholderText("Escribe el nombre de la nueva categoría"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("keeps the savings category for savings rows", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      onPreview: vi.fn().mockResolvedValue({
+        transactions: [
+          Transaction.create({
+            date: "2026-08-10",
+            type: "savings",
+            category: normalizeKey("Ahorro"),
+            concept: "Traspaso a la cuenta de ahorro",
+            amount: 200,
+          }),
+        ],
+        errors: [],
+        skipped: 0,
+      }),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    expect(categorySelect()).toHaveValue("ahorro");
+    expect(
+      screen.queryByPlaceholderText("Escribe el nombre de la nueva categoría"),
+    ).not.toBeInTheDocument();
+  });
+
+  test("switches to Nueva categoría mode from an existing category", async () => {
+    const user = userEvent.setup();
+    renderImport({
+      categories: casaCategories,
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.selectOptions(categorySelect(), "__new_category__");
+    await user.type(
+      screen.getByPlaceholderText("Escribe el nombre de la nueva categoría"),
+      "Suscripciones",
+    );
+
+    expect(categorySelect()).toHaveValue("__new_category__");
+    expect(
+      screen.getByPlaceholderText("Escribe el nombre de la nueva categoría"),
+    ).toHaveValue("Suscripciones");
+  });
+
+  test("does not auto-add categories that already exist in the configuration", async () => {
+    const user = userEvent.setup();
+    const { onConfirm, onAddCategories } = renderImport({
+      categories: casaCategories,
+      onPreview: mockPreview([tx("comida", "Mercadona", 40.5)]),
+      onConfirm: vi
+        .fn<(ts: Transaction[]) => Promise<number>>()
+        .mockResolvedValue(1),
+    });
+    selectFile(makeFile("movimientos.xlsx"));
+    await user.click(screen.getByRole("button", { name: "Previsualizar" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Guardar 1 movimientos" }),
+    );
+
+    expect(onConfirm).toHaveBeenCalledWith([
+      expect.objectContaining({ category: "comida" }),
+    ]);
+    expect(onAddCategories).not.toHaveBeenCalled();
   });
 });

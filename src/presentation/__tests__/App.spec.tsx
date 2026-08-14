@@ -6,7 +6,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import {
   Category,
   Person,
@@ -649,5 +649,82 @@ describe("App", () => {
     expect(
       await screen.findByText("✅ Sincronizado con Google Drive"),
     ).toBeInTheDocument();
+  });
+
+  test("opens the year summary from the header and prints it", async () => {
+    const user = userEvent.setup();
+    const printSpy = vi.spyOn(window, "print").mockImplementation(() => {});
+    try {
+      renderApp({
+        settings: augustSettings,
+        transactions: [
+          expense(1, "2026-08-05", "comida", 40),
+          Transaction.create({
+            date: "2026-01-15",
+            type: "income",
+            category: "nomina",
+            concept: "Nómina",
+            amount: 1500,
+          }),
+        ],
+        categories: defaultCategories,
+      });
+      await settled();
+      await screen.findByText("Mercadona");
+
+      await user.click(screen.getByRole("button", { name: "Resumen" }));
+
+      expect(
+        screen.getByRole("heading", { name: "Resumen · 2026" }),
+      ).toBeInTheDocument();
+      expect(
+        await screen.findByText("Ingresos, gastos y ahorro por mes"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("nomina")).toBeInTheDocument();
+      expect(screen.getAllByText(/1500,00 €/).length).toBeGreaterThanOrEqual(2);
+
+      await user.click(screen.getByRole("button", { name: /Imprimir/ }));
+      expect(printSpy).toHaveBeenCalled();
+    } finally {
+      printSpy.mockRestore();
+    }
+  });
+
+  test("navigates the summary report by year", async () => {
+    const user = userEvent.setup();
+    renderApp({
+      settings: augustSettings,
+      transactions: [expense(1, "2026-08-05", "comida", 40)],
+      categories: [],
+    });
+    await settled();
+    await screen.findByText("Mercadona");
+
+    await user.click(screen.getByRole("button", { name: "Resumen" }));
+    expect(
+      screen.getByRole("heading", { name: "Resumen · 2026" }),
+    ).toBeInTheDocument();
+
+    const panel = modalPanel("Resumen · 2026");
+    await user.click(
+      within(panel).getByRole("button", { name: "Año siguiente" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Resumen · 2027" }),
+    ).toBeInTheDocument();
+
+    const panel2027 = modalPanel("Resumen · 2027");
+    await user.click(
+      within(panel2027).getByRole("button", { name: "Año anterior" }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Resumen · 2026" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Cerrar" }));
+    expect(
+      screen.queryByRole("heading", { name: "Resumen · 2027" }),
+    ).not.toBeInTheDocument();
   });
 });
