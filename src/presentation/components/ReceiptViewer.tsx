@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { isSafeImageSrc } from "../imageSrc";
 import { btnSecondary, modal, modalOverlay } from "../styles";
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function ReceiptViewer({ src, onClose }: Props) {
+  const safeSrc = isSafeImageSrc(src) ? src : null;
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -30,11 +32,13 @@ export function ReceiptViewer({ src, onClose }: Props) {
         aria-modal="true"
         aria-label="Foto del ticket"
       >
-        <img
-          src={src}
-          alt="Ticket del gasto"
-          className="max-h-[70vh] w-auto max-w-full self-center rounded-lg object-contain"
-        />
+        {safeSrc && (
+          <img
+            src={safeSrc}
+            alt="Ticket del gasto"
+            className="max-h-[70vh] w-auto max-w-full self-center rounded-lg object-contain"
+          />
+        )}
         <div className="flex justify-end">
           <button type="button" className={btnSecondary} onClick={onClose}>
             Cerrar

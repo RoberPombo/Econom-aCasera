@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import type { Person, TransactionType } from "../../domain/entities";
+import { useMemo, useRef, useState } from "react";
+import type { Category, Person, TransactionType } from "../../domain/entities";
 import { Transaction } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
 import {
@@ -56,6 +56,7 @@ export type ImportRow = {
 
 interface Props {
   persons: Person[];
+  categories: Category[];
   onPreview: (source: ImportSource, file: File) => Promise<ImportPreview>;
   onConfirm: (transactions: Transaction[]) => Promise<number>;
   onAddCategories: (options: ImportCategoryOption[]) => Promise<number>;
@@ -111,8 +112,58 @@ function validateRow(row: ImportRow, index: number): string[] {
   return errors;
 }
 
+function buildCategoryOptions(
+  categories: Category[],
+  legacyOptions: ImportCategoryOption[],
+): ImportCategoryOption[] {
+  const keys = new Set(categories.map((c) => c.key));
+  const options: ImportCategoryOption[] = categories.map((c) => ({
+    label: c.label,
+    type: c.type,
+  }));
+  for (const option of legacyOptions) {
+    if (!keys.has(normalizeKey(option.label))) {
+      options.push(option);
+    }
+  }
+  return options;
+}
+
+function categoryOptionsForType(
+  rowType: TransactionType,
+  income: ImportCategoryOption[],
+  expense: ImportCategoryOption[],
+): ImportCategoryOption[] {
+  if (rowType === "income") return income;
+  if (rowType === "expense") return expense;
+  return SAVINGS_CATEGORY_OPTIONS;
+}
+
+function detectNewCategoryOptions(
+  rows: ImportRow[],
+  configKeys: Set<string>,
+): ImportCategoryOption[] {
+  const found: ImportCategoryOption[] = [];
+  const added = new Set(configKeys);
+  for (const row of rows) {
+    const label = row.category.trim();
+    if (!label) continue;
+    const key = normalizeKey(label);
+    if (added.has(key)) continue;
+    found.push({ label, type: row.type === "income" ? "income" : "expense" });
+    added.add(key);
+  }
+  return found;
+}
+
+const NEW_CATEGORY_VALUE = "__new_category__";
+const SAVINGS_CATEGORY_OPTIONS: ImportCategoryOption[] = [
+  { label: "Ahorro", type: "expense" },
+];
+
 export function ImportView({
   persons,
+  categories,
   onPreview,
   onConfirm,
   onAddCategories,
@@ -139,8 +190,24 @@ export function ImportView({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activePersons = persons.filter((p) => p.active);
-  const incomeOptions = categoryOptions.filter((c) => c.type === "income");
-  const expenseOptions = categoryOptions.filter((c) => c.type === "expense");
+  const configCategoryKeys = useMemo(
+    () => new Set(categories.map((c) => c.key)),
+    [categories],
+  );
+  const knownCategoryOptions = useMemo(
+    () => buildCategoryOptions(categories, categoryOptions),
+    [categories, categoryOptions],
+  );
+  const incomeOptions = knownCategoryOptions.filter((c) => c.type === "income");
+  const expenseOptions = knownCategoryOptions.filter(
+    (c) => c.type === "expense",
+  );
+  const legacyIncomeOptions = categoryOptions.filter(
+    (c) => c.type === "income",
+  );
+  const legacyExpenseOptions = categoryOptions.filter(
+    (c) => c.type === "expense",
+  );
 
   function resetCategorySelection() {
     setCategoryOptions([]);
@@ -220,13 +287,27 @@ export function ImportView({
     if (validationErrors.length > 0) return;
     setSaving(true);
     try {
+      const newCategoryOptions = detectNewCategoryOptions(
+        rows,
+        configCategoryKeys,
+      );
+      let addedCategories = 0;
+      if (newCategoryOptions.length > 0) {
+        addedCategories = await onAddCategories(newCategoryOptions);
+      }
+
       const transactions = rows.map(rowToTransaction);
       const inserted = await onConfirm(transactions);
       const skippedNow = transactions.length - inserted;
       setSaveMessage(
-        inserted > 0
-          ? `Guardados ${inserted} movimiento${inserted > 1 ? "s" : ""}${skippedNow > 0 ? ` (${skippedNow} ya existían)` : ""}.`
-          : `No se guardó nada: los ${transactions.length} movimiento${transactions.length > 1 ? "s" : ""} ya existían en la base de datos.`,
+        `${
+          inserted > 0
+            ? `Guardados ${inserted} movimiento${inserted > 1 ? "s" : ""}${skippedNow > 0 ? ` (${skippedNow} ya existían)` : ""}`
+            : `No se guardó nada: los ${transactions.length} movimiento${transactions.length > 1 ? "s" : ""} ya existían en la base de datos.`
+        }` +
+          (addedCategories > 0
+            ? ` Categoría${addedCategories > 1 ? "s" : ""} nueva${addedCategories > 1 ? "s" : ""} añadida${addedCategories > 1 ? "s" : ""} a la configuración.`
+            : ""),
       );
       setRows([]);
       setParserErrors([]);
@@ -449,13 +530,13 @@ export function ImportView({
             configuración actual.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {incomeOptions.length > 0 && (
+            {legacyIncomeOptions.length > 0 && (
               <fieldset>
                 <legend className="mb-1 text-[0.85rem] font-medium text-muted">
                   Ingresos
                 </legend>
                 <div className="flex flex-col gap-1.5">
-                  {incomeOptions.map((option) => (
+                  {legacyIncomeOptions.map((option) => (
                     <button
                       key={option.label}
                       type="button"
@@ -474,13 +555,13 @@ export function ImportView({
                 </div>
               </fieldset>
             )}
-            {expenseOptions.length > 0 && (
+            {legacyExpenseOptions.length > 0 && (
               <fieldset>
                 <legend className="mb-1 text-[0.85rem] font-medium text-muted">
                   Gastos
                 </legend>
                 <div className="flex flex-col gap-1.5">
-                  {expenseOptions.map((option) => (
+                  {legacyExpenseOptions.map((option) => (
                     <button
                       key={option.label}
                       type="button"
@@ -580,11 +661,30 @@ export function ImportView({
                         <select
                           className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
                           value={row.type}
-                          onChange={(e) =>
-                            updateRow(index, {
-                              type: e.target.value as TransactionType,
-                            })
-                          }
+                          onChange={(e) => {
+                            const nextType = e.target.value as TransactionType;
+                            const allowedKeys = new Set(
+                              categoryOptionsForType(
+                                nextType,
+                                incomeOptions,
+                                expenseOptions,
+                              ).map((o) => normalizeKey(o.label)),
+                            );
+                            const patch: Partial<ImportRow> = {
+                              type: nextType,
+                            };
+                            if (
+                              !allowedKeys.has(
+                                normalizeKey(row.category.trim()),
+                              )
+                            ) {
+                              patch.category =
+                                nextType === "savings"
+                                  ? SAVINGS_CATEGORY_OPTIONS[0].label
+                                  : "";
+                            }
+                            updateRow(index, patch);
+                          }}
                         >
                           <option value="income">Ingreso</option>
                           <option value="expense">Gasto</option>
@@ -592,14 +692,79 @@ export function ImportView({
                         </select>
                       </td>
                       <td className={`${td} align-top`}>
-                        <input
-                          className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
-                          type="text"
-                          value={row.category}
-                          onChange={(e) =>
-                            updateRow(index, { category: e.target.value })
-                          }
-                        />
+                        {(() => {
+                          const allowedOptions = categoryOptionsForType(
+                            row.type,
+                            incomeOptions,
+                            expenseOptions,
+                          );
+                          const allowedKeys = new Set(
+                            allowedOptions.map((o) => normalizeKey(o.label)),
+                          );
+                          const isKnown = allowedKeys.has(
+                            normalizeKey(row.category.trim()),
+                          );
+                          const groupLabel =
+                            row.type === "income"
+                              ? "Ingresos"
+                              : row.type === "expense"
+                                ? "Gastos"
+                                : "Ahorro";
+                          return (
+                            <>
+                              <select
+                                className="w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
+                                value={
+                                  isKnown
+                                    ? normalizeKey(row.category)
+                                    : NEW_CATEGORY_VALUE
+                                }
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  if (value === NEW_CATEGORY_VALUE) {
+                                    updateRow(index, { category: "" });
+                                    return;
+                                  }
+                                  const option = allowedOptions.find(
+                                    (o) => normalizeKey(o.label) === value,
+                                  );
+                                  if (option) {
+                                    updateRow(index, {
+                                      category: option.label,
+                                    });
+                                  }
+                                }}
+                              >
+                                <optgroup label={groupLabel}>
+                                  {allowedOptions.map((option) => (
+                                    <option
+                                      key={`${groupLabel}-${option.label}`}
+                                      value={normalizeKey(option.label)}
+                                    >
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                                <option value={NEW_CATEGORY_VALUE}>
+                                  ＋ Nueva categoría…
+                                </option>
+                              </select>
+                              {!isKnown && (
+                                <input
+                                  className="mt-1 w-full rounded-lg border border-line bg-surface p-2 text-[0.95rem] text-body"
+                                  type="text"
+                                  value={row.category}
+                                  onChange={(e) =>
+                                    updateRow(index, {
+                                      category: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Escribe el nombre de la nueva categoría"
+                                />
+                              )}
+                            </>
+                          );
+                        })()}
                       </td>
                       <td className={`${td} align-top`}>
                         <textarea

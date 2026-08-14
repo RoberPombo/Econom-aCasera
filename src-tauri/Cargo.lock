@@ -1048,6 +1048,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
+name = "economia_casera"
+version = "1.0.0"
+dependencies = [
+ "calamine",
+ "dirs",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tauri-plugin-sql",
+ "tauri-plugin-updater",
+]
+
+[[package]]
 name = "either"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4400,22 +4415,7 @@ checksum = "61c41af27dd6d1e27b1b16b489db798443478cef1f06a660c96db617ba5de3b1"
 
 [[package]]
 name = "tauri"
-version = "1.0.0"
-dependencies = [
- "calamine",
- "dirs",
- "serde",
- "serde_json",
- "tauri 2.11.5",
- "tauri-build",
- "tauri-plugin-opener",
- "tauri-plugin-sql",
- "tauri-plugin-updater",
-]
-
-[[package]]
-name = "tauri"
-version = "1.0.0"
+version = "2.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "667b20e2726d572dea2de7370da16e188eb06008faf9a92fab7cdc46791190b5"
 dependencies = [
@@ -4556,7 +4556,7 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "tauri 2.11.5",
+ "tauri",
  "tauri-plugin",
  "thiserror 2.0.19",
  "url",
@@ -4577,7 +4577,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
- "tauri 2.11.5",
+ "tauri",
  "tauri-plugin",
  "thiserror 2.0.19",
  "time",
@@ -4607,7 +4607,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tar",
- "tauri 2.11.5",
+ "tauri",
  "tauri-plugin",
  "tempfile",
  "thiserror 2.0.19",

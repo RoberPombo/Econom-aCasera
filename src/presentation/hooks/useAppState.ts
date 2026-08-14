@@ -16,6 +16,7 @@ import type {
 import { TransactionFilters } from "../../domain/entities";
 import type { ImportSource } from "../../domain/entities/ImportSource";
 import type { ImportCategoryOption } from "../../domain/repositories/ImportRepository";
+import type { SummaryResult } from "../../domain/repositories/TransactionRepository";
 import type { UpdateInfo } from "../../domain/repositories/UpdateRepository";
 import { useAppContext } from "../context/useAppContext";
 
@@ -43,6 +44,7 @@ export function useAppState() {
   const [categorySummary, setCategorySummary] = useState<CategorySummary[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MonthlySummary[]>([]);
   const [annualSummary, setAnnualSummary] = useState<AnnualSummary[]>([]);
+  const [report, setReport] = useState<SummaryResult | null>(null);
   const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
   const [persons, setPersons] = useState<Person[]>([]);
   const [showConflict, setShowConflict] = useState(false);
@@ -129,6 +131,17 @@ export function useAppState() {
       setLoading(false);
     }
   }, [compositionRoot, filters]);
+
+  const loadYearReport = useCallback(
+    async (year: number) => {
+      setReport(null);
+      const result = await compositionRoot
+        .provideGetSummaryUseCase()
+        .executeByYearAndMonth(year);
+      setReport(result);
+    },
+    [compositionRoot],
+  );
 
   useEffect(() => {
     loadSettings();
@@ -381,6 +394,7 @@ export function useAppState() {
     categorySummary,
     monthlySummary,
     annualSummary,
+    report,
     dbInfo,
     persons,
     showConflict,
@@ -412,6 +426,7 @@ export function useAppState() {
     previewImport,
     confirmImport,
     addImportCategories,
+    loadYearReport,
     reloadDatabase,
     forceOverwrite,
     closeConflict: () => setShowConflict(false),

@@ -5,6 +5,7 @@ import type {
   Transaction,
   TransactionType,
 } from "../../domain/entities";
+import { isSafeImageSrc } from "../imageSrc";
 import {
   btn,
   btnGhost,
@@ -122,6 +123,8 @@ export function TransactionForm({
   const previewSrc =
     receipt?.previewUrl ??
     (!removeReceipt ? (existingReceiptUrl ?? null) : null);
+  const safePreviewSrc =
+    previewSrc && isSafeImageSrc(previewSrc) ? previewSrc : null;
 
   async function applyImageFile(file: File) {
     setReceiptError(null);
@@ -341,9 +344,9 @@ export function TransactionForm({
                 }}
               />
             </div>
-            {previewSrc && (
+            {safePreviewSrc && (
               <img
-                src={previewSrc}
+                src={safePreviewSrc}
                 alt="Vista previa del ticket"
                 className={receiptPreview}
               />
