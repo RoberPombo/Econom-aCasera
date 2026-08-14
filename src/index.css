@@ -23,6 +23,11 @@
   .shadow-card {
     box-shadow: var(--shadow);
   }
+
+  .print-color-exact {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
 
 :root {
@@ -133,5 +138,50 @@
 
   p {
     @apply my-4;
+  }
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #374151;
+    --income: #059669;
+    --expense: #dc2626;
+    --primary: #2563eb;
+    --border: #d1d5db;
+    --balance-positive: #0284c7;
+    --balance-negative: #c2410c;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .fixed.inset-0 {
+    background: transparent;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .print-area :is(input, select, textarea) {
+    border: none;
   }
 }

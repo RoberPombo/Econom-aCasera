@@ -116,8 +116,19 @@ export class InMemoryTransactionRepository implements TransactionRepository {
   }
 
   async getSummary(year: number, month?: number): Promise<SummaryResult> {
+    if (month === undefined) {
+      return this.getSummaryFiltered(
+        TransactionFilters.create({
+          period: {
+            mode: "range",
+            from: `${year}-01-01`,
+            to: `${year}-12-31`,
+          },
+        }),
+      );
+    }
     return this.getSummaryFiltered(
-      TransactionFilters.defaultMonth(year, month ?? 1),
+      TransactionFilters.defaultMonth(year, month),
     );
   }
 
@@ -131,15 +142,55 @@ export class InMemoryTransactionRepository implements TransactionRepository {
     const expense = txs
       .filter((t) => t.type === "expense")
       .reduce((s, t) => s + t.amount, 0);
+
+    const byCategory = new Map<string, { type: string; amount: number }>();
+    const byMonth = new Map<number, { income: number; expense: number }>();
+    const byYear = new Map<number, { income: number; expense: number }>();
+    for (const t of txs) {
+      if (t.type === "income" || t.type === "expense") {
+        const cat = byCategory.get(t.category) ?? {
+          type: t.type,
+          amount: 0,
+        };
+        byCategory.set(t.category, { ...cat, amount: cat.amount + t.amount });
+
+        const month = byMonth.get(t.month) ?? { income: 0, expense: 0 };
+        byMonth.set(t.month, {
+          ...month,
+          [t.type]: month[t.type] + t.amount,
+        });
+
+        const year = byYear.get(t.year) ?? { income: 0, expense: 0 };
+        byYear.set(t.year, {
+          ...year,
+          [t.type]: year[t.type] + t.amount,
+        });
+      }
+    }
+
     return {
       summary: {
         income: Math.round(income * 100) / 100,
         expense: Math.round(expense * 100) / 100,
         balance: Math.round((income - expense) * 100) / 100,
       },
-      categories: [],
-      monthly: [],
-      annual: [],
+      categories: Array.from(byCategory.entries()).map(([category, c]) => ({
+        category,
+        type: c.type as "income" | "expense",
+        amount: Math.round(c.amount * 100) / 100,
+      })),
+      monthly: Array.from(byMonth.entries()).map(([month, m]) => ({
+        month,
+        income: Math.round(m.income * 100) / 100,
+        expense: Math.round(m.expense * 100) / 100,
+        balance: Math.round((m.income - m.expense) * 100) / 100,
+      })),
+      annual: Array.from(byYear.entries()).map(([year, y]) => ({
+        year,
+        income: Math.round(y.income * 100) / 100,
+        expense: Math.round(y.expense * 100) / 100,
+        balance: Math.round((y.income - y.expense) * 100) / 100,
+      })),
     };
   }
 }
