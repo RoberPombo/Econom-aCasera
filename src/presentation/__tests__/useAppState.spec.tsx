@@ -668,6 +668,9 @@ describe("useAppState", () => {
     });
     const previousReport = result.current.report;
     expect(previousReport).not.toBeNull();
+    if (previousReport === null) {
+      throw new Error("Expected a loaded report before switching years");
+    }
 
     let resolveSummary!: (value: SummaryResult) => void;
     const pending = new Promise<SummaryResult>((resolve) => {
