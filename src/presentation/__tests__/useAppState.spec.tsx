@@ -7,6 +7,7 @@ import {
   Transaction,
   TransactionFilters,
 } from "../../domain/entities";
+import type { SummaryResult } from "../../domain/repositories/TransactionRepository";
 import { FakeCompositionRoot } from "../../tests/fakes/compositionRoot";
 import { defaultSettings } from "../../tests/fakes/repositories";
 import { AppProvider } from "../context/AppProvider";
@@ -654,6 +655,44 @@ describe("useAppState", () => {
     expect(root.imports.addCategoriesCalls).toEqual([
       [{ label: "Nóminas", type: "income" }],
     ]);
+  });
+
+  test("clears the report while a new year is loading", async () => {
+    const { result, root } = renderState({
+      transactions: [expense(1, "2026-08-05", "comida", 40)],
+    });
+    await settle();
+
+    await act(async () => {
+      await result.current.loadYearReport(2026);
+    });
+    const previousReport = result.current.report;
+    expect(previousReport).not.toBeNull();
+    if (previousReport === null) {
+      throw new Error("Expected a loaded report before switching years");
+    }
+
+    let resolveSummary!: (value: SummaryResult) => void;
+    const pending = new Promise<SummaryResult>((resolve) => {
+      resolveSummary = resolve;
+    });
+    root.transactions.getSummary = vi.fn().mockReturnValue(pending);
+
+    let loading: Promise<void>;
+    act(() => {
+      loading = result.current.loadYearReport(2027);
+    });
+    expect(result.current.report).toBeNull();
+    expect(root.transactions.getSummary).toHaveBeenLastCalledWith(
+      2027,
+      undefined,
+    );
+
+    await act(async () => {
+      resolveSummary(previousReport);
+      await loading;
+    });
+    expect(result.current.report).toEqual(previousReport);
   });
 
   test("closeConflict hides the conflict dialog", async () => {
