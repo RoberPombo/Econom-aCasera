@@ -134,6 +134,7 @@ export function useAppState() {
 
   const loadYearReport = useCallback(
     async (year: number) => {
+      setReport(null);
       const result = await compositionRoot
         .provideGetSummaryUseCase()
         .executeByYearAndMonth(year);
