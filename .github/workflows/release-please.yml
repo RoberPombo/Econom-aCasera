@@ -20,6 +20,6 @@ jobs:
       - name: Release Please
         uses: googleapis/release-please-action@d1a8f221d7723166f48a584aebba00ef3f6febec # v4.1.4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
