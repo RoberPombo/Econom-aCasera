@@ -18,6 +18,13 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
+      # tauri-action's "find or create draft release" step is not safe for
+      # concurrent runners: when multiple platforms race to create/find the
+      # same draft release for a fresh tag, GitHub can end up with two
+      # separate draft release objects sharing the same tag, and only one of
+      # them gets attached/published, silently dropping the other
+      # platforms' binaries. Building sequentially avoids that race.
+      max-parallel: 1
       matrix:
         include:
           - platform: ubuntu-latest
@@ -74,6 +81,17 @@ jobs:
     needs: build-and-attach
     runs-on: ubuntu-latest
     steps:
+      - name: Fail if duplicate draft releases exist for this tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          count=$(gh api "repos/${{ github.repository }}/releases" \
+            --jq "[.[] | select(.tag_name == \"${{ github.ref_name }}\")] | length")
+          if [ "$count" -ne 1 ]; then
+            echo "::error::Expected exactly 1 release for tag ${{ github.ref_name }}, found $count. This usually means tauri-action created duplicate draft releases due to concurrent matrix jobs; merge them manually before publishing."
+            exit 1
+          fi
+
       - name: Publish the draft release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
