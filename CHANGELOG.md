@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.1.0](https://github.com/RoberPombo/Econom-aCasera/compare/v1.0.0...v1.1.0) (2026-08-14)
+
+
+### Features
+
+* resumen anual imprimible y selector de categorías condicionado al tipo en la importación ([#40](https://github.com/RoberPombo/Econom-aCasera/issues/40)) ([fca756b](https://github.com/RoberPombo/Econom-aCasera/commit/fca756bc184c6667e476d2feca7f0ac1da80468e))
+
+
+### Bug Fixes
+
+* blindar sanitización de tickets y resetear resumen al cambiar de año ([#42](https://github.com/RoberPombo/Econom-aCasera/issues/42)) ([646f9c5](https://github.com/RoberPombo/Econom-aCasera/commit/646f9c58764ccf2084bd2e7751adca3f0268f425))
+* rename tauri package to silence Dependabot false positives ([0cd2fee](https://github.com/RoberPombo/Econom-aCasera/commit/0cd2fee66463c3cd267394013a7d2b958e7d2d4a))
+* sanitize receipt image sources for CodeQL ([9d5821e](https://github.com/RoberPombo/Econom-aCasera/commit/9d5821e31a3326bf171c6d9296cb66808a0e57b0))
+
+
+### Documentation
+
+* **stpr:** add STPR method workflow artifacts ([#35](https://github.com/RoberPombo/Econom-aCasera/issues/35)) ([d2ce409](https://github.com/RoberPombo/Econom-aCasera/commit/d2ce4093632ac69eb859444e57999edb39b66ec2))
+
+
+### Continuous Integration
+
+* auto-open sync PR from main into develop after release ([#36](https://github.com/RoberPombo/Econom-aCasera/issues/36)) ([cf2c476](https://github.com/RoberPombo/Econom-aCasera/commit/cf2c47622b11bcbe2fec03428124d43197cb1765))
+
+
+### Chores
+
+* sync main into develop after release v1.0.0 ([c7bee95](https://github.com/RoberPombo/Econom-aCasera/commit/c7bee957ee24696e1188247295ab732d24db3690))
+* sync main into develop after release v1.0.0 ([f6a4886](https://github.com/RoberPombo/Econom-aCasera/commit/f6a4886e13d3cf4ac314d6ed4e9ad4ffa640db75))
+
 ## [1.0.0](https://github.com/RoberPombo/Econom-aCasera/compare/v0.1.0...v1.0.0) (2026-08-09)
 
 
