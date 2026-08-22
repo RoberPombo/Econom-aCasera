@@ -1,6 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  type Mock,
+  test,
+  vi,
+} from "vitest";
 import { Category, Person, Transaction } from "../../domain/entities";
 import {
   TransactionForm,
@@ -42,8 +50,6 @@ function renderForm(
       initialValue={overrides.initialValue}
       categories={categories}
       persons={persons}
-      year={2026}
-      month={8}
       existingReceiptUrl={overrides.existingReceiptUrl ?? null}
     />,
   );
@@ -52,16 +58,22 @@ function renderForm(
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 7, 15, 10, 0, 0));
   vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock-url");
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("TransactionForm", () => {
-  test("renders a new expense with the default date and filtered options", () => {
+  test("renders a new expense with today's date and filtered options", () => {
     renderForm();
 
     expect(screen.getByLabelText("Tipo")).toHaveValue("expense");
-    expect(screen.getByLabelText("Fecha")).toHaveValue("2026-08-01");
+    expect(screen.getByLabelText("Fecha")).toHaveValue("2026-08-15");
     expect(
       screen.getByText(
         "Arrastra una imagen, pégala (Ctrl+V) o elige un archivo",
@@ -90,7 +102,7 @@ describe("TransactionForm", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const data = onSubmit.mock.calls[0][0];
     expect(data).toMatchObject({
-      date: "2026-08-01",
+      date: "2026-08-15",
       type: "expense",
       category: "comida",
       concept: "Mercadona",

@@ -18,7 +18,7 @@ async function initDatabase(db: DbClient): Promise<void> {
     CREATE TABLE IF NOT EXISTS settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       current_year INTEGER NOT NULL DEFAULT ${new Date().getFullYear()},
-      current_month INTEGER NOT NULL DEFAULT 1,
+      current_month INTEGER NOT NULL DEFAULT ${new Date().getMonth() + 1},
       view_mode TEXT NOT NULL DEFAULT 'monthly',
       theme TEXT NOT NULL DEFAULT 'system'
     )
@@ -26,8 +26,16 @@ async function initDatabase(db: DbClient): Promise<void> {
 
   await db.execute(`
     INSERT OR IGNORE INTO settings (id, current_year, current_month, view_mode, theme)
-    VALUES (1, ${new Date().getFullYear()}, 1, 'monthly', 'system')
+    VALUES (1, ${new Date().getFullYear()}, ${new Date().getMonth() + 1}, 'monthly', 'system')
   `);
+
+  // Always land on the real current month/year when the app starts, even if
+  // a previous session left the view on a different period (e.g. the user
+  // closed the app in one month and reopened it in the next one).
+  await db.execute(
+    `UPDATE settings SET current_year = ?, current_month = ? WHERE id = 1`,
+    [new Date().getFullYear(), new Date().getMonth() + 1],
+  );
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS categories (
