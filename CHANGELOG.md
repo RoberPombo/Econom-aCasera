@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.1...v1.1.2) (2026-08-22)
+
+
+### Chores
+
+* sync release-please manifest with recreated v1.1.1 release ([#67](https://github.com/RoberPombo/Econom-aCasera/issues/67)) ([77d5106](https://github.com/RoberPombo/Econom-aCasera/commit/77d510607be2be6e630e2141f53fdfe3e8c41f3e))
+
 ## [1.1.0](https://github.com/RoberPombo/Econom-aCasera/compare/v1.0.0...v1.1.0) (2026-08-14)
 
 
