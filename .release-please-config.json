@@ -7,6 +7,14 @@
       "package-name": "economia-casera",
       "include-component-in-tag": false,
       "include-v-in-tag": true,
+      "extra-files": [
+        "src-tauri/tauri.conf.json",
+        {
+          "type": "toml",
+          "path": "src-tauri/Cargo.toml",
+          "jsonpath": "$.package.version"
+        }
+      ],
       "changelog-sections": [
         { "type": "feat", "section": "Features" },
         { "type": "fix", "section": "Bug Fixes" },
@@ -19,15 +27,6 @@
         { "type": "ci", "section": "Continuous Integration" },
         { "type": "chore", "section": "Chores" },
         { "type": "revert", "section": "Reverts" }
-      ]
-    },
-    "src-tauri": {
-      "release-type": "rust",
-      "package-name": "economiacasera-tauri",
-      "include-component-in-tag": false,
-      "include-v-in-tag": true,
-      "extra-files": [
-        "tauri.conf.json"
       ]
     }
   }
