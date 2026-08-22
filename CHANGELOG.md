@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.3](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.2...v1.1.3) (2026-08-22)
+
+
+### Bug Fixes
+
+* avoid duplicate draft releases from concurrent tauri-action matrix jobs ([93517a1](https://github.com/RoberPombo/Econom-aCasera/commit/93517a17bd327117d1acacae07ae5206066783f2))
+* unify app and Tauri crate under a single tracked version ([#74](https://github.com/RoberPombo/Econom-aCasera/issues/74)) ([3cc8d06](https://github.com/RoberPombo/Econom-aCasera/commit/3cc8d06d8a394bfcaab3ced341818c6c6aa56ea0))
+
+
+### Chores
+
+* promote develop to main ([acbf8a3](https://github.com/RoberPombo/Econom-aCasera/commit/acbf8a371f5e662c5f632950e6b7aaad15a08d00))
+* release main ([#69](https://github.com/RoberPombo/Econom-aCasera/issues/69)) ([de1ab01](https://github.com/RoberPombo/Econom-aCasera/commit/de1ab013c4d7c942c899e04a74b590f00d9196fe))
+* sync main into develop (version unification) ([46ec4e8](https://github.com/RoberPombo/Econom-aCasera/commit/46ec4e8c6fcba96fec8aedee1b459323a1b71da9))
+* sync release-please manifest with recreated v1.1.1 release ([34976c5](https://github.com/RoberPombo/Econom-aCasera/commit/34976c5ab84bcc46aac838dd7d617a3468a1f104))
+
 ## [1.1.2](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.1...v1.1.2) (2026-08-22)
 
 
