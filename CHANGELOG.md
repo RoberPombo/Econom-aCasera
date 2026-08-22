@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.4](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.3...v1.1.4) (2026-08-22)
+
+
+### Chores
+
+* promote develop to main ([dff4b36](https://github.com/RoberPombo/Econom-aCasera/commit/dff4b36160b140a642d0b2b277ac63e96fa6b0c1))
+* sync main into develop after release ([23e16a4](https://github.com/RoberPombo/Econom-aCasera/commit/23e16a4b2869787978dbf8cec49773631bf1c941))
+* trim Tauri bundle targets to one installer per platform ([52049b8](https://github.com/RoberPombo/Econom-aCasera/commit/52049b8323e59fa1f9bc77ac7cf270414397f4b8))
+
 ## [1.1.3](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.2...v1.1.3) (2026-08-22)
 
 
