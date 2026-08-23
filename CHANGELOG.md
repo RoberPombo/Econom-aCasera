@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.5](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.4...v1.1.5) (2026-08-23)
+
+
+### Continuous Integration
+
+* bump actions/setup-node and pnpm/action-setup to silence Node 20 deprecation warning ([0afd52e](https://github.com/RoberPombo/Econom-aCasera/commit/0afd52eedd3a4134104accab4d36e955b7570b64))
+
+
+### Chores
+
+* promote develop to main ([9aaf0ae](https://github.com/RoberPombo/Econom-aCasera/commit/9aaf0aea7483a634c2c2daebebb0405abe9d26c6))
+* sync main into develop after release ([61c28eb](https://github.com/RoberPombo/Econom-aCasera/commit/61c28eb31378caef7a1361bf6a1efb41fe3375f0))
+
 ## [1.1.4](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.3...v1.1.4) (2026-08-22)
 
 
