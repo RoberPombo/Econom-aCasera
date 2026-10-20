@@ -1,5 +1,67 @@
 # Changelog
 
+## [1.1.4](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.3...v1.1.4) (2026-08-22)
+
+
+### Chores
+
+* promote develop to main ([dff4b36](https://github.com/RoberPombo/Econom-aCasera/commit/dff4b36160b140a642d0b2b277ac63e96fa6b0c1))
+* sync main into develop after release ([23e16a4](https://github.com/RoberPombo/Econom-aCasera/commit/23e16a4b2869787978dbf8cec49773631bf1c941))
+* trim Tauri bundle targets to one installer per platform ([52049b8](https://github.com/RoberPombo/Econom-aCasera/commit/52049b8323e59fa1f9bc77ac7cf270414397f4b8))
+
+## [1.1.3](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.2...v1.1.3) (2026-08-22)
+
+
+### Bug Fixes
+
+* avoid duplicate draft releases from concurrent tauri-action matrix jobs ([93517a1](https://github.com/RoberPombo/Econom-aCasera/commit/93517a17bd327117d1acacae07ae5206066783f2))
+* unify app and Tauri crate under a single tracked version ([#74](https://github.com/RoberPombo/Econom-aCasera/issues/74)) ([3cc8d06](https://github.com/RoberPombo/Econom-aCasera/commit/3cc8d06d8a394bfcaab3ced341818c6c6aa56ea0))
+
+
+### Chores
+
+* promote develop to main ([acbf8a3](https://github.com/RoberPombo/Econom-aCasera/commit/acbf8a371f5e662c5f632950e6b7aaad15a08d00))
+* release main ([#69](https://github.com/RoberPombo/Econom-aCasera/issues/69)) ([de1ab01](https://github.com/RoberPombo/Econom-aCasera/commit/de1ab013c4d7c942c899e04a74b590f00d9196fe))
+* sync main into develop (version unification) ([46ec4e8](https://github.com/RoberPombo/Econom-aCasera/commit/46ec4e8c6fcba96fec8aedee1b459323a1b71da9))
+* sync release-please manifest with recreated v1.1.1 release ([34976c5](https://github.com/RoberPombo/Econom-aCasera/commit/34976c5ab84bcc46aac838dd7d617a3468a1f104))
+
+## [1.1.2](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.1...v1.1.2) (2026-08-22)
+
+
+### Chores
+
+* sync release-please manifest with recreated v1.1.1 release ([#67](https://github.com/RoberPombo/Econom-aCasera/issues/67)) ([77d5106](https://github.com/RoberPombo/Econom-aCasera/commit/77d510607be2be6e630e2141f53fdfe3e8c41f3e))
+
+## [1.1.0](https://github.com/RoberPombo/Econom-aCasera/compare/v1.0.0...v1.1.0) (2026-08-14)
+
+
+### Features
+
+* resumen anual imprimible y selector de categorías condicionado al tipo en la importación ([#40](https://github.com/RoberPombo/Econom-aCasera/issues/40)) ([fca756b](https://github.com/RoberPombo/Econom-aCasera/commit/fca756bc184c6667e476d2feca7f0ac1da80468e))
+
+
+### Bug Fixes
+
+* blindar sanitización de tickets y resetear resumen al cambiar de año ([#42](https://github.com/RoberPombo/Econom-aCasera/issues/42)) ([646f9c5](https://github.com/RoberPombo/Econom-aCasera/commit/646f9c58764ccf2084bd2e7751adca3f0268f425))
+* rename tauri package to silence Dependabot false positives ([0cd2fee](https://github.com/RoberPombo/Econom-aCasera/commit/0cd2fee66463c3cd267394013a7d2b958e7d2d4a))
+* sanitize receipt image sources for CodeQL ([9d5821e](https://github.com/RoberPombo/Econom-aCasera/commit/9d5821e31a3326bf171c6d9296cb66808a0e57b0))
+
+
+### Documentation
+
+* **stpr:** add STPR method workflow artifacts ([#35](https://github.com/RoberPombo/Econom-aCasera/issues/35)) ([d2ce409](https://github.com/RoberPombo/Econom-aCasera/commit/d2ce4093632ac69eb859444e57999edb39b66ec2))
+
+
+### Continuous Integration
+
+* auto-open sync PR from main into develop after release ([#36](https://github.com/RoberPombo/Econom-aCasera/issues/36)) ([cf2c476](https://github.com/RoberPombo/Econom-aCasera/commit/cf2c47622b11bcbe2fec03428124d43197cb1765))
+
+
+### Chores
+
+* sync main into develop after release v1.0.0 ([c7bee95](https://github.com/RoberPombo/Econom-aCasera/commit/c7bee957ee24696e1188247295ab732d24db3690))
+* sync main into develop after release v1.0.0 ([f6a4886](https://github.com/RoberPombo/Econom-aCasera/commit/f6a4886e13d3cf4ac314d6ed4e9ad4ffa640db75))
+
 ## [1.0.0](https://github.com/RoberPombo/Econom-aCasera/compare/v0.1.0...v1.0.0) (2026-08-09)
 
 

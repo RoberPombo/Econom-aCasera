@@ -133,6 +133,8 @@ describe("App", () => {
   });
 
   test("warns about a similar transaction and adds it as new", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 7, 1, 10, 0, 0));
     const user = userEvent.setup();
     const root = renderApp({
       settings: augustSettings,
@@ -163,9 +165,12 @@ describe("App", () => {
 
     expect(await screen.findByText("Cine")).toBeInTheDocument();
     expect(await augustCount(root)).toBe(2);
+    vi.useRealTimers();
   });
 
   test("updates the existing transaction from the similar dialog", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 7, 1, 10, 0, 0));
     const user = userEvent.setup();
     const root = renderApp({
       settings: augustSettings,
@@ -195,6 +200,7 @@ describe("App", () => {
       TransactionFilters.defaultMonth(2026, 8),
     );
     expect(txs[0].concept).toBe("Cine");
+    vi.useRealTimers();
   });
 
   test("edits an existing transaction", async () => {
@@ -438,6 +444,8 @@ describe("App", () => {
   });
 
   test("cancels the similar transaction dialog", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 7, 1, 10, 0, 0));
     const user = userEvent.setup();
     const root = renderApp({
       settings: augustSettings,
@@ -474,6 +482,7 @@ describe("App", () => {
       screen.queryByRole("heading", { name: "Movimiento similar encontrado" }),
     ).not.toBeInTheDocument();
     expect(await augustCount(root)).toBe(1);
+    vi.useRealTimers();
   });
 
   test("loads the receipt of the transaction being edited", async () => {

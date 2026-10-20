@@ -47,12 +47,12 @@ interface Props {
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_BYTES = 10 * 1024 * 1024;
 
-function getTodayDate(): string {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function todayIsoDate(): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function extensionFromFile(file: File): string {
@@ -76,7 +76,7 @@ export function TransactionForm({
   const [form, setForm] = useState<
     Omit<TransactionFormData, "receipt" | "removeReceipt">
   >({
-    date: getTodayDate(),
+    date: todayIsoDate(),
     type: "expense",
     category: "",
     concept: "",
@@ -100,7 +100,7 @@ export function TransactionForm({
       });
     } else {
       setForm({
-        date: getTodayDate(),
+        date: todayIsoDate(),
         type: "expense",
         category: "",
         concept: "",

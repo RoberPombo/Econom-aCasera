@@ -1,14 +1,15 @@
 name: Release Binaries
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*.*.*"
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-binaries
+  group: release-binaries-${{ github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -17,6 +18,13 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
+      # tauri-action's "find or create draft release" step is not safe for
+      # concurrent runners: when multiple platforms race to create/find the
+      # same draft release for a fresh tag, GitHub can end up with two
+      # separate draft release objects sharing the same tag, and only one of
+      # them gets attached/published, silently dropping the other
+      # platforms' binaries. Building sequentially avoids that race.
+      max-parallel: 1
       matrix:
         include:
           - platform: ubuntu-latest
@@ -28,17 +36,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.19.0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@c336a2788d9774dccfdeb4823a5058ccc9f07453 # v4.3.0
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         with:
           version: 11.20.0
 
@@ -57,13 +65,37 @@ jobs:
         run: pnpm install
 
       - name: Build and upload Tauri bundles
-        uses: tauri-apps/tauri-action@f650639e43adf15f35dd1023d248b3ecc3568b64 # v0.6.1
+        uses: tauri-apps/tauri-action@73fb865345c54760d875b94642314f8c0c894afa # v0.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.event.release.tag_name }}
-          releaseName: ${{ github.event.release.name }}
-          releaseBody: ${{ github.event.release.body }}
+          tagName: ${{ github.ref_name }}
+          releaseName: ${{ github.ref_name }}
+          releaseDraft: true
+          prerelease: false
           args: ${{ matrix.args }}
+
+  publish-release:
+    needs: build-and-attach
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if duplicate draft releases exist for this tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          count=$(gh api "repos/${{ github.repository }}/releases" \
+            --jq "[.[] | select(.tag_name == \"${{ github.ref_name }}\")] | length")
+          if [ "$count" -ne 1 ]; then
+            echo "::error::Expected exactly 1 release for tag ${{ github.ref_name }}, found $count. This usually means tauri-action created duplicate draft releases due to concurrent matrix jobs; merge them manually before publishing."
+            exit 1
+          fi
+
+      - name: Publish the draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --draft=false

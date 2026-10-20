@@ -63,6 +63,8 @@ function renderForm(
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 7, 15, 10, 0, 0));
   vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock-url");
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
 });
@@ -73,12 +75,10 @@ afterEach(() => {
 
 describe("TransactionForm", () => {
   test("defaults a new expense to today's date and filters options", () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date(2026, 7, 21, 12));
     renderForm();
 
     expect(screen.getByLabelText("Tipo")).toHaveValue("expense");
-    expect(screen.getByLabelText("Fecha")).toHaveValue("2026-08-21");
+    expect(screen.getByLabelText("Fecha")).toHaveValue("2026-08-15");
     expect(
       screen.getByText(
         "Arrastra una imagen, pégala (Ctrl+V) o elige un archivo",
