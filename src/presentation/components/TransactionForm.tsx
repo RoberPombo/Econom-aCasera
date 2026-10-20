@@ -41,13 +41,19 @@ interface Props {
   initialValue?: Transaction;
   categories: Category[];
   persons: Person[];
-  year: number;
-  month: number;
   existingReceiptUrl?: string | null;
 }
 
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_BYTES = 10 * 1024 * 1024;
+
+function getTodayDate(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function extensionFromFile(file: File): string {
   const nameExt = file.name.split(".").pop()?.toLowerCase();
@@ -64,15 +70,13 @@ export function TransactionForm({
   initialValue,
   categories,
   persons,
-  year,
-  month,
   existingReceiptUrl,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<
     Omit<TransactionFormData, "receipt" | "removeReceipt">
   >({
-    date: `${year}-${String(month).padStart(2, "0")}-01`,
+    date: getTodayDate(),
     type: "expense",
     category: "",
     concept: "",
@@ -96,7 +100,7 @@ export function TransactionForm({
       });
     } else {
       setForm({
-        date: `${year}-${String(month).padStart(2, "0")}-01`,
+        date: getTodayDate(),
         type: "expense",
         category: "",
         concept: "",
@@ -107,7 +111,7 @@ export function TransactionForm({
     setReceipt(null);
     setRemoveReceipt(false);
     setReceiptError(null);
-  }, [initialValue, year, month]);
+  }, [initialValue]);
 
   useEffect(() => {
     return () => {

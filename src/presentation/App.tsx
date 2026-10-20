@@ -192,8 +192,6 @@ function App() {
   );
 
   const currentYear = state.settings?.currentYear ?? new Date().getFullYear();
-  const currentMonth =
-    state.settings?.currentMonth ?? new Date().getMonth() + 1;
   const filters = state.filters;
 
   function toSavePayload(data: TransactionFormData) {
@@ -473,8 +471,6 @@ function App() {
             initialValue={editingTx ?? undefined}
             categories={state.categories}
             persons={state.persons}
-            year={currentYear}
-            month={currentMonth}
             existingReceiptUrl={editingReceiptUrl}
           />
         </Modal>

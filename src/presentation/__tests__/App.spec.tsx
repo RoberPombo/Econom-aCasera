@@ -113,6 +113,9 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
     const dialog = modalPanel("Añadir movimiento");
+    fireEvent.change(within(dialog).getByLabelText("Fecha"), {
+      target: { value: "2026-08-15" },
+    });
 
     await user.selectOptions(
       within(dialog).getByLabelText("Categoría"),
@@ -141,6 +144,9 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
     const dialog = modalPanel("Añadir movimiento");
+    fireEvent.change(within(dialog).getByLabelText("Fecha"), {
+      target: { value: "2026-08-01" },
+    });
     await user.selectOptions(
       within(dialog).getByLabelText("Categoría"),
       "comida",
@@ -171,6 +177,9 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
     const dialog = modalPanel("Añadir movimiento");
+    fireEvent.change(within(dialog).getByLabelText("Fecha"), {
+      target: { value: "2026-08-01" },
+    });
     await user.selectOptions(
       within(dialog).getByLabelText("Categoría"),
       "comida",
@@ -440,6 +449,9 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
     const dialog = modalPanel("Añadir movimiento");
+    fireEvent.change(within(dialog).getByLabelText("Fecha"), {
+      target: { value: "2026-08-01" },
+    });
     await user.selectOptions(
       within(dialog).getByLabelText("Categoría"),
       "comida",
@@ -609,6 +621,9 @@ describe("App", () => {
 
     await user.click(screen.getByRole("button", { name: "Añadir movimiento" }));
     const dialog = modalPanel("Añadir movimiento");
+    fireEvent.change(within(dialog).getByLabelText("Fecha"), {
+      target: { value: "2026-08-15" },
+    });
     await user.upload(
       within(dialog).getByLabelText("Ticket"),
       new File(["x"], "ticket.png", { type: "image/png" }),

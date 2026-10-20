@@ -54,8 +54,10 @@ export class Transaction extends Entity {
     }
 
     Amount.create(data.amount);
-    const year = data.year ?? date.getFullYear();
-    const month = data.month ?? date.getMonth() + 1;
+    const isoDateParts = /^(\d{4})-(\d{2})-\d{2}$/.exec(data.date);
+    const year = data.year ?? Number(isoDateParts?.[1] ?? date.getFullYear());
+    const month =
+      data.month ?? Number(isoDateParts?.[2] ?? date.getMonth() + 1);
     const receiptPath = data.receiptPath?.trim() || null;
 
     if (data.type !== "expense" && receiptPath) {
@@ -72,6 +74,8 @@ export class Transaction extends Entity {
 
   withUpdates(data: Partial<TransactionData>): Transaction {
     const type = data.type ?? this.type;
+    const date = data.date ?? this.date;
+    const dateChanged = date !== this.date;
     const receiptPath =
       type === "expense"
         ? data.receiptPath === undefined
@@ -81,13 +85,13 @@ export class Transaction extends Entity {
 
     return Transaction.create({
       id: data.id ?? (typeof this.id === "number" ? this.id : undefined),
-      date: data.date ?? this.date,
+      date,
       type,
       category: data.category ?? this.category,
       concept: data.concept ?? this.concept,
       amount: data.amount ?? this.amount,
-      year: data.year ?? this.year,
-      month: data.month ?? this.month,
+      year: data.year ?? (dateChanged ? undefined : this.year),
+      month: data.month ?? (dateChanged ? undefined : this.month),
       person: data.person ?? this.person,
       receiptPath,
     });
