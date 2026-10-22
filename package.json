@@ -18,32 +18,32 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@tauri-apps/api": "2.11.1",
-    "@tauri-apps/plugin-opener": "2.5.4",
-    "@tauri-apps/plugin-sql": "2.4.0",
-    "@tauri-apps/plugin-updater": "2.10.1",
-    "react": "19.2.8",
+    "@tauri-apps/api": "2.12.4",
+    "@tauri-apps/plugin-opener": "2.7.2",
+    "@tauri-apps/plugin-sql": "2.6.0",
+    "@tauri-apps/plugin-updater": "2.14.0",
+    "react": "19.3.1",
     "react-datepicker": "9.1.0",
-    "react-dom": "19.2.8",
-    "read-excel-file": "9.3.10"
+    "react-dom": "19.3.1",
+    "read-excel-file": "9.3.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.8",
+    "@biomejs/biome": "^2.5.15",
     "@tailwindcss/vite": "4.3.3",
-    "@tauri-apps/cli": "2.11.4",
+    "@tauri-apps/cli": "2.12.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.4",
-    "@types/node": "26.2.0",
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.4",
-    "@vitejs/plugin-react": "6.0.5",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
     "@vitest/coverage-v8": "4.1.10",
     "husky": "^9.1.7",
     "jsdom": "30.0.1",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
-    "vite": "8.2.1",
-    "vitest": "4.1.10"
+    "vite": "8.3.4",
+    "vitest": "4.1.11"
   }
 }
