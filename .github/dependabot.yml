@@ -7,6 +7,10 @@ updates:
       day: monday
       time: "08:00"
     open-pull-requests-limit: 10
+    # Never open a PR for a version published less than 2 days ago, so a
+    # compromised or immediately yanked release does not reach the repo.
+    cooldown:
+      default-days: 2
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
@@ -26,6 +30,13 @@ updates:
           - "vitest"
           - "@vitest/*"
           - "jsdom"
+    # vitest 5 + jsdom break URL.createObjectURL in the test environment, so
+    # major bumps are upgraded by hand once the tests are adapted.
+    ignore:
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: cargo
     directory: "/src-tauri"
@@ -34,6 +45,10 @@ updates:
       day: monday
       time: "08:00"
     open-pull-requests-limit: 10
+    # Never open a PR for a version published less than 2 days ago, so a
+    # compromised or immediately yanked release does not reach the repo.
+    cooldown:
+      default-days: 2
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -47,5 +62,7 @@ updates:
       interval: weekly
       day: monday
       time: "08:00"
+    cooldown:
+      default-days: 2
     commit-message:
       prefix: "ci"
