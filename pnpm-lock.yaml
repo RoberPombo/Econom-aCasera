@@ -30,8 +30,8 @@ importers:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
       read-excel-file:
-        specifier: 9.3.10
-        version: 9.3.10
+        specifier: 9.3.20
+        version: 9.3.20
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.8
@@ -1049,6 +1049,9 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  graceful-fs@4.2.12:
+    resolution: {integrity: sha512-iuyGF2E4oafQfPsRrG2wtY2ILupMhvtdrhzrxB+0VcjsPpSPttpfYdjnGFGsTi5MaJFjI1jOKHPQ6UTbTj9TAw==}
+
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
@@ -1335,8 +1338,8 @@ packages:
     resolution: {integrity: sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==}
     engines: {node: '>=0.10.0'}
 
-  read-excel-file@9.3.10:
-    resolution: {integrity: sha512-zFcBdzunLCGBmLRT4Q3mLPJnhKPAXXfGAZ83feODlEqX2aRUbgF1h/n2oY0UF7I8tVwnJNRas6fTRD5veDUs+g==}
+  read-excel-file@9.3.20:
+    resolution: {integrity: sha512-vRWkVDwHBzlrc2ic4AdQq43fZLpm/7iAD0vW6Ejmkw66hW90BxZ7zXhLmGSOeNSGKDG6c8Wu9WVecJ1qcpM6XQ==}
     engines: {node: '>=18'}
 
   redent@3.0.0:
@@ -1352,8 +1355,8 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  saxen@11.1.1:
-    resolution: {integrity: sha512-J4BkmJFaM7VgE7pgkFGsNEcqqM3h7+Mz80vfLWFhx7uNOCOXIu6LLjQHYWNejdst3pf/3JUaBIG9+pkk1umlow==}
+  saxen@11.2.0:
+    resolution: {integrity: sha512-2bG564AAJcm/3vyZC0Uhs/mACrH+4AHMaKHKAB2M5xMqomUZa27FQ7MYaQGFKVcJk/MVzSEQ34A8QZWW+eiWEw==}
     engines: {node: '>= 20.12'}
 
   saxes@6.0.0:
@@ -1557,8 +1560,8 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
-  worker-f@0.1.20:
-    resolution: {integrity: sha512-7z5K5z4x++FykhpDTfriT/dOu7CmSap9BBv38DVFU3CD38obopq+DoFH75yBV3butpGm+OeqR9BKdSvYJSnUfQ==}
+  worker-f@0.1.25:
+    resolution: {integrity: sha512-H0JI9LVt7/5He3fR81CrPAOPqKcL/++Ah0C64C9/E9vyj2cLgUta7KT/fidjyGbKm5lqhESt+KCglLlcqNDW9Q==}
     engines: {node: '>=12'}
 
   xml-name-validator@5.0.0:
@@ -2266,6 +2269,8 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  graceful-fs@4.2.12: {}
+
   has-flag@4.0.0: {}
 
   html-encoding-sniffer@6.0.0:
@@ -2494,12 +2499,12 @@ snapshots:
 
   react@19.2.8: {}
 
-  read-excel-file@9.3.10:
+  read-excel-file@9.3.20:
     dependencies:
       fflate: 0.8.3
-      saxen: 11.1.1
+      saxen: 11.2.0
       unzipper-esm: 0.13.3
-      worker-f: 0.1.20
+      worker-f: 0.1.25
 
   redent@3.0.0:
     dependencies:
@@ -2528,7 +2533,7 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.2.4
       '@rolldown/binding-win32-x64-msvc': 1.2.4
 
-  saxen@11.1.1: {}
+  saxen@11.2.0: {}
 
   saxes@6.0.0:
     dependencies:
@@ -2616,7 +2621,7 @@ snapshots:
 
   unzipper-esm@0.13.3:
     dependencies:
-      graceful-fs: 4.2.11
+      graceful-fs: 4.2.12
       node-int64: 0.4.0
 
   vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0):
@@ -2690,7 +2695,7 @@ snapshots:
       siginfo: 2.0.0
       stackback: 0.0.2
 
-  worker-f@0.1.20: {}
+  worker-f@0.1.25: {}
 
   xml-name-validator@5.0.0: {}
 
