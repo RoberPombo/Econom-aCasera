@@ -7,10 +7,10 @@ updates:
       day: monday
       time: "08:00"
     open-pull-requests-limit: 10
-    # Never open a PR for a version published less than 2 days ago, so a
+    # Never open a PR for a version published less than 7 days ago, so a
     # compromised or immediately yanked release does not reach the repo.
     cooldown:
-      default-days: 2
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
@@ -45,10 +45,10 @@ updates:
       day: monday
       time: "08:00"
     open-pull-requests-limit: 10
-    # Never open a PR for a version published less than 2 days ago, so a
+    # Never open a PR for a version published less than 7 days ago, so a
     # compromised or immediately yanked release does not reach the repo.
     cooldown:
-      default-days: 2
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -63,6 +63,6 @@ updates:
       day: monday
       time: "08:00"
     cooldown:
-      default-days: 2
+      default-days: 7
     commit-message:
       prefix: "ci"
