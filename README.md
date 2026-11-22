@@ -215,7 +215,7 @@ La aplicación, al arrancar, consulta la última release pública de GitHub. Si 
 El repositorio incluye configuración para reducir riesgos:
 
 - **Rulesets de GitHub** (`Settings > Rules`): protección de `main` y `develop` (requiere PR, 1 review, status check `PR Checks`, sin force-push). Tras cada release, la sincronización `main -> develop` se integra con merge commit normal (nunca squash).
-- **Dependabot** (`.github/dependabot.yml`) para dependencias de npm, cargo y GitHub Actions.
+- **Dependabot** (`.github/dependabot.yml`) para dependencias de npm, cargo y GitHub Actions. Sus PRs apuntan a `develop`, como cualquier otro cambio.
 - **Code scanning**: GitHub *default setup* (Settings > Code security > Code scanning) escanea JS/TS, Rust y Actions semanalmente y en cada push a la rama por defecto. No usar el modo avanzado mientras el default setup esté activo (son incompatibles).
 - Los workflows usan `permissions` mínimas y `persist-credentials: false`; las actions están fijadas por SHA.
 - Los PRs de forks requieren aprobación del mantenedor y, una vez aprobados, ejecutan `PR Checks` con token de solo lectura, sin secretos y con las actions fijadas por SHA.
@@ -235,7 +235,7 @@ El repositorio incluye configuración para reducir riesgos:
    - **Allow GitHub Actions to create and approve pull requests**: desmarcado (`can_approve_pull_request_reviews=false`).
 
 3. **Settings > Environments**
-   - Crear el entorno `release` con una *deployment branch policy* de tipo *tag* y nombre `v*.*.*`. Los secretos de firma del updater viven en ese entorno, de modo que solo los jobs que corren sobre un tag de release pueden leerlos. El job `build-and-attach` declara `environment: release`; ningún otro workflow lo declara.
+   - Crear el entorno `release` con una *deployment branch policy* de tipo *tag* y nombre `v*.*.*`. Los secretos de firma del updater viven en ese entorno, de modo que solo los jobs que corren sobre un tag de release pueden leerlos. El job `build-and-attach` declara `environment: release`; ningún otro workflow lo declara. No añadir *required reviewers* al entorno: cada tag se quedaría esperando una aprobación manual y `Release Binaries` no llegaría a ejecutarse.
 
 4. **Settings > Secrets and variables > Actions**
    - No añadir secrets innecesarios. `GITHUB_TOKEN` se genera automáticamente y solo tiene permisos declarados en cada workflow. Para firmar actualizaciones, `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` se guardan en el entorno `release`, no a nivel de repositorio.
