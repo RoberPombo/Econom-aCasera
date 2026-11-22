@@ -21,13 +21,13 @@ Aplicación de escritorio para llevar el control de gastos e ingresos anuales. F
 
 Descarga el instalador de la [última release](https://github.com/RoberPombo/Econom-aCasera/releases/latest) según tu sistema:
 
-| Sistema | Archivo recomendado | Dónde queda instalada | Menú de aplicaciones |
-|---------|---------------------|------------------------|----------------------|
-| **Linux (Debian/Ubuntu)** | `.deb` | `/usr/bin` + datos de app del usuario | Sí (entrada `.desktop`) |
-| **Linux (Fedora/openSUSE)** | `.rpm` | rutas del paquete del sistema | Sí |
-| **Linux (portable)** | `.AppImage` | donde la dejes | No automático |
-| **Windows** | instalador NSIS (`.exe`) o `.msi` | carpeta de usuario / Program Files | Sí (menú Inicio) |
-| **macOS (Apple Silicon)** | `.dmg` | arrastra a `/Applications` | Sí (Launchpad) |
+| Sistema                     | Archivo recomendado               | Dónde queda instalada                 | Menú de aplicaciones    |
+| --------------------------- | --------------------------------- | ------------------------------------- | ----------------------- |
+| **Linux (Debian/Ubuntu)**   | `.deb`                            | `/usr/bin` + datos de app del usuario | Sí (entrada `.desktop`) |
+| **Linux (Fedora/openSUSE)** | `.rpm`                            | rutas del paquete del sistema         | Sí                      |
+| **Linux (portable)**        | `.AppImage`                       | donde la dejes                        | No automático           |
+| **Windows**                 | instalador NSIS (`.exe`) o `.msi` | carpeta de usuario / Program Files    | Sí (menú Inicio)        |
+| **macOS (Apple Silicon)**   | `.dmg`                            | arrastra a `/Applications`            | Sí (Launchpad)          |
 
 ### Linux
 
@@ -216,7 +216,7 @@ El repositorio incluye configuración para reducir riesgos:
 
 - **Rulesets de GitHub** (`Settings > Rules`): protección de `main` y `develop` (requiere PR, 1 review, status check `PR Checks`, sin force-push). Tras cada release, la sincronización `main -> develop` se integra con merge commit normal (nunca squash).
 - **Dependabot** (`.github/dependabot.yml`) para dependencias de npm, cargo y GitHub Actions. Sus PRs apuntan a `develop`, como cualquier otro cambio.
-- **Code scanning**: GitHub *default setup* (Settings > Code security > Code scanning) escanea JS/TS, Rust y Actions semanalmente y en cada push a la rama por defecto. No usar el modo avanzado mientras el default setup esté activo (son incompatibles).
+- **Code scanning**: GitHub _default setup_ (Settings > Code security > Code scanning) escanea JS/TS, Rust y Actions semanalmente y en cada push a la rama por defecto. No usar el modo avanzado mientras el default setup esté activo (son incompatibles).
 - Los workflows usan `permissions` mínimas y `persist-credentials: false`; las actions están fijadas por SHA.
 - Los PRs de forks requieren aprobación del mantenedor y, una vez aprobados, ejecutan `PR Checks` con token de solo lectura, sin secretos y con las actions fijadas por SHA.
 - **Token de release-please**: `RELEASE_PLEASE_TOKEN` es un PAT fine-grained limitado a este repositorio, con permisos mínimos y caducidad corta. No se usa `secrets.GITHUB_TOKEN` porque los eventos que genera no disparan otros workflows: el PR de release no tendría `PR Checks` y el tag no dispararía `Release Binaries`.
@@ -224,25 +224,25 @@ El repositorio incluye configuración para reducir riesgos:
 ### Configuración manual recomendada en GitHub
 
 1. **Settings > Rules > Rulesets**
-   - `main` y `develop`: *Require a pull request before merging* con 1 approval, *Dismiss stale pull request approvals when new commits are pushed*, *Require status checks to pass* con `PR Checks` (para `main`) y bloquear force-push y eliminación de ramas.
+   - `main` y `develop`: _Require a pull request before merging_ con 1 approval, _Dismiss stale pull request approvals when new commits are pushed_, _Require status checks to pass_ con `PR Checks` (para `main`) y bloquear force-push y eliminación de ramas.
    - Estado deseado de los checkboxes: ✅ Require a pull request · ✅ Require approvals: 1 · ✅ Dismiss stale approvals · ✅ Require status checks (`PR Checks`) · ✅ No force-pushes ni deletions.
 
 2. **Settings > Actions > General**
    - ✅ Require approval for first-time contributors
    - ✅ Require approval for all outside collaborators
-   - **Fork pull request workflows**: selecciona *Require approval for first-time contributors* o *Require approval for all outside collaborators*
-   - **Workflow permissions**: *Read repository contents and packages permissions* (`default_workflow_permissions=read`).
+   - **Fork pull request workflows**: selecciona _Require approval for first-time contributors_ o _Require approval for all outside collaborators_
+   - **Workflow permissions**: _Read repository contents and packages permissions_ (`default_workflow_permissions=read`).
    - **Allow GitHub Actions to create and approve pull requests**: desmarcado (`can_approve_pull_request_reviews=false`).
 
 3. **Settings > Environments**
-   - Crear el entorno `release` con una *deployment branch policy* de tipo *tag* y nombre `v*.*.*`. Los secretos de firma del updater viven en ese entorno, de modo que solo los jobs que corren sobre un tag de release pueden leerlos. El job `build-and-attach` declara `environment: release`; ningún otro workflow lo declara. No añadir *required reviewers* al entorno: cada tag se quedaría esperando una aprobación manual y `Release Binaries` no llegaría a ejecutarse.
+   - Crear el entorno `release` con una _deployment branch policy_ de tipo _tag_ y nombre `v*.*.*`. Los secretos de firma del updater viven en ese entorno, de modo que solo los jobs que corren sobre un tag de release pueden leerlos. El job `build-and-attach` declara `environment: release`; ningún otro workflow lo declara. No añadir _required reviewers_ al entorno: cada tag se quedaría esperando una aprobación manual y `Release Binaries` no llegaría a ejecutarse.
 
 4. **Settings > Secrets and variables > Actions**
    - No añadir secrets innecesarios. `GITHUB_TOKEN` se genera automáticamente y solo tiene permisos declarados en cada workflow. Para firmar actualizaciones, `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` se guardan en el entorno `release`, no a nivel de repositorio.
    - `RELEASE_PLEASE_TOKEN`: PAT fine-grained con owner `RoberPombo`, acceso solo a `RoberPombo/Econom-aCasera`, permisos `Contents: Read and write`, `Pull requests: Read and write` y `Metadata: Read` (todo lo demás, `No access`), caducidad corta (recomendado 90 días) y renovación antes de que expire. Revoca el token anterior solo después de confirmar un release completo con el nuevo.
 
 5. **Settings > Code security**
-   - Habilitar *Dependabot alerts* y *Dependabot security updates*.
+   - Habilitar _Dependabot alerts_ y _Dependabot security updates_.
 
 ## Estructura del proyecto
 
@@ -262,4 +262,3 @@ El repositorio incluye configuración para reducir riesgos:
 ├── LICENSE            # MIT
 └── README.md
 ```
-
