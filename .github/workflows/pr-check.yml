@@ -14,7 +14,12 @@ concurrency:
 jobs:
   PR-Checks:
     name: PR Checks
-    if: github.event.repository.fork == false
+    # No fork guard on purpose: for pull_request events `github.event.repository`
+    # describes the base repository, so the old `.fork` check was always true and
+    # filtered nothing. Do not gate on the pull request head repository's
+    # `full_name` either: approved fork PRs must still produce the required
+    # `PR Checks` status, and they run with a read-only token, no secrets and
+    # SHA-pinned actions.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
