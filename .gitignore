@@ -3,6 +3,9 @@ node_modules/
 .pnp
 .pnp.js
 
+.stpr
+.opencode
+
 # Build outputs
 dist/
 dist-ssr/
