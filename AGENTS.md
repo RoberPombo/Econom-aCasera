@@ -155,8 +155,8 @@ Run them before committing.
 ## Security Rules
 
 - Never commit secrets, API keys, tokens or personal credentials.
-- Do not add repository secrets unless explicitly requested.
-- Use `GITHUB_TOKEN` only; it is provided automatically with the permissions declared in each workflow.
+- Do not add repository secrets unless explicitly requested. The only repository-level secret is `RELEASE_PLEASE_TOKEN`; the Tauri signing key and password live in the `release` environment instead.
+- Use `GITHUB_TOKEN` everywhere except release-please, which needs `RELEASE_PLEASE_TOKEN`: the events `GITHUB_TOKEN` creates do not trigger other workflows, so the release PR and the tag would skip `PR Checks` and `Release Binaries`. `GITHUB_TOKEN` is provided automatically with the permissions declared in each workflow.
 - Avoid executing untrusted scripts or installing packages outside the workspace.
 - The Tauri signing private key (`src-tauri/tauri.key`) must never be committed. It is ignored by `.gitignore`.
 
