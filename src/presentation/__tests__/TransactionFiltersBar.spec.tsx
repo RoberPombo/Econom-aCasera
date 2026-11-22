@@ -400,7 +400,7 @@ describe("TransactionFiltersBar", () => {
     expect(onRangeChange).toHaveBeenCalledWith("2026-08-01", "2026-08-31");
   });
 
-  test("shows the person counter label with selected persons", () => {
+  test("shows the person counter label with a single selected person", () => {
     renderBar(
       TransactionFilters.create({
         period: { mode: "month", year: 2026, month: 8 },

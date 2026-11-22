@@ -13,7 +13,7 @@ Solo la versión más reciente publicada en [releases](https://github.com/RoberP
 
 Por favor, no abras un issue público para vulnerabilidades de seguridad.
 
-1. **Método preferido:** usa el [reporte privado de vulnerabilidades](https://github.com/RoberPombo/Econom-aCasera/security/advisories) de GitHub (pestaña *Security* → *Report a vulnerability*).
+1. **Método preferido:** usa el [reporte privado de vulnerabilidades](https://github.com/RoberPombo/Econom-aCasera/security/advisories) de GitHub (pestaña _Security_ → _Report a vulnerability_).
 2. **Alternativa:** envía un correo a los mantenedores con el asunto `[SECURITY]` incluyendo la misma información.
 
 Incluye en el reporte:
