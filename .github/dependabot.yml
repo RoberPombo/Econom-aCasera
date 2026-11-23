@@ -31,12 +31,15 @@ updates:
           - "vitest"
           - "@vitest/*"
           - "jsdom"
-    # vitest 5 + jsdom break URL.createObjectURL in the test environment, so
-    # major bumps are upgraded by hand once the tests are adapted.
+    # vitest 5 and jsdom 31 break the test environment (URL.createObjectURL and
+    # the file `_buffer` used when attaching receipts), so major bumps of these
+    # are upgraded by hand once the tests are adapted.
     ignore:
       - dependency-name: "vitest"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@vitest/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "jsdom"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: cargo

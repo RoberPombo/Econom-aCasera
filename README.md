@@ -219,7 +219,7 @@ El repositorio incluye configuración para reducir riesgos:
 - **Code scanning**: GitHub _default setup_ (Settings > Code security > Code scanning) escanea JS/TS, Rust y Actions semanalmente y en cada push a la rama por defecto. No usar el modo avanzado mientras el default setup esté activo (son incompatibles).
 - Los workflows usan `permissions` mínimas y `persist-credentials: false`; las actions están fijadas por SHA.
 - Los PRs de forks requieren aprobación del mantenedor y, una vez aprobados, ejecutan `PR Checks` con token de solo lectura, sin secretos y con las actions fijadas por SHA.
-- **Token de release-please**: `RELEASE_PLEASE_TOKEN` es un PAT fine-grained limitado a este repositorio, con permisos mínimos y caducidad corta. No se usa `secrets.GITHUB_TOKEN` porque los eventos que genera no disparan otros workflows: el PR de release no tendría `PR Checks` y el tag no dispararía `Release Binaries`.
+- **Token de release-please**: `RELEASE_PLEASE_TOKEN` es un PAT fine-grained limitado a este repositorio, con permisos mínimos y caducidad corta. No se usa `secrets.GITHUB_TOKEN` porque los eventos que genera no disparan otros workflows: el PR de release no tendría `PR Checks` y el tag no dispararía `Release Binaries`. Ese mismo PAT abre el PR de sincronización `main -> develop` (`sync-develop.yml`), porque `GITHUB_TOKEN` no puede crear PRs con _Allow GitHub Actions to create and approve pull requests_ desmarcado.
 
 ### Configuración manual recomendada en GitHub
 
