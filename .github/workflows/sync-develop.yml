@@ -26,8 +26,11 @@ jobs:
         run: git fetch origin develop
 
       - name: Create sync PR (main -> develop)
+        # `GITHUB_TOKEN` cannot open PRs while "Allow GitHub Actions to create and
+        # approve pull requests" is disabled, so the PAT used by release-please
+        # does it. Events from a PAT also trigger the PR workflows again.
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
         run: |
           set -euo pipefail
           if git diff --quiet origin/main origin/develop; then
