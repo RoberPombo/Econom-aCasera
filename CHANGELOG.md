@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.7](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.6...v1.1.7) (2026-11-23)
+
+
+### Bug Fixes
+
+* patch open security advisories in lockfiles ([#172](https://github.com/RoberPombo/Econom-aCasera/issues/172)) ([5e5dde2](https://github.com/RoberPombo/Econom-aCasera/commit/5e5dde2933b890f50d23576bde44e85c9813cf56))
+* rotate the updater signing key ([#173](https://github.com/RoberPombo/Econom-aCasera/issues/173)) ([8fbf2f1](https://github.com/RoberPombo/Econom-aCasera/commit/8fbf2f171ba5b9dc6fb8fa14a6513885548edfaa))
+
+
+### Continuous Integration
+
+* open the sync PR with the release PAT ([#171](https://github.com/RoberPombo/Econom-aCasera/issues/171)) ([3ee5962](https://github.com/RoberPombo/Econom-aCasera/commit/3ee59627a0ed944e3ff8998b4772b4dfd92f8356))
+
+
+### Chores
+
+* promote develop to main ([5ee9b23](https://github.com/RoberPombo/Econom-aCasera/commit/5ee9b234d9acc723aaa36dc52ca7ee60ad413426))
+* sync main into develop after release v1.1.6 ([b97809e](https://github.com/RoberPombo/Econom-aCasera/commit/b97809efa662bdbee777258fe5050986cada8a8b))
+
 ## [1.1.6](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.5...v1.1.6) (2026-11-22)
 
 
