@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.1.6](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.5...v1.1.6) (2026-11-22)
+
+
+### Documentation
+
+* close P-001 review considerations and point dependabot at develop ([#157](https://github.com/RoberPombo/Econom-aCasera/issues/157)) ([3790e1c](https://github.com/RoberPombo/Econom-aCasera/commit/3790e1cbef5839d090a750a5ce566d1977ffdcd3))
+
+
+### Continuous Integration
+
+* add 2-day dependabot cooldown and ignore vitest major updates ([be57404](https://github.com/RoberPombo/Econom-aCasera/commit/be574046e1bd0587456bd183751640bcb3dfd323))
+* add 2-day dependabot cooldown and ignore vitest major updates ([0c4d4b7](https://github.com/RoberPombo/Econom-aCasera/commit/0c4d4b70b9f6089230d2dc1cb31e3aeb51e62fc3))
+* bump actions/setup-node from 7.0.0 to 7.1.0 ([4009fbf](https://github.com/RoberPombo/Econom-aCasera/commit/4009fbf5cc23be4a24e27190c6733ae8dddfe4e5))
+* bump dtolnay/rust-toolchain pin ([e765c75](https://github.com/RoberPombo/Econom-aCasera/commit/e765c75175cb3ed309224ca7ef4c9584be0b530a))
+* bump GitHub Actions pins (rust-cache, pnpm, setup-node, rust-toolchain) ([c4ed9ad](https://github.com/RoberPombo/Econom-aCasera/commit/c4ed9adc1d20c5441034b8953767e1b49969aef1))
+* bump pnpm/action-setup from 6.0.10 to 6.1.0 ([e0e4ded](https://github.com/RoberPombo/Econom-aCasera/commit/e0e4ded665eec109f51e4af0224bbac0b587cfda))
+* bump swatinem/rust-cache from 2.9.0 to 2.9.2 ([c67cb04](https://github.com/RoberPombo/Econom-aCasera/commit/c67cb04e2e56248ffcb129fb9892bc990e2bc644))
+* harden workflow triggers, tokens and release secrets ([#156](https://github.com/RoberPombo/Econom-aCasera/issues/156)) ([7053e09](https://github.com/RoberPombo/Econom-aCasera/commit/7053e096f472c37437f433389d3d8f8abb05c84c))
+* raise dependabot cooldown to 7 days ([#155](https://github.com/RoberPombo/Econom-aCasera/issues/155)) ([48217b8](https://github.com/RoberPombo/Econom-aCasera/commit/48217b8db8e4473ae6341a08027338a02c4bdc66))
+
+
+### Chores
+
+* **deps-dev:** bump @biomejs/biome from 2.5.8 to 2.5.15 ([a0bdc5e](https://github.com/RoberPombo/Econom-aCasera/commit/a0bdc5edcd84b796f227b87362c60ddfedacdc66))
+* **deps-dev:** bump @types/node from 26.2.0 to 26.6.5 ([7ab3b44](https://github.com/RoberPombo/Econom-aCasera/commit/7ab3b44392a05cf3bd9d93ad24aa78eb5f8632c9))
+* **deps-dev:** bump @vitejs/plugin-react from 6.0.5 to 6.1.2 ([b1712d2](https://github.com/RoberPombo/Econom-aCasera/commit/b1712d2e26d5f87780d8a90acd31daffe97d9444))
+* **deps-dev:** bump vite from 8.2.1 to 8.3.4 ([b06c100](https://github.com/RoberPombo/Econom-aCasera/commit/b06c10065b61e20ccea1340051c3d1200860eb83))
+* **deps-dev:** bump vitest from 4.1.10 to 4.1.11 ([ba42321](https://github.com/RoberPombo/Econom-aCasera/commit/ba42321b8c2766ea3364d6c146c10816979a688c))
+* **deps:** bump dirs from 6.0.0 to 7.0.0 ([dc56ab5](https://github.com/RoberPombo/Econom-aCasera/commit/dc56ab55f223c8563a150021d731972da67e3833))
+* **deps:** bump npm dependencies and the tauri stack (npm + Rust) ([e83d40d](https://github.com/RoberPombo/Econom-aCasera/commit/e83d40d5e031a55ebb8347920c2bb86231f58887))
+* **deps:** bump pending npm, cargo and action dependencies ([#158](https://github.com/RoberPombo/Econom-aCasera/issues/158)) ([a68d551](https://github.com/RoberPombo/Econom-aCasera/commit/a68d551c0bdcc5266c35bbf6bd08052625f53deb))
+* **deps:** bump read-excel-file from 9.3.10 to 9.3.12 ([e412011](https://github.com/RoberPombo/Econom-aCasera/commit/e4120114aef0d2bb87cc6d69c1576eb3043fb95f))
+* **deps:** bump serde_json from 1.0.151 to 1.0.154 ([a7f4126](https://github.com/RoberPombo/Econom-aCasera/commit/a7f412608d7af6a8116d21a7469abd491a5ebcb1))
+* **deps:** bump the react group with 4 updates ([9086cb5](https://github.com/RoberPombo/Econom-aCasera/commit/9086cb5fb17b86367d9f978a1095f9f46f781f87))
+* **deps:** bump the tauri group with 5 updates ([86bf53d](https://github.com/RoberPombo/Econom-aCasera/commit/86bf53d4745fe0aab5dcb19c20501f02e1cd77e5))
+* **deps:** bump the tauri-crate group with 5 updates ([34c9d04](https://github.com/RoberPombo/Econom-aCasera/commit/34c9d04fb86b3121d5143ea9a34bc1cd916ff35e))
+* promote develop to main ([858e6f4](https://github.com/RoberPombo/Econom-aCasera/commit/858e6f431564ed889234dafcb4dcbae09c37529f))
+* stop tracking .stpr and .opencode ([#154](https://github.com/RoberPombo/Econom-aCasera/issues/154)) ([4554ec4](https://github.com/RoberPombo/Econom-aCasera/commit/4554ec4be693b509b8a3dad4609788cefd972d19))
+* sync main into develop after release ([69fd1f2](https://github.com/RoberPombo/Econom-aCasera/commit/69fd1f25437f3b67806da2f88dc6892c7c3aa722))
+* update biome config schema to 2.5.15 ([15e5d5c](https://github.com/RoberPombo/Econom-aCasera/commit/15e5d5c708ab6c3a3d5681326ba46cdf139a45cd))
+
 ## [1.1.5](https://github.com/RoberPombo/Econom-aCasera/compare/v1.1.4...v1.1.5) (2026-08-23)
 
 
