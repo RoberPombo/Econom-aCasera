@@ -40,7 +40,8 @@ updates:
       - dependency-name: "@vitest/*"
         update-types: ["version-update:semver-major"]
       - dependency-name: "jsdom"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          ["version-update:semver-minor", "version-update:semver-major"]
 
   - package-ecosystem: cargo
     directory: "/src-tauri"
