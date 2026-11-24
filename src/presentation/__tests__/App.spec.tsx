@@ -386,6 +386,7 @@ describe("App", () => {
         version: "2.0.0",
         downloadUrl: "https://example.com/app",
         currentVersion: "1.9.0",
+        notes: "",
       },
     });
     await settled();

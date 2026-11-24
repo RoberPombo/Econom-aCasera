@@ -410,6 +410,7 @@ describe("useAppState", () => {
       version: "2.0.0",
       downloadUrl: "https://example.com/app.exe",
       currentVersion: "1.0.0",
+      notes: "",
     };
     const { result } = renderState({ updateInfo: info });
 

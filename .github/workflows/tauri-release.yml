@@ -97,6 +97,32 @@ jobs:
             exit 1
           fi
 
+      - name: Add the release notes to the updater manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          workdir=$(mktemp -d)
+          repo="${{ github.repository }}"
+          tag="${{ github.ref_name }}"
+          gh release view "$tag" --repo "$repo" --json body --jq '.body' > "$workdir/body.md"
+          gh release download "$tag" --repo "$repo" --pattern latest.json --dir "$workdir"
+          python3 - "$workdir/latest.json" "$workdir/body.md" <<'PY'
+          import json
+          import sys
+
+          manifest_path, body_path = sys.argv[1], sys.argv[2]
+          with open(body_path, encoding="utf-8") as body_file:
+              notes = body_file.read().strip()
+          with open(manifest_path, encoding="utf-8") as manifest_file:
+              manifest = json.load(manifest_file)
+          manifest["notes"] = notes
+          with open(manifest_path, "w", encoding="utf-8") as manifest_file:
+              json.dump(manifest, manifest_file, ensure_ascii=False, indent=2)
+              manifest_file.write("\n")
+          PY
+          gh release upload "$tag" "$workdir/latest.json" --repo "$repo" --clobber
+
       - name: Publish the draft release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

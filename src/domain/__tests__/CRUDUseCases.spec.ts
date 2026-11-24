@@ -228,6 +228,7 @@ describe("Update use cases", () => {
     version: "1.2.3",
     downloadUrl: "https://example.com/app.exe",
     currentVersion: "1.0.0",
+    notes: "",
   };
 
   test("CheckForUpdateUseCase returns null when there is no update", async () => {

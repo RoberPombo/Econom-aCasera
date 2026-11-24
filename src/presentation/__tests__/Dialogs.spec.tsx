@@ -58,6 +58,7 @@ describe("UpdateDialog", () => {
           version: "2.0.0",
           downloadUrl: "https://example.com/app.exe",
           currentVersion: "1.0.0",
+          notes: "",
         }}
         onConfirm={onConfirm}
         onCancel={onCancel}
@@ -75,5 +76,54 @@ describe("UpdateDialog", () => {
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows the release notes only when the user asks for them", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <UpdateDialog
+        update={{
+          version: "2.0.0",
+          downloadUrl: "",
+          currentVersion: "1.0.0",
+          notes: `### Bug Fixes
+
+* fix a crash on start ([#191](https://example.com/issues/191)) ([def5678](https://example.com/commit/def5678))`,
+        }}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("Correcciones")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Ver novedades" }));
+
+    expect(screen.getByText("Correcciones")).toBeInTheDocument();
+    expect(screen.getByText("fix a crash on start (#191)")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Ocultar novedades" }));
+
+    expect(screen.queryByText("Correcciones")).not.toBeInTheDocument();
+  });
+
+  test("does not offer release notes when the update has none", () => {
+    render(
+      <UpdateDialog
+        update={{
+          version: "2.0.0",
+          downloadUrl: "",
+          currentVersion: "1.0.0",
+          notes: "",
+        }}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Ver novedades" }),
+    ).not.toBeInTheDocument();
   });
 });
