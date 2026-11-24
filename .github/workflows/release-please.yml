@@ -18,8 +18,53 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Release Please
+        id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # release-please cannot bump Cargo.lock itself: its TOML updater wraps values,
+      # so a jsonpath filter like $.package[?(@.name=="economia_casera")].version
+      # matches nothing, and a generic marker does not survive a cargo run. Without
+      # this step the release PR leaves the lock's root version behind and any
+      # `cargo build --locked` fails on it.
+      - name: Keep Cargo.lock in sync with the release PR
+        if: ${{ steps.release.outputs.pr != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          PR: ${{ steps.release.outputs.pr }}
+        run: |
+          set -euo pipefail
+          branch=$(printf '%s' "$PR" | jq -r '.headBranchName')
+          api="repos/${GITHUB_REPOSITORY}/contents"
+          version=$(gh api "$api/package.json?ref=$branch" --jq '.content' | base64 -d | jq -r '.version')
+          sha=$(gh api "$api/src-tauri/Cargo.lock?ref=$branch" --jq '.sha')
+          gh api "$api/src-tauri/Cargo.lock?ref=$branch" --jq '.content' | base64 -d > "$RUNNER_TEMP/Cargo.lock"
+          cp "$RUNNER_TEMP/Cargo.lock" "$RUNNER_TEMP/Cargo.lock.orig"
+          python3 - "$RUNNER_TEMP/Cargo.lock" "$version" <<'PY'
+          import re
+          import sys
+
+          path, version = sys.argv[1], sys.argv[2]
+          text = open(path).read()
+          pattern = re.compile(r'(name = "economia_casera"\nversion = ")[^"]+(")')
+          updated, count = pattern.subn(rf'\g<1>{version}\g<2>', text, count=1)
+          if count != 1:
+              raise SystemExit('economia_casera entry not found in src-tauri/Cargo.lock')
+          open(path, 'w').write(updated)
+          PY
+          if diff -q "$RUNNER_TEMP/Cargo.lock.orig" "$RUNNER_TEMP/Cargo.lock" >/dev/null; then
+            echo "Cargo.lock is already in sync with $version"
+            exit 0
+          fi
+          # The update API needs the base64 file in the body: passing it as an
+          # argument breaks with "Argument list too long" on a real Cargo.lock.
+          jq -n \
+            --arg message "chore: sync Cargo.lock with $version" \
+            --arg branch "$branch" \
+            --arg sha "$sha" \
+            --rawfile lock "$RUNNER_TEMP/Cargo.lock" \
+            '{message: $message, branch: $branch, sha: $sha, content: ($lock | @base64)}' \
+            | gh api -X PUT "$api/src-tauri/Cargo.lock" --input -
