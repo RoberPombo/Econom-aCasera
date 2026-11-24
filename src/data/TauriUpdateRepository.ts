@@ -15,6 +15,7 @@ export class TauriUpdateRepository implements UpdateRepository {
         version: update.version,
         downloadUrl: "",
         currentVersion,
+        notes: update.body ?? "",
       };
     } catch {
       // Updater endpoint may not be available yet (e.g. dev mode or no releases published).

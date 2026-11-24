@@ -2,6 +2,7 @@ export interface UpdateInfo {
   version: string;
   downloadUrl: string;
   currentVersion: string;
+  notes: string;
 }
 
 export interface UpdateRepository {
